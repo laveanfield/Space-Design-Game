@@ -1,16 +1,17 @@
 # Space Mission Design Game — Kiến trúc hệ thống
 
 > **NASA Space Apps Challenge 2026 · Challenge: Space Mission Design Game**
-> Tài liệu v0.1 · 11-11-2026 · Trạng thái: bản thiết kế để team duyệt trước ngày thi
-> Nguồn: lịch sử dự án (v1 → v6, Mục 1 Δv budget, Mục 2 gravity turn, giai đoạn D/E và 3 nhiệm vụ mới), tài liệu so sánh 2D/3D của một trợ lý khác, và skill `/anatomy`.
+> Tài liệu v0.2 · 13-11-2026 · Trạng thái: bản kiến trúc chuẩn tích hợp tài nguyên NASA, CML, GMAT & Pipeline 3D Blender/Anatomy/Figma
+> Nguồn: lịch sử dự án (v1 → v6, K-ASC, K-ORB, K-DV, K-ATT, K-LNK, K-PWR), tài liệu NASA Systems Engineering, CubeSat 101, GMAT, CML, MDL, Mission Viz, và skill `/anatomy`.
 
-**Kiến trúc này phải làm được 5 việc**
+**Kiến trúc này phải làm được 6 việc**
 
 1. Ngày thi: nhận dataset và chạy được game trong **vài giờ**, không sửa code kernel.
-2. Đổi hoặc thêm mission bằng **dữ liệu** (YAML/JSON), không bằng code.
-3. Giữ nguyên toàn bộ vật lý đã kiểm chứng; chỉ đóng gói lại thành một package sạch.
-4. Có sẵn "khe cắm" cho figure 3D (isometric) thiết kế bằng `/anatomy`.
-5. Mọi con số trong game truy được nguồn (library / public / estimate) để ăn điểm *Validity*.
+2. Đổi hoặc thêm mission bằng **dữ liệu** (YAML/JSON theo NASA Data Schema), không bằng code.
+3. Giữ nguyên toàn bộ vật lý đã kiểm chứng; có cổng mở rộng sang GMAT và NAIF SPICE / JPL Horizons.
+4. Đánh giá mission theo chuẩn NASA: Concept Maturity Levels (CML 1–4) và Mission Design Lab (MDL) trade-offs.
+5. Hệ sinh thái 3D/UI rõ ràng: Blender (modular 3D assets), `/anatomy` (exploded-view SVG/cơ chế), Figma (UI/UX) và Three.js/React (runtime web).
+6. Mọi con số trong game truy được nguồn (library / public / estimate / calibrated) để ăn điểm tối đa ở tiêu chí *Validity*.
 
 ---
 
@@ -18,23 +19,23 @@
 
 0. Cách đọc tài liệu
 1. Tóm tắt và 8 nguyên tắc
-2. Bài toán: đề NASA → yêu cầu hệ thống
+2. Bài toán: đề NASA → yêu cầu hệ thống & Quy trình 6 giai đoạn NASA
 3. Kiến trúc tổng thể
-4. L0–L1: Dataset Gateway và Catalog
+4. L0–L1: Dataset Gateway, Catalog & Chuẩn hóa 5 nhóm NASA Data Schemas
 5. L2: Mission Pack
-6. L3: Simulation Kernels
-7. L4: Rules — Constraint, Scoring, Fault, Explainer, Advisor
+6. L3: Simulation Kernels & GMAT Simulation Adapter (Level 1 / Level 2)
+7. L4: Rules — Constraint, Scoring, CML Maturity, MDL Trade Studies & Explainer
 8. L4: Mission Modes
 9. L5: Session Orchestrator
 10. Contract và Engine Client
-11. L7: Presentation
-12. Figure Layer — thiết kế 3D bằng `/anatomy`
+11. L7: Presentation, Figma UI/UX 4 màn hình & NASA Mission Viz Trajectory Schema
+12. Figure Layer & 3D Asset Ecosystem — Phân công Blender, `/anatomy`, Figma, Three.js và React
 13. Repo, stack, build, deploy
 14. Validation và test
 15. Runbook ngày thi
 16. Tổ chức dự án: phân công, rủi ro, quyết định cần chốt
 17. Tiêu chí chấm và checklist nộp bài
-- Phụ lục A: prompt mẫu cho `/anatomy` · B: ký hiệu · C: quy ước làm việc
+- Phụ lục A: prompt mẫu cho `/anatomy` · B: ký hiệu · C: quy ước làm việc · D: Ma trận phân tích 13 tài nguyên NASA
 
 ---
 
@@ -110,7 +111,45 @@ Quy ước chung: tên module/hàm bằng tiếng Anh (snake_case); chú thích 
 | R7 | Tối đa 4 người chơi, vai trò khác nhau, có đàm phán ưu tiên | Roles + Negotiation Board (§9.5) | `[NEW]` P2 |
 | R8 | Nhóm tự xác định tài nguyên "nút thắt" cho từng loại mission | `constraints[*].critical` trong Mission Pack (§5) | `[NEW]` |
 
-### Khoảng trống của bản hiện tại → "móc" trong kiến trúc
+### 2.1 Quy trình phát triển nhiệm vụ khoa học NASA (6 giai đoạn & 4 segments)
+
+Dựa trên tài liệu hệ thống chính thức của NASA (*NASA Systems Engineering Handbook & Design and Develop Science Missions*), một nhiệm vụ không gian khoa học không bao giờ bắt đầu từ việc lắp ráp tàu tùy ý, mà luôn tuân theo chu trình 6 giai đoạn và phân rã thành 4 phân đoạn (segments):
+
+```
+[1. Identify Need] ──► [2. Define Concept] ──► [3. Define Requirements]
+      |                       |                         |
+      v                       v                         v
+Cau hoi khoa hoc      Kien truc: Orbiter,        Thong so ky thuat,
+(vd: tim nuoc Mars)   Lander, Rover, Flyby       do phan giai, dai song
+      │
+      └────────────────────────────────────────────────────────┐
+                                                               v
+[6. Implement]     ◄── [5. Build & Verify]   ◄── [4. Detailed Design]
+      |                       |                         |
+      v                       v                         v
+Phong tau, quy dao,    Kiem tra 9 budget,         Thiet ke bus, payload,
+van hanh & du lieu     feasibility & CML          propulsion, power, link
+```
+
+#### Ánh xạ 6 giai đoạn NASA vào Gameplay:
+
+| Giai đoạn NASA | Ý nghĩa kỹ thuật NASA | Ánh xạ vào Game (Flow người chơi) | Module đảm nhiệm |
+|---|---|---|---|
+| **1. Identify Need & Goals** | Xác định câu hỏi khoa học cần giải quyết (khí hậu Trái Đất, tìm nước Sao Hỏa, từ trường Mặt Trời...) | **Màn Brief & Mission Select**: Người chơi nhận mục tiêu khoa học, hạn định, tiêu chí thành công | Mission Pack (`meta.brief`, `objective.statement`) |
+| **2. Define Concept** | Chọn kiến trúc nhiệm vụ phù hợp: Orbiter, Lander, Rover, Flyby hay Space Observatory | **Architecture Choice**: Chọn loại phương tiện (CubeSat, SmallSat, ESPA-class, Deep Space Probe) | Mission Pack (`design_space`, `mission_type`) |
+| **3. Define Requirements** | Chuyển mục tiêu khoa học thành yêu cầu kỹ thuật: bước sóng, độ phân giải camera, góc quan sát | **Payload Requirement Matching**: Thiết lập bộ ràng buộc (phải chọn đúng loại cảm biến, quỹ đạo tương thích) | `ruleset.yaml` + `constraints` trong pack |
+| **4. Detailed Design** | Thiết kế chi tiết: kết cấu tàu, nguồn điện, thông tin liên lạc, điều khiển tư thế, chọn tên lửa | **Design Desk**: Người chơi lắp ráp các module tàu trên giá 3D, đóng 9 budget thời gian thực | `catalog.json`, L3 Kernels, Blender/Anatomy F-10 |
+| **5. Build & Verify** | Kiểm tra tính khả thi, đánh giá độ trưởng thành thiết kế (CML 1–4), phân tích rủi ro | **Mission Feasibility & Review Desk**: Chạy kiểm tra 10 constraint, kiểm tra launch gate, tính điểm CML | `EvaluationReport`, Advisor, Data Doctor D12 |
+| **6. Implement** | Phóng tên lửa, bay vào quỹ đạo mục tiêu, vận hành thiết bị, thu thập và phân tích dữ liệu | **Launch Control & Ops**: Bay vật lý thật (RK4), tách tầng, ổn định tư thế, chụp ảnh/quét phổ và hạ dữ liệu | K-ASC, K-INS, Mission Modes, 3D Mission Viz |
+
+#### 4 Phân đoạn nhiệm vụ NASA (4 Segments) trong Kiến trúc Game:
+
+1. **Launch Segment**: Quản lý bãi phóng (`launch_sites.yaml`), tên lửa (`launch_vehicles`), động cơ đẩy từng tầng, tính toán lực đẩy, khí động học qua Max-Q và quỹ đạo chèn vệ tinh (K-ASC, K-GDN, K-INS).
+2. **Space Segment**: Tàu vũ trụ với 7 hệ thống con (Subsystems theo chuẩn CubeSat 101): Cấu trúc Bus, Nguồn điện (Solar/Battery), Đẩy (Propulsion/RCS), Thông tin liên lạc (RF/Optical), Máy tính bay (OBC), Điều khiển tư thế (ADCS) và Thiết bị khoa học (Payload).
+3. **Ground Segment**: Mạng lưới trạm mặt đất (`ground_stations.yaml` với 11 trạm toàn cầu bao gồm DSN/NEN), theo dõi góc ngẩng vệ tinh (elevation), cửa sổ liên lạc (contact passes) và link budget (Eb/N0, FSPL).
+4. **User / Science Segment**: Trạm xử lý khoa học, tính toán dữ liệu thu nhận được, trừ suy hao do rung lắc (blur), mất nguồn (brownout), tính điểm khoa học phân phối (`science_delivered_pts`) và trả lời câu hỏi "vì sao" (Explainer).
+
+### 2.2 Khoảng trống của bản hiện tại → "móc" trong kiến trúc
 
 Những điểm sau đã lộ ra khi phát triển. Kiến trúc phải có chỗ chứa phần sửa:
 
@@ -435,6 +474,136 @@ FEAS  SC-01 OK (3 thiet ke)   SC-04 OK (1)   SC-0X KHONG co thiet ke kha thi -> 
 - Lỗi parse không làm chết cả bảng: bỏ dòng hỏng, ghi vào report với số dòng gốc, tiếp tục.
 - Giữ `data/raw/` bất biến: mọi chỉnh sửa tay đi qua `mapping/` hoặc `overrides/` để truy vết được.
 
+### 4.9 Chuẩn hóa 5 nhóm dữ liệu NASA Mission Data Schemas
+
+Để tránh hardcode nhiệm vụ vào source code và đảm bảo tiếp nhận mọi challenge dataset trong tương lai, hệ thống chuẩn hóa toàn bộ dữ liệu thành 5 nhóm schema có phiên bản (`schema_version`):
+
+```
+                       NASA RAW DATA / CHALLENGE PACKS
+                                      │
+                                      ▼
+                      ┌───────────────────────────────┐
+                      │    NASA Mission Data Schemas   │
+                      └───────┬───────────────┬───────┘
+                              │               │
+       ┌──────────────────────┼───────────────┼──────────────────────┐
+       ▼                      ▼               ▼                      ▼
+1. Mission Def        2. Components    3. Celestial/Physics   4. Constraints/Events
+(Mục tiêu khoa học,   (Linh kiện bus,  (Trọng trường, bán     (9 budgets, sự cố,
+ destination, quỹ đạo) payload, power) kính, ephemeris)       timeline bay)
+```
+
+#### 1. Mission Definition Schema (`missions/*.mission.yaml`)
+Định nghĩa mục tiêu khoa học, đối tượng khảo sát, yêu cầu payload và tiêu chí thành công theo chuẩn NASA Science Mission:
+```yaml
+schema: mission-def/1
+mission_id: "mars_surface_001"
+name: "Mars Geologic & Hydrology Survey"
+difficulty: "hard"
+science_theme: "planetary_science"          # earth_science | planetary_science | astrophysics | heliophysics
+destination:
+  body_id: "BODY-MARS"
+  orbit_class: "AREO"                       # Low Mars Orbit (LMO) / Areostationary
+  target_altitude_km: 400
+  target_inclination_deg: 93.0              # Sun-synchronous Mars
+objective:
+  statement: "Khảo sát bề mặt Sao Hỏa để xác định khoáng vật ngậm nước và trầm tích cổ."
+  min_science_pts: 45
+  expected_findings: ["hydrated_silicates", "ancient_riverbed_strata"]
+requirements:
+  payload: ["spectrometer", "imager_multispectral"]
+  pointing_accuracy_deg: 0.05
+  min_downlink_gb_per_day: 12.0
+  min_lifetime_years: 2.0
+constraints:
+  max_mass_kg: 850
+  max_cost_musd: 450
+  max_lead_time_months: 48
+```
+
+#### 2. Spacecraft Components Schema (Chuẩn CubeSat 101 Subsystems)
+Mỗi component thuộc một subsystem chuẩn trong tài liệu NASA CubeSat 101: Structure, Power, Comms, Attitude Control, Propulsion, On-board Computer, Payload:
+```yaml
+schema: component/1
+component_id: "INS-HYPER-02"
+name: "Miniaturized Hyperspectral Surface Imager"
+category: "payload"                         # payload | power | comms | adcs | obc | propulsion | bus
+subsystem: "scientific_payload"
+heritage: "TRL-7"                           # Technology Readiness Level (1-9)
+mass_kg: 8.5
+power_operating_w: 32.0
+power_standby_w: 4.0
+data_generated_gb_per_day: 15.0
+pointing_required_deg: 0.02
+cost_musd: 14.5
+lead_time_months: 18
+dimensions_m: [0.2, 0.1, 0.1]               # 2U form factor
+fov_deg: [12.0, 12.0]
+spectral_bands_nm: [400, 1000]
+provenance: { source: "public", ref: "NASA Small Spacecraft Technology State of the Art 2023" }
+```
+
+#### 3. Physics & Celestial Parameters Schema (`data/geo/celestial_bodies.yaml`)
+Tham số hấp dẫn, hình học và khí quyển của các thiên thể phục vụ mô phỏng quỹ đạo và hạ cánh:
+```yaml
+schema: celestial-body/1
+body_id: "BODY-MARS"
+name: "Mars"
+gm_m3_s2: 4.282837e13                      # Gravitational parameter mu = GM
+radius_equatorial_km: 3396.2
+radius_polar_km: 3376.2
+mass_kg: 6.4171e23
+rotation_period_s: 88642.66                # 1 sol
+j2_perturbation: 1.96045e-3
+atmosphere:
+  has_atmosphere: true
+  surface_density_kg_m3: 0.020
+  scale_height_km: 11.1
+  surface_pressure_pa: 610.0
+ephemeris_source: "JPL_HORIZONS_DE440"
+```
+
+#### 4. Mission Constraints & Engineering Rules Schema
+Tham số cho 9 budget kỹ thuật và các quy tắc trade-off (MDL), xem chi tiết tại `ruleset.yaml` (§7).
+
+#### 5. Mission Events & Timeline Schema (`FlightBundle.events`)
+Lịch trình diễn tiến sự kiện sau phóng từ Liftoff đến Scientific Operation:
+```json
+{
+  "mission_id": "mars_survey_001",
+  "timeline": [
+    { "event_id": "T00", "t_sec": 0, "name": "LIFTOFF", "type": "launch" },
+    { "event_id": "T01", "t_sec": 165, "name": "MECO_STAGE1_SEP", "type": "staging" },
+    { "event_id": "T02", "t_sec": 540, "name": "PARKING_ORBIT_INSERTION", "type": "insertion" },
+    { "event_id": "T03", "t_sec": 3600, "name": "TRANS_MARS_INJECTION_TMI", "type": "maneuver", "dv_ms": 3600.0 },
+    { "event_id": "T04", "t_sec": 17280000, "name": "MARS_ORBIT_INSERTION_MOI", "type": "maneuver", "dv_ms": 1100.0 },
+    { "event_id": "T05", "t_sec": 17366400, "name": "SOLAR_ARRAY_DEPLOY", "type": "mechanism" },
+    { "event_id": "T06", "t_sec": 17452800, "name": "SCIENCE_OPS_PHASE_START", "type": "science" }
+  ]
+}
+```
+
+### 4.10 Tích hợp Ephemeris và Dữ liệu Khoa học Mở (SPICE / Horizons / PDS)
+
+Để đảm bảo tính khoa học chân thực (*Validity*), engine hỗ trợ tích hợp với các nguồn dữ liệu vũ trụ uy tín:
+
+1. **NAIF SPICE (NASA's Observation Geometry System)**:
+   - Cung cấp định vị thiên thể (SPK kernels), hướng trục quay (PCK kernels), khung tọa độ thiết bị (IK/FK kernels).
+   - Ở bản web client: Sử dụng dữ liệu ép phẳng (baked ephemeris table) nội suy Chebyshev hoặc spline.
+   - Ở môi trường Python backend: Hỗ trợ `SpiceyPy` để tính toán chính xác vector vị trí $r(t)$ và vận tốc $v(t)$ theo thời gian thực.
+2. **JPL Horizons API**:
+   - Sử dụng để truy vấn tọa độ thiên thể theo mốc thời gian thực (Epoch J2000), đồng bộ quỹ đạo Trái Đất – Mặt Trăng – Sao Hỏa. Dữ liệu được fetch ở bước build (`tools/fetch_horizons.py`) và lưu vào `data/geo/ephemeris_cache.json`.
+3. **NASA Planetary Data System (PDS) & Solar System Exploration**:
+   - Nguồn cung cấp đặc tính quang phổ bề mặt, suất phản chiếu (albedo), bản đồ số độ cao (DEM/MOLA cho Mars, LOLA cho Moon) dùng làm texture và độ dốc địa hình cho viewer 3D.
+
+### 4.11 Pipeline xử lý dữ liệu tự động từ tài liệu NASA
+
+Khi ban tổ chức cung cấp tài liệu dạng PDF hoặc Excel ngày thi:
+- **PyMuPDF (`fitz`)**: Đọc trích xuất text và metadata từ PDF kỹ thuật.
+- **Camelot / Tabula**: Tự động parse bảng biểu thông số kỹ thuật (mass, power, specific impulse, frequencies).
+- **Pydantic Data Models**: Validate kiểu dữ liệu, bắt buộc đơn vị SI, kiểm tra khoảng hợp lý trước khi nạp vào Catalog.
+- **Data Doctor**: Chạy tự động ở cuối bước `make ingest` để đảm bảo 0 lỗi nghiêm trọng.
+
 ---
 
 ## 5. L2: Mission Pack
@@ -755,6 +924,55 @@ Tên file lấy từ lịch sử dự án — **đối chiếu lại với thư 
 4. Viết test tham chiếu (giải tích hoặc trong sách) trong `tests/kernels/`.
 5. Chạy `make validate`; số baseline cũ không được đổi.
 
+### 6.6 Kiến trúc mô phỏng quỹ đạo 2 cấp độ & GMAT Simulation Adapter
+
+Nhằm cân bằng giữa tính mượt mà (real-time responsiveness) của một trò chơi và độ chính xác kỹ thuật chuẩn NASA (*Technical Validity*), engine hỗ trợ kiến trúc mô phỏng quỹ đạo hai cấp độ:
+
+```
+                          DESIGN SPEC & MISSION PARAMS
+                                       │
+                                       ▼
+                     ┌──────────────────────────────────┐
+                     │    Simulation Router / Engine    │
+                     └─────────┬───────────────┬────────┘
+                               │               │
+                 Mặc định / Real-time          │ Yêu cầu High-Fidelity / Offline
+                               │               │
+                               ▼               ▼
+                     ┌──────────────────┐ ┌───────────────────────────┐
+                     │  LEVEL 1 ENGINE  │ │      LEVEL 2: GMAT        │
+                     │  (Python Pure)   │ │  Headless Adapter (.py)   │
+                     │  - RK4 Two-body  │ ├───────────────────────────┤
+                     │  - Kepler / CW   │ │ - Sinh .script từ template│
+                     │  - Hohmann       │ │ - GMAT CLI execution      │
+                     │  - Point mass    │ │ - Parse ephemeris / orbit │
+                     └─────────┬────────┘ └─────────────┬─────────────┘
+                               │                        │
+                               └───────────┬────────────┘
+                                           ▼
+                                 FlightBundle / Snapshot
+                                 (Chuẩn hóa schema chung)
+```
+
+#### Level 1: Simplified Physics Engine (Ưu tiên P0, chạy nội tuyến)
+- **Mô hình**: Bài toán hai vật (two-body problem) sử dụng tích phân số RK4, định luật Kepler, phương trình vis-viva, chuyển tiếp quỹ đạo Hohmann và phương trình Clohessy-Wiltshire (CW) cho tiếp cận tương đối.
+- **Môi trường**: 100% Python thuần (`numpy`), chạy cực nhanh (≤ 50 ms cho một quỹ đạo hoàn chỉnh, ≤ 300 ms cho ascent), tương thích hoàn hảo cả trên Pyodide Web Worker và backend native.
+- **Độ tin cậy**: Đã qua ma trận kiểm chứng khắt khe (§14.1), độ lệch bán kính LEO $\le 5\cdot 10^{-6}$ m, bảo toàn cơ năng ở mức $10^{-14}$.
+
+#### Level 2: High-Fidelity Simulation qua GMAT Adapter (Nâng cấp P1/P2)
+- **Vị trí kiến trúc**: Tuyệt đối không gọi GMAT trực tiếp từ trình duyệt/frontend. GMAT được tích hợp tại simulation backend thông qua adapter `mission_engine/kernels/gmat_adapter.py`.
+- **Nhiệm vụ**: Phục vụ các quỹ đạo liên hành tinh phức tạp (Earth–Moon Cycler, Trans-Mars Injection, chèn quỹ đạo Mặt Trăng/Sao Hỏa, mô hình nhiễu loạn trường xuyên tâm $J_2, J_3, J_4$, áp suất bức xạ Mặt Trời - SRP, lực cản khí quyển phi tuyến).
+- **Quy trình hoạt động**:
+  1. `gmat_adapter.py` nhận thông số tàu vũ trụ (khối lượng khô, nhiên liệu, $I_{sp}$, diện tích cản $S$, $C_D$) và kế hoạch cơ động từ `DesignSpec`.
+  2. Adapter kết xuất file kịch bản GMAT (.script) từ Jinja2 template (`templates/gmat/earth_moon_transfer.script.j2`).
+  3. Gọi tiến trình GMAT dạng headless:
+     ```bash
+     gmat --run --minimize --exit mission_run.script
+     ```
+  4. Trình phân tích kết quả (`GmatReportParser`) đọc các file log `.report` và file quỹ đạo `.ephem`, trích xuất chuỗi vector trạng thái Cartesian $[X, Y, Z, V_x, V_y, V_z]$ cùng các sự kiện cơ động (burnout, periapsis, apoapsis).
+  5. Đóng gói dữ liệu đầu ra về đúng chuẩn `FlightBundle` JSON của game.
+- **Cơ chế suy giảm êm (Graceful Fallback)**: Nếu môi trường chạy chưa cài đặt GMAT (ví dụ khi giám khảo mở link web tĩnh), adapter tự động chuyển về Level 1 Simplified Physics và gắn cờ `meta.physics = "simplified-analytic"` kèm cảnh báo minh bạch trên giao diện để không bao giờ bị crash.
+
 ---
 
 ## 7. L4: Rules — Constraint, Scoring, Fault, Explainer, Advisor
@@ -861,6 +1079,46 @@ Dùng cho: kiểm tra D12 (feasibility), nút "Gợi ý" trong Design Desk, mụ
 4. `why_not(design)`: với mỗi constraint trượt, tìm các phép **thay một slot** sửa được, xếp theo Δchi phí; ghép tham lam nếu cần nhiều thay đổi.
 
 Không gian thiết kế rời rạc cỡ 10⁶–10⁷ tổ hợp (ước tính thô từ số mục trong thư viện). Mục tiêu: vài giây cho một mission nhờ cắt tỉa `[?]` (đo khi làm). Nếu không đủ nhanh thì mới dùng NSGA-II qua `pymoo` (P2).
+
+### 7.7 Đánh giá độ trưởng thành nhiệm vụ CML (Concept Maturity Levels)
+
+Dựa trên framework chuẩn của NASA (*Measuring the Maturity of Robotic Planetary Mission Concepts - JPL/NASA Science*), game không chỉ chấm một con số điểm khô khan mà đánh giá xem ý tưởng thiết kế của người chơi đã đạt tới cấp độ trưởng thành kỹ thuật nào:
+
+```
+[ CML 1: Concept ] ──► [ CML 2: Feasibility ] ──► [ CML 3: Trade Space ] ──► [ CML 4: Point Design ]
+Muc tieu khoa hoc      Dong du mass/power       So sanh phuong an        Thiet ke hoan chinh,
+& kien truc co ban     co ban tren giay         (Trade studies)          san sang de phong
+```
+
+#### Các cấp độ CML trong Gameplay:
+
+| Level CML | Tên chuẩn NASA | Điều kiện đạt trong Game | Cơ chế Unlock / Gameplay tương ứng |
+|---|---|---|---|
+| **CML 1** | **Initial Concept** | Xác định mục tiêu khoa học rõ ràng (`science.pts >= min`) và chọn kiến trúc phù hợp. | Mở khóa kho linh kiện và bàn thiết kế Design Desk. |
+| **CML 2** | **Initial Feasibility** | Khối lượng khô nằm trong sức tải danh định, năng lượng phát trung bình $> 0$, không vi phạm các ràng buộc cấm. | Mở khóa chạy mô phỏng quỹ đạo sơ bộ và kiểm tra biên độ an toàn. |
+| **CML 3** | **Trade Space** | Người chơi đã thực hiện so sánh ít nhất 2 cấu hình khác nhau (ví dụ: Solar Array tĩnh vs Xoay; RF S-band vs Optical laser). | Mở khóa Advisor Pareto và bảng so sánh phương án tối ưu. |
+| **CML 4** | **Point Design** | Đóng trọn vẹn 10/10 constraint (9 budget + quỹ đạo), xác định rõ rủi ro, phân tích lỗi (fault analysis). | **Cấp phép phóng (Flight Readiness Review - FRR GO)** cho phép bước sang Launch Control. |
+
+#### Thuật toán tính Mission Maturity Score (MMS):
+$$MMS = \sum w_k \cdot \mu_k$$
+- Có Scientific Objective phù hợp: $+15$ pts
+- Mission Architecture hợp lệ: $+15$ pts
+- Quỹ đạo tương thích mọi cảm biến: $+15$ pts
+- Power budget dương qua vùng tối (eclipse): $+15$ pts
+- Downlink budget đủ xả hết bộ đệm: $+15$ pts
+- ADCS đáp ứng dung sai trỏ của camera: $+15$ pts
+- Kế hoạch kiểm soát rủi ro bức xạ / suy giảm quỹ đạo: $+10$ pts
+- **Mức trưởng thành**: $MMS \ge 90 \rightarrow \text{CML 4 (Point Design)}$; $70-89 \rightarrow \text{CML 3}$; $50-69 \rightarrow \text{CML 2}$; $< 50 \rightarrow \text{CML 1}$.
+
+### 7.8 Mission Design Lab (MDL) Trade-off Engine
+
+Mô phỏng quy trình thiết kế kỹ thuật đồng thời (Concurrent Engineering) từ phòng thí nghiệm **Mission Design Lab (MDL)** thuộc NASA Goddard Space Flight Center:
+
+1. **Đồng bộ đa hệ thống (Multi-subsystem Coupling)**: Thay vì thiết kế tách rời, mọi thay đổi ở một phân hệ lập tức kéo theo phản ứng dây chuyền ở các phân hệ khác:
+   - **Tăng cảm biến khoa học**: Tăng `science_value` $\rightarrow$ Tăng khối lượng (`mass_kg`) $\rightarrow$ Giảm biên sức tải tên lửa $\rightarrow$ Tăng công suất tiêu thụ (`power_operating_w`) $\rightarrow$ Cần mảng pin lớn hơn và ắc quy dung lượng cao hơn $\rightarrow$ Lại tiếp tục tăng khối lượng tổng.
+   - **Tăng công suất phát sóng (High-gain antenna / Optical)**: Tăng tốc độ truyền downlink $\rightarrow$ Xả sạch bộ đệm dữ liệu nhanh hơn $\rightarrow$ Đòi hỏi độ chính xác chỉ hướng ADCS khắt khe hơn ($< 0.005^\circ$) $\rightarrow$ Buộc phải nâng cấp từ bánh đà phản lực thường lên cảm biến sao (Star Tracker) và bánh đà siêu chính xác $\rightarrow$ Đội chi phí ngân sách (`cost_musd`).
+   - **Thay đổi quỹ đạo**: Quỹ đạo thấp (LEO 400 km) cho độ phân giải mặt đất cực cao nhưng chịu lực cản khí quyển lớn (tuổi thọ quỹ đạo tụt nhanh, cần nhiên liệu reboost) $\rightarrow$ Lên quỹ đạo SSO 600–800 km thì môi trường ổn định nhưng liều bức xạ tăng cao, đòi hỏi máy tính bay chống bức xạ (Rad-Hard OBC).
+2. **Bảng đánh giá Trade Studies**: Advisor (§7.6) hiển thị trực tiếp đồ thị phân tán Pareto (Pareto Front) giữa hai trục: **Điểm khoa học (Science Return)** và **Chi phí / Rủi ro (Cost & Risk)**, giúp người chơi rèn luyện tư duy kỹ sư trưởng (Chief Engineer) của NASA.
 
 ---
 
@@ -1239,20 +1497,140 @@ loops:
 - **Responsive**: phải đọc được ở 390 px (cũng là yêu cầu của `/anatomy` cho mỗi figure); dashboard thu thành tab trên điện thoại.
 - **Truy cập**: tôn trọng `prefers-reduced-motion`; `aria-live` cho sự kiện quan trọng (tách tầng, mất liên lạc, sự cố); mỗi figure có `aria-label` và giá trị mô tả bằng lời.
 
+### 11.6 NASA Mission Viz & 3D Trajectory Rendering Schema (Three.js)
+
+Học tập cách tổ chức dữ liệu trực quan từ **NASA Mission Viz** (web-based visualizer chính thức của NASA), client Three.js hiển thị quỹ đạo chuyển tiếp Earth–Moon / Earth–Mars mà không tính lại vật lý:
+
+```
+                  SIMULATION BACKEND / FLIGHT BUNDLE
+                                  │
+                 JSON Trajectory (ECI J2000, km, UTC)
+                                  │
+                                  ▼
+                   ┌─────────────────────────────┐
+                   │    Three.js Mission Viz     │
+                   ├─────────────────────────────┤
+                   │ - Celestial Bodies (Shaders)│
+                   │ - Trajectory Spline Curve   │
+                   │ - Spacecraft Marker / Orient│
+                   │ - Time-scrubber / Epoch HUD │
+                   └─────────────────────────────┘
+```
+
+#### Trajectory Schema cho Three.js:
+```json
+{
+  "schema_version": "trajectory/1",
+  "mission_id": "earth_moon_001",
+  "reference_frame": "ECI_J2000",
+  "unit": "km",
+  "epoch_start": "2026-11-14T00:00:00Z",
+  "points": [
+    { "t_sec": 0, "pos": [6778.14, 0.0, 0.0], "vel": [0.0, 7.67, 0.0] },
+    { "t_sec": 3600, "pos": [12500.0, 24000.0, 3100.0], "vel": [-2.1, 4.3, 0.6] },
+    { "t_sec": 72000, "pos": [180000.0, 195000.0, 21000.0], "vel": [-0.8, 1.2, 0.1] }
+  ],
+  "burn_markers": [
+    { "t_sec": 3600, "name": "TLI_BURN", "dv_ms": 3150.0, "color": "#ffaa00" },
+    { "t_sec": 259200, "name": "LOI_BURN", "dv_ms": 850.0, "color": "#00ffcc" }
+  ]
+}
+```
+Client Three.js nhận cấu trúc này, chuyển đổi sang `CatmullRomCurve3`, render đường quỹ đạo phát sáng (`Line2` với `LineMaterial`), vẽ nón FOV cảm biến hướng về mục tiêu và cho phép người chơi tua nhanh/chậm dòng thời gian bằng thanh scrubber.
+
 ---
 
-## 12. Figure Layer — thiết kế 3D bằng `/anatomy`
+## 12. Figure Layer & 3D Asset Ecosystem — Phân công Blender, `/anatomy`, Figma, Three.js và React
 
-### 12.1 Vai trò và phạm vi
+Để không lãng phí thời gian vào sai công cụ, dự án phân định ranh giới chức năng 1-1 cho từng công cụ trong chuỗi sản xuất trực quan (Visual & 3D Pipeline):
+
+```
+       [ 01. Research & Engineering ]  (NASA Docs, CubeSat 101, GMAT)
+                      │
+       ┌──────────────┴──────────────┐
+       ▼                             ▼
+[ 02. Anatomy Skill ]         [ 03. Blender ]
+Exploded Views, Cơ chế        Modular 3D Spacecraft Assets
+(SVG Isometric / React)       (Mesh, LOD, PBR, GLB/glTF)
+       │                             │
+       │                             ▼
+       │                      [ 05. Three.js ]
+       │                      Render 3D Spacecraft, Turntable
+       │                      & NASA Mission Viz Trajectory
+       │                             │
+       └──────────────┬──────────────┘
+                      ▼
+               [ 04. Figma ]  ──►  [ 06. React + TS ]
+               UI/UX Mockups,      Game Shell, 9-budget Dashboard,
+               Wireframes, Flows   Controls & Presentation
+```
+
+| Công cụ | Vai trò chuyên biệt trong dự án | Định dạng đầu ra | Không dùng vào việc gì |
+|---|---|---|---|
+| **Blender** | Dựng thư viện mô hình 3D thực tế dạng mô-đun (Modular Spacecraft Asset Library): Bus, Solar panels, ăng-ten, động cơ, cảm biến. | `.glb` / `.gltf` (PBR, low-poly) | **Không** dùng để vẽ wireframe UI hay layout nút bấm. |
+| **`/anatomy`** | Tạo sơ đồ bóc tách (Exploded-view), minh họa cơ cấu kỹ thuật (cân đòn mass, phễu buffer, gimbal RCS, bàn quang học link). | SVG tương tác, React component | **Không** dùng để xuất mesh 3D cho cảnh bay tự do. |
+| **Figma** | Thiết kế UI/UX mockup, wireframe 4 màn hình chính, typography retro CRT, color token và user flow. | Wireframe, Prototype link | **Không** dùng để tính toán vật lý hay dựng 3D. |
+| **Three.js** | Tích hợp vào Web client: xoay/lắp ráp tàu 3D thời gian thực (Screen 2) và vẽ quỹ đạo hành tinh Mission Viz (Screen 4). | Canvas WebGL runtime | **Không** tự tính toán quỹ đạo (chỉ render từ backend). |
+| **React** | Xây dựng vỏ giao diện game, bảng 9 budget, HUD điều khiển, xử lý phím tắt và đồng bộ âm thanh. | Web App DOM / HTML5 | **Không** can thiệp vào vòng lặp tính toán RK4 của Python. |
+
+### 12.1 Thư viện Modular Spacecraft Asset Library (Blender Pipeline)
+
+Thay vì dựng sẵn các con tàu cố định, nhóm sử dụng Blender để xây dựng **Thư viện linh kiện mô-đun hóa**. Mỗi bộ phận là một asset độc lập có thể ghép nối qua các điểm neo (Mount Points / Anchors):
+
+```
+Spacecraft (Root)
+│
+├── 1. Structure / Bus Frame
+│   ├── CubeSat 1U / 3U / 6U / 12U Frame (chuẩn CubeSat 101)
+│   ├── ESPA-class Ring Bus (vệ tinh cỡ trung)
+│   └── Deep Space Probe Bus (khung tải trọng nặng)
+│
+├── 2. Power Subsystem
+│   ├── Body-mounted Solar Cells (ốp thân)
+│   ├── Deployable Solar Array (cánh pin gập 2–4 tấm có bản lề)
+│   └── Internal Li-ion Battery Pack
+│
+├── 3. Communication Subsystem
+│   ├── Deployable Dipole / Whip Antenna (UHF)
+│   ├── S-band / X-band Patch Antenna
+│   ├── Parabolic High-Gain Dish Antenna (gimbal 2 trục)
+│   └── Optical Laser Communication Terminal
+│
+├── 4. Propulsion & RCS Subsystem
+│   ├── Cold Gas RCS Thruster Nozzle Cluster (4 hướng)
+│   ├── Monopropellant Hydrazine Thruster
+│   ├── Miniaturized Gridded Ion Engine
+│   └── Propellant Tank (hình cầu/hình trụ)
+│
+├── 5. Payload / Science Instruments Bay
+│   ├── High-Resolution Earth/Planetary Camera Barrel
+│   ├── Hyperspectral Spectrometer Slit & Optics
+│   ├── Deployable Magnetometer Boom (cần dài tránh nhiễu từ thân tàu)
+│   └── Synthetic Aperture Radar (SAR) Flat Array
+│
+└── 6. Avionics & Attitude Control
+    ├── Flight Computer Stack (OBC)
+    ├── 3-Axis Reaction Wheels Module
+    └── Star Tracker Optical Head
+```
+
+#### Quy chuẩn kỹ thuật xuất khẩu từ Blender sang Three.js:
+- **Hệ tọa độ**: Blender sử dụng Right-Handed $Z$-up $\rightarrow$ Khi xuất glTF, tick chọn `+Y Up` để đồng bộ hoàn hảo với camera Three.js.
+- **Điểm gốc (Pivot Point / Origin)**: Luôn đặt tại mặt tiếp xúc lắp ghép (Mount Interface) để khi người chơi đổi linh kiện, part mới tự động bắt dính chính xác vào khung bus mà không bị lệch tâm.
+- **Ngân sách đa giác (Polycount Budget)**:
+  - CubeSat / SmallSat hoàn chỉnh: $\le 12.000$ triangles.
+  - Tên lửa đầy đủ các tầng: $\le 20.000$ triangles.
+- **Vật liệu (Material & PBR)**: Dùng chuẩn Metallic-Roughness PBR, gom texture thành một atlas $1024\times 1024$ px hoặc $2048\times 2048$ px, nén bằng Draco / KTX2 để tải dưới 2 giây trên mạng web.
+
+### 12.2 Vai trò và phạm vi của skill `/anatomy`
 
 `/anatomy` tạo **figure isometric** (SVG nhiều chi tiết, đổ bóng bốn tông, có chuyển động nhẹ và số đọc trực tiếp) trong đó **một vật thể thật có cơ chế chính là khái niệm cần giải thích**. Trong dự án, figure layer đảm nhiệm:
 
 - **"Vật thể" của Design Desk** (S3), **bộ dụng cụ của Ops** (S5) và **ảnh tĩnh ở Debrief** (S6);
-- **tài liệu in** (poster A4) cho bài nộp (§12.10).
+- **tài liệu in** (poster A4) cho bài nộp (§12.10);
+- **Sơ đồ cấu tạo Exploded-view** minh họa sự tương tác cơ khí và luồng năng lượng/dữ liệu giữa các phân hệ (Power Flow, Data Downlink, Thermal Paths) nhằm phục vụ mục tiêu giáo dục (*Learn Panel*).
 
-Figure layer **không phải** cảnh bay tự do. Cảnh bay là Dashboard 2D + OrbitMap 2D (ground track trên Blue Marble) và, nếu còn thời gian, Three.js hoặc Ursina. Lý do: figure có camera isometric cố định; quả địa cầu xoay tự do không phải thế mạnh của skill.
-
-### 12.2 Quy tắc của skill → hệ quả cho dự án
+### 12.3 Quy tắc của skill → hệ quả cho dự án
 
 | Quy tắc của skill | Áp vào dự án |
 |---|---|
@@ -1741,4 +2119,26 @@ Tóm tắt từ cách làm ở v3 và các yêu cầu đã nêu; bản đầy đ
 6. **Test đi cùng thay đổi lõi:** baseline không được đổi âm thầm.
 7. **Mới:** mọi con số có `provenance`; mọi dữ liệu đi qua Gateway; viewer không tính vật lý.
 
-*— Hết tài liệu v0.1 —*
+---
+
+## Phụ lục D: Ma trận phân tích và ánh xạ 13 tài nguyên NASA (NASA Resource Mapping Matrix)
+
+Bảng ma trận tổng hợp toàn bộ 9 tài nguyên chính thức từ đề bài NASA Space Apps Challenge 2026 kèm 4 nguồn dữ liệu mở rộng, xác định rõ vai trò kỹ thuật, layer tiếp nhận và mức độ ưu tiên triển khai:
+
+| # | Tài nguyên NASA | Loại tài nguyên | Ánh xạ vào Kiến trúc Game | Trách nhiệm Module | Mức ưu tiên |
+|---|---|---|---|---|---|
+| **1** | **Design & Develop Science Missions** | Systems Engineering Docs | Chu trình 6 giai đoạn (§2.1) & 4 segments (Launch, Space, Ground, User); định hình luồng người chơi từ Brief đến Debrief. | L2 Mission Pack, L5 Session FSM | **Rất cao (P0)** |
+| **2** | **CubeSat 101** | Technical Reference | Cơ sở xây dựng cấu trúc 7 subsystem tàu và kho linh kiện chuẩn hóa (Component Dataset Schema, §4.9). | L1 Catalog, L0 Gateway | **Rất cao (P0)** |
+| **3** | **General Mission Analysis Tool (GMAT)** | Mission Simulation Software | Tham chiếu kiểm chứng Level 1 RK4 và adapter Level 2 High-Fidelity cho chuyển tiếp liên hành tinh (§6.6). | L3 Kernels (`gmat_adapter.py`) | **Cao (P1)** |
+| **4** | **NASA Mission Viz** | 3D Web Visualizer | Quy chuẩn schema quỹ đạo Cartesian ECI J2000 và hiển thị hành tinh/đường bay trên Three.js (§11.6). | L7 Presentation (`threejs/`) | **Cao (P0/P1)** |
+| **5** | **Concept Maturity Levels (CMLs)** | Evaluation Framework | Bộ chỉ số Mission Maturity Score (CML 1–4) và cơ chế mở khóa tính năng theo mức độ khả thi (§7.7). | L4 Rules (`evaluate.py`) | **Cao (P0)** |
+| **6** | **Mission Design Lab (MDL)** | Design Center Workflow | Cơ chế đánh đổi đa phân hệ (Trade studies: Science vs Mass vs Power vs Budget vs Link) và Dashboard kỹ thuật (§7.8). | L4 Advisor, L7 Dashboard | **Cao (P0)** |
+| **7** | **A Learning Game About Telescopes** | Educational Game Reference | Logic phụ thuộc đa tầng (Dependency System: Objective $\rightarrow$ Observation $\rightarrow$ Instrument $\rightarrow$ Orbit) và nguyên tắc Choice $\rightarrow$ Consequence $\rightarrow$ Feedback. | L4 Rules & Mode Resolver | **Cao (P1)** |
+| **8** | **Space Apps 2023 VR Cycler** | Product Inspiration | Trải nghiệm trực quan 3D quỹ đạo theo dòng thời gian (timeline scrubber, event playback, camera POVs). | L7 Presentation & Three.js | **Trung bình (P1)** |
+| **9** | **CSA Digital Games** | Educational UX | Phương pháp truyền tải kiến thức kỹ thuật hàng không phức tạp thành mini-game trực quan, dễ hiểu. | L7 Presentation & HUD cues | **Tham khảo (P2)** |
+| **10** | **NAIF SPICE** | Observation Geometry System | Dữ liệu chính xác về vị trí, hình học quan sát và khung tọa độ thiên thể (`SpiceyPy` backend / baked tables web, §4.10). | L0 Gateway, L3 Kernels | **Cao (P1)** |
+| **11** | **JPL Horizons** | Planetary Ephemeris API | Bảng tọa độ và vận tốc thiên thể theo Epoch chuẩn J2000 phục vụ đồng bộ quỹ đạo Trái Đất – Mặt Trăng – Sao Hỏa (§4.10). | `tools/fetch_horizons.py` | **Cao (P1)** |
+| **12** | **Planetary Data System (PDS)** | Scientific Data Archive | Dữ liệu quang phổ bề mặt, suất phản chiếu và bản đồ độ cao phục vụ tính toán điều kiện hạ cánh và texture 3D. | L0 Gateway (`data/geo/`) | **Trung bình (P2)** |
+| **13** | **NASA Solar System Exploration** | Planetary Physical Database | Bộ thông số chuẩn về khối lượng, bán kính, tham số hấp dẫn $\mu$, mật độ khí quyển cho các hành tinh (§4.9). | `celestial_bodies.yaml` | **Cao (P0)** |
+
+*— Hết tài liệu v0.2 —*
