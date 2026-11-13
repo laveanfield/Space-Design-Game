@@ -1,0 +1,18 @@
+# Mau mission moi: copy file nay, doi id va extends. Xem docs/architecture.md muc 5.
+schema: mission-pack/1
+id: MP-NEW
+extends: { table: scenarios, id: SC-01 }
+meta:
+  title: { vi: "Tiêu đề", en: "Title" }
+  brief: { vi: "Đề bài cho người chơi", en: "Player brief" }
+  learning_goals: [ "delta-v" ]
+  difficulty: 2
+objective:
+  statement: { vi: "Mục tiêu nhiệm vụ", en: "Mission objective" }
+design_space:
+  allow: { instruments: { tier: [ basic ] } }
+constraints:
+  - { id: power, critical: true }
+gameplay: { mode: auto }
+hazards: { profile: standard, seed: 42 }
+presets: []

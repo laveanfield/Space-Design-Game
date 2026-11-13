@@ -1,0 +1,16 @@
+# Truong bat buoc cho Data Doctor (D01, D02) va tham chieu cheo (D04). Sua file nay khi dataset ngay thi khac.
+tables:
+  scenarios:      { required: [name, budget_musd, min_science_pts, min_mission_life_years, deadline_months, allowed_orbit_ids] }
+  orbits:         { required: [name, class, altitude_km, inclination_deg, eclipse_fraction, ground_contact_min_per_day, radiation_dose_krad_per_year, orbital_lifetime_years_no_reboost, lv_payload_factor] }
+  instruments:    { required: [name, kind, science_value_pts, mass_kg, power_operating_w, data_generated_gb_per_day, pointing_required_deg, cost_musd, lead_time_months, compatible_orbit_ids] }
+  buses:          { required: [name, mass_kg, max_total_mass_kg, cost_musd, lead_time_months] }
+  power_arrays:   { required: [name, generation_w, mass_kg, cost_musd, lead_time_months] }
+  batteries:      { required: [name, capacity_wh, mass_kg, cost_musd, lead_time_months] }
+  comms:          { required: [name, downlink_mbps, pointing_required_deg, mass_kg, power_w, cost_musd, lead_time_months] }
+  avionics:       { required: [name, type, mass_kg, power_w, cost_musd, lead_time_months] }
+  launch_vehicles: { required: [name, liftoff_mass_kg, leo_capacity_kg, cost_musd, compatible_site_ids] }
+  launch_sites:   { required: [name, lat_deg, lon_deg] }
+refs:
+  - { table: scenarios,       field: allowed_orbit_ids,    to: orbits }
+  - { table: instruments,     field: compatible_orbit_ids, to: orbits }
+  - { table: launch_vehicles, field: compatible_site_ids,  to: launch_sites }

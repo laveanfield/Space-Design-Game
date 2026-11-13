@@ -1,0 +1,15 @@
+# Khoang vat ly hop ly [min, max] cho D05 (nghi sai don vi neu ra ngoai). Dang 'bang.truong'.
+ranges:
+  instruments.mass_kg: [0.01, 5000]
+  instruments.power_operating_w: [0, 5000]
+  instruments.pointing_required_deg: [0.0001, 90]
+  buses.max_total_mass_kg: [1, 20000]
+  power_arrays.generation_w: [0.1, 50000]
+  batteries.capacity_wh: [1, 100000]
+  comms.downlink_mbps: [0.0001, 100000]
+  orbits.altitude_km: [160, 40000]
+  orbits.eclipse_fraction: [0, 0.6]
+  orbits.lv_payload_factor: [0.01, 1.5]
+  launch_vehicles.leo_capacity_kg: [1, 200000]
+  launch_sites.lat_deg: [-90, 90]
+  launch_sites.lon_deg: [-180, 180]

@@ -1,0 +1,5 @@
+set: ghg_hotspots
+items:
+  - { id: TGT-PERMIAN, name: "Permian Basin",   lat_deg: 31.9, lon_deg: -102.0, kind: methane }
+  - { id: TGT-RUHR,    name: "Ruhr area",       lat_deg: 51.5, lon_deg: 7.3,    kind: co2 }
+  - { id: TGT-BEIJING, name: "Beijing-Tianjin", lat_deg: 39.5, lon_deg: 116.5,  kind: co2 }

@@ -1,0 +1,34 @@
+# Thuong va tien trinh. Dieu kien la bieu thuc an toan (@...) tren ket qua `r`; doi so/diem ma khong sua code.
+schema: rewards/1
+xp:
+  pass_bonus: 50              # thiet ke dat du budget
+  coop_bonus_per_member: 10   # choi dong doi: moi thanh vien them diem
+levels: [0, 100, 250, 500, 900, 1500]      # nguong XP cho level 0..5
+unlocks:                                   # tier thiet bi trong library (basic/advanced) mo theo level
+  0: { instrument_tiers: [basic] }
+  2: { instrument_tiers: [basic, advanced] }
+achievements:
+  - id: FIRST_LIGHT
+    title: { vi: "Ánh sáng đầu tiên", en: "First Light" }
+    when: "@r.design_ok"
+    points: 20
+  - id: FRUGAL
+    title: { vi: "Tiết kiệm", en: "Frugal Engineer" }
+    when: "@r.design_ok and r.cost_ratio <= 0.6"
+    points: 30
+  - id: ZERO_FAULT
+    title: { vi: "Không sự cố", en: "Zero Fault" }
+    when: "@r.design_ok and r.faults == 0"
+    points: 30
+  - id: SAFE_MARGIN
+    title: { vi: "Biên an toàn", en: "Safe Margin" }
+    when: "@r.design_ok and r.min_margin_rel >= 0.25"
+    points: 25
+  - id: SPEED_DESIGN
+    title: { vi: "Thiết kế thần tốc", en: "Speed Design" }
+    when: "@r.coop and r.design_ok and r.design_time_s <= 600"
+    points: 40
+  - id: TEAMWORK
+    title: { vi: "Làm việc nhóm", en: "Teamwork" }
+    when: "@r.coop and r.roles_used >= 3"
+    points: 30

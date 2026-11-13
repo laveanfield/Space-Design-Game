@@ -1,0 +1,34 @@
+schema: mission-pack/1
+id: MP-SC04-GHG
+extends: { table: scenarios, id: SC-04 }
+meta:
+  title: { vi: "Giám sát khí nhà kính", en: "Greenhouse Gas Monitor" }
+  brief: { vi: "Đo khí nhà kính từ quỹ đạo đồng bộ Mặt Trời: thiết bị lớn, chỉ hướng khắt khe.", en: "Measure greenhouse gases from a sun-synchronous orbit: big instrument, tight pointing." }
+  learning_goals: [ "pointing accuracy", "radiation" ]
+  difficulty: 4
+objective:
+  statement: { vi: "Dừng trên vùng mục tiêu đủ lâu để đo phổ.", en: "Dwell on target areas long enough to take spectra." }
+constraints:
+  - { id: power, critical: true }
+gameplay:
+  mode: spectral_scan            # [NEW] mode chua cai dat trong skeleton -> engine roi ve imaging va ghi canh bao
+  params: { target_set: ghg_hotspots, dwell_s: 20, sun_elevation_min_deg: 25 }
+starter: fail_pointing
+hazards: { profile: standard, seed: 42 }
+presets:
+  - id: good
+    expect: pass
+    design:
+      orbit: ORB-SSO-600
+      instruments: [ INS-04 ]
+      bus: BUS-ESPA
+      power: PWR-SA-LARGE
+      battery: BAT-L
+      comm: COM-OPT-LEO
+      obc: OBC-SPACE
+      adcs: ADCS-FINE
+      launch: { vehicle: LV-VEGAC, site: SITE-KOUROU }
+  - id: fail_pointing
+    from: good
+    swap: { adcs: ADCS-WHEEL }
+    expect: "fail:pointing"

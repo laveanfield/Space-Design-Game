@@ -1,0 +1,5 @@
+set: coast
+items:
+  - { id: TGT-MEKONG,  name: "Mekong Delta",       lat_deg: 10.0,  lon_deg: 106.0,  kind: coast }
+  - { id: TGT-GBR,     name: "Great Barrier Reef", lat_deg: -18.3, lon_deg: 147.7,  kind: coast }
+  - { id: TGT-AMAZON,  name: "Amazon river mouth", lat_deg: -0.2,  lon_deg: -50.0,  kind: coast }

@@ -1,0 +1,10 @@
+# Gan `kind` tu tu khoa trong ten khi dataset khong co cot nay. Luat dau tien khop thang. Luon co fallback.
+instruments:
+  - { match: "multispectral",              kind: imager_multispectral }
+  - { match: "hyperspectral|spectromet",   kind: spectrometer }
+  - { match: "camera|imager|rgb",          kind: imager_rgb }
+  - { match: "radar|sar",                  kind: radar_sar }
+  - { match: "magnetomet|fluxgate",        kind: magnetometer }
+  - { match: "particle|radiation|dosimet", kind: particle_detector }
+  - { match: "telescope|astro",            kind: telescope }
+  - { match: ".*",                         kind: generic }

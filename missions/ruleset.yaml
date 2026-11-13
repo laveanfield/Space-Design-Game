@@ -1,0 +1,114 @@
+# Luat chung cho moi mission. Moi con so o day la THAM SO co the doi, khong phai code.
+schema: ruleset/1
+capacity_policy: library        # library | model | min   (quyet dinh D1)
+launch_gate: soft               # soft: chi NO_GO ve khoi luong chan phong; hard: moi constraint hard phai dat
+downlink_efficiency: 0.85       # [calibrated] gia dinh hieu suat ha du lieu
+sun_factor: 0.6                 # [estimate] ti le nang trung binh tren tam pin
+battery_dod: 0.3                # [estimate] do sau xa pin cho phep
+duty: { instrument: 0.3, comm: 0.2, adcs: 0.4 }      # [estimate] he so tai trung binh
+link: { lock_db: 3.0, marginal_db: 0.0 }
+margin_ref: 0.25                # bien tuong doi >= 25% duoc tinh la day du khi cham diem
+scoring: { science: 0.4, efficiency: 0.2, margin: 0.2, decisions: 0.2 }
+grade_bands: { A: 85, B: 70, C: 50 }                 # VI DU, chot theo playtest (quyet dinh D4)
+fault_loss: { brownout: 0.5, blackout: 1.0, memory_full: 0.6, blur: 0.4, seu: 0.3, reset: 0.6, no_link: 0.7, decay: 0.5 }
+fault_upgrade: { brownout: blackout, seu: reset }    # nang cap khi severity >= 0.5
+seu_rate_per_day: { gentle: 0.5, standard: 2.0, harsh: 8.0 }   # [estimate]
+
+# 10 constraint chuan luc thiet ke (9 budget + orbit_allowed). `scale` = thang do muc truot/bien tuong doi.
+constraints:
+  - id: science
+    metric: science.pts
+    op: ">="
+    limit: "@scenario.min_science_pts"
+    unit: pts
+    kind: hard
+    scale: "@scenario.min_science_pts"
+    drivers: [science.pts, science.required_pts]
+    why: { vi: "Tổng điểm khoa học của thiết bị phải đạt mức tối thiểu của đề.", en: "Total science value must reach the scenario minimum." }
+  - id: mass
+    metric: mass.margin_kg
+    op: ">="
+    limit: 0
+    unit: kg
+    kind: hard
+    fault: no_go
+    scale: "@m.mass.dry_kg"
+    drivers: [mass.dry_kg, mass.capacity_kg, mass.bus_limit_kg, launch.compatible]
+    why: { vi: "Khối lượng khô phải nhỏ hơn sức tải của tên lửa lên quỹ đạo và giới hạn của bus.", en: "Dry mass must fit the launch vehicle capacity to the orbit and the bus limit." }
+  - id: power
+    metric: power.margin_w
+    op: ">="
+    limit: 0
+    unit: W
+    kind: hard
+    fault: brownout
+    scale: "@m.power.load_w"
+    drivers: [power.gen_avg_w, power.load_w, power.sustain_w]
+    why: { vi: "Điện phát trung bình và điện pin qua eclipse phải đủ nuôi tải.", en: "Average generation and battery through eclipse must carry the load." }
+  - id: data
+    metric: data.downlink_gb_per_day
+    op: ">="
+    limit: "@m.data.generated_gb_per_day"
+    unit: GB/day
+    kind: hard
+    fault: memory_full
+    scale: "@m.data.generated_gb_per_day"
+    drivers: [data.downlink_gb_per_day, data.generated_gb_per_day, comm.downlink_mbps, orbit.contact_min]
+    why: { vi: "Lượng dữ liệu hạ xuống mỗi ngày phải lớn hơn lượng dữ liệu sinh ra.", en: "Daily downlink must exceed daily data generated." }
+  - id: pointing
+    metric: pointing.adcs_deg
+    op: "<="
+    limit: "@m.pointing.required_deg"
+    unit: deg
+    kind: hard
+    fault: blur
+    scale: "@m.pointing.required_deg"
+    drivers: [pointing.adcs_deg, pointing.required_deg]
+    why: { vi: "Độ chính xác chỉ hướng của ADCS phải tốt hơn yêu cầu của thiết bị khoa học.", en: "ADCS pointing accuracy must beat the science instrument requirement." }
+  - id: cost
+    metric: cost.total_musd
+    op: "<="
+    limit: "@scenario.budget_musd"
+    unit: M$
+    kind: soft
+    scale: "@scenario.budget_musd"
+    drivers: [cost.total_musd]
+    why: { vi: "Tổng chi phí không vượt ngân sách của đề.", en: "Total cost must stay within the scenario budget." }
+  - id: lifetime
+    metric: lifetime.years
+    op: ">="
+    limit: "@scenario.min_mission_life_years"
+    unit: yr
+    kind: hard
+    fault: decay
+    scale: "@scenario.min_mission_life_years"
+    drivers: [lifetime.years]
+    why: { vi: "Quỹ đạo phải tồn tại ít nhất bằng thời gian nhiệm vụ nếu không reboost.", en: "The orbit must last at least as long as the mission without reboost." }
+  - id: radiation
+    metric: radiation.dose_krad
+    op: "<="
+    limit: "@m.radiation.tolerance_krad"
+    unit: krad
+    kind: hard
+    fault: seu
+    scale: "@m.radiation.tolerance_krad"
+    drivers: [radiation.dose_krad, radiation.tolerance_krad]
+    why: { vi: "Liều bức xạ tích lũy không được vượt mức chịu đựng của máy tính bay.", en: "Accumulated dose must stay below the flight computer tolerance." }
+  - id: schedule
+    metric: schedule.months
+    op: "<="
+    limit: "@scenario.deadline_months"
+    unit: months
+    kind: soft
+    scale: "@scenario.deadline_months"
+    drivers: [schedule.months]
+    why: { vi: "Thời gian chế tạo lâu nhất không vượt hạn của đề.", en: "The longest lead time must not exceed the deadline." }
+  - id: orbit_allowed
+    metric: orbit.allowed
+    op: ">="
+    limit: 1
+    unit: ""
+    kind: hard
+    scale: 1
+    drivers: [orbit.allowed]
+    why: { vi: "Quỹ đạo phải thuộc danh sách cho phép của đề và tương thích với mọi thiết bị.", en: "The orbit must be allowed by the scenario and compatible with every instrument." }

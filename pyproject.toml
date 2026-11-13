@@ -1,0 +1,21 @@
+[project]
+name = "mission-engine"
+version = "0.1.0"
+description = "Space Mission Design Game - engine (NASA Space Apps 2026)"
+requires-python = ">=3.11"
+dependencies = ["numpy", "pyyaml"]
+
+[project.optional-dependencies]
+api = ["fastapi", "uvicorn[standard]", "pydantic>=2"]
+xlsx = ["openpyxl"]
+dev = ["pytest", "httpx"]
+
+[tool.setuptools.packages.find]
+where = ["engine"]
+
+[tool.setuptools.package-dir]
+"" = "engine"
+
+[tool.pytest.ini_options]
+pythonpath = ["engine"]
+testpaths = ["tests"]

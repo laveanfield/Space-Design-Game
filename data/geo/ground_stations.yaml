@@ -1,0 +1,6 @@
+# Tram mat dat (toa do gan dung, dung cho link budget va cua so bay qua).
+- { id: GS-GOLDSTONE, name: GOLDSTONE, lat_deg: 35.43, lon_deg: -116.89, min_elevation_deg: 10 }
+- { id: GS-MADRID,    name: MADRID,    lat_deg: 40.43, lon_deg: -4.25,   min_elevation_deg: 10 }
+- { id: GS-CANBERRA,  name: CANBERRA,  lat_deg: -35.40, lon_deg: 148.98, min_elevation_deg: 10 }
+- { id: GS-SVALBARD,  name: SVALBARD,  lat_deg: 78.23, lon_deg: 15.40,   min_elevation_deg: 5 }
+- { id: GS-SANTIAGO,  name: SANTIAGO,  lat_deg: -33.15, lon_deg: -70.67, min_elevation_deg: 10 }

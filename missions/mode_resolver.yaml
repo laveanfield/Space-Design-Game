@@ -1,0 +1,23 @@
+# Chon mode gameplay. Doc tu tren xuong, luat dau tien khop thang. Trong mot `when`: moi khoa phai khop (AND);
+# gia tri dang danh sach nghia la "mot trong". Luat theo instrument.kind dung TRUOC luat theo quy dao.
+rules:
+  - when: { "mission.gameplay.mode": { not: auto } }
+    use: "@mission.gameplay.mode"
+  - when: { "design.instrument.kind": [ particle_detector, magnetometer ] }
+    use: space_weather
+  - when: { "design.instrument.kind": [ spectrometer ] }
+    use: spectral_scan
+  - when: { "design.instrument.kind": [ radar_sar ] }
+    use: radar_swath
+  - when: { "design.instrument.kind": [ telescope ] }
+    use: stare
+  - when: { "orbit.class": [ MEO, GTO ] }
+    use: space_weather
+  - when: { "orbit.class": [ POLAR, GEO ] }
+    use: downlink
+  - when: { "orbit.id": [ ORB-LEO-500 ] }
+    use: downlink
+default: imaging
+overlays:
+  - when: { "metrics.orbit_lifetime_years": { lt: "@mission.life_years" } }
+    add: orbit_keeping
