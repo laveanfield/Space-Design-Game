@@ -979,6 +979,24 @@ dialog.modal::backdrop {
   background: #05090b;
   border-radius: 3px;
   overflow: hidden;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: zoom-in;
+  animation: ev-in 0.4s ease-out;
+}
+
+.evidence-card:disabled {
+  cursor: default;
+}
+
+.evidence-card.ok {
+  border-color: var(--ok);
+}
+
+.evidence-card.bad {
+  border-color: var(--warn);
 }
 
 .evidence-card canvas {
@@ -987,25 +1005,125 @@ dialog.modal::backdrop {
   height: auto;
 }
 
-.evidence-card.blurred {
-  border-color: var(--warn);
+@keyframes ev-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: none; }
 }
 
 .evidence-pending {
-  aspect-ratio: 200 / 140;
+  aspect-ratio: 200 / 132;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 18px;
   color: var(--warn);
   background: repeating-linear-gradient(45deg, #0b1013 0 10px, #0f171b 10px 20px);
 }
 
+.ev-spin {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--warn);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ev-spin 0.9s linear infinite;
+}
+
+@keyframes ev-spin {
+  to { transform: rotate(360deg); }
+}
+
 .evidence-cap {
-  padding: 4px 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 6px;
+  font-size: 11px;
   background: var(--bg-card);
+}
+
+.ev-gb {
+  margin-left: auto;
+  color: var(--muted, #8aa);
+}
+
+.ev-dot.ok {
+  color: var(--ok);
+}
+
+.ev-dot.bad {
+  color: var(--warn);
+}
+
+.evidence-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.ev-meter {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.ev-meter i {
+  width: 14px;
+  height: 8px;
+  border: 1px solid var(--border);
+  background: #0b1013;
+}
+
+.ev-meter i.on {
+  background: var(--ok);
+  border-color: var(--ok);
+}
+
+.ev-meter b {
+  margin-left: 4px;
+}
+
+.evidence-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(2, 5, 8, 0.82);
+}
+
+.evidence-big {
+  max-width: min(92vw, 900px);
+  border: 1px solid var(--border);
+  background: #05090b;
+}
+
+.evidence-big canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.evidence-big-cap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.evidence-big-cap .btn {
+  margin-left: auto;
+}
+
+.err-text {
+  color: var(--warn);
 }
 
 .ok-text {
@@ -1060,4 +1178,132 @@ dialog.modal::backdrop {
 
 .pad-card .anatomy-pad .iso-svg {
   max-height: 300px;
+}
+
+/* Danh sach chon linh kien: the co anh 3D (them 14-11-2026) */
+.option-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.part-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+.part-card:hover:not(:disabled) {
+  border-color: var(--border-bright);
+  transform: translateY(-1px);
+}
+
+.part-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 14px var(--shadow);
+}
+
+.part-card.disallowed {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.part-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 192 / 140;
+  border-radius: 3px;
+  background: radial-gradient(circle at 50% 40%, #22313b 0%, #0b1216 100%);
+  object-fit: contain;
+}
+
+.part-thumb.loading {
+  background: linear-gradient(90deg, #0f1a1f 0%, #1a2a32 50%, #0f1a1f 100%);
+  background-size: 200% 100%;
+  animation: thumb-shimmer 1.2s linear infinite;
+}
+
+@keyframes thumb-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.part-name {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.part-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.part-stat i {
+  font-style: normal;
+  margin-right: 2px;
+}
+
+.part-stat.cost {
+  color: var(--warn);
+}
+
+.part-nofit {
+  font-size: 11px;
+  color: var(--err);
+}
+
+/* ---- bang Sep + datasheet gon (bieu tuong + thanh do thay cho cau van) ---- */
+.boss-meter {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.boss-meter .gauge-bar {
+  margin: 0;
+}
+
+.boss-meter b.over {
+  color: var(--warn);
+}
+
+.datasheet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.datasheet-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 2px;
+  border: 1px solid var(--border);
+  background: #070c0e;
+  font-size: 11px;
+  cursor: help;
+}
+
+.datasheet-cell i {
+  font-style: normal;
+  font-size: 15px;
 }

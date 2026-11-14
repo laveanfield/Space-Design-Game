@@ -1,0 +1,1 @@
+{"id":"ins_INS-09","dims":[1.0,1.0,1.0],"bin":"ins_INS-09.bin","meshes":[{"name":"body_w","nv":394,"ni":1116,"idx16":true,"lo":[-0.8,-0.06,-0.8],"span":[1.6,1.4,1.6],"p":0,"n":2364,"c":3548,"i":4732,"role":"body","part":-1,"solar":false}],"parts":[],"kind":"ins","ins":"INS-09"}

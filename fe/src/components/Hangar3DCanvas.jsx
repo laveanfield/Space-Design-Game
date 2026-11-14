@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { buildRocket, buildSatellite, loadRocket, loadSatellite } from '../three/modelLoader';
-import { buildHangarEnv } from '../three/environments';
+import { buildHangarEnv, buildIntegrationHall } from '../three/environments';
 
 const BUS_DIMS = {
   'BUS-3U': [0.1, 0.1, 0.34],
@@ -336,8 +336,14 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
     const rimLight = new THREE.DirectionalLight(0x8fd8ff, 0.55);
     rimLight.position.set(-4, 3, -5);
     scene.add(keyLight, rimLight);
+    // 2 boi canh: xuong sach cho VE TINH, toa tich hop thang dung cho TEN LUA (ten lua ~75 % chieu cao toa)
     const env = buildHangarEnv();
     scene.add(env);
+    const hall = buildIntegrationHall({ rocketH: 2.6, rocketR: 0.14 });
+    hall.group.visible = false;
+    scene.add(hall.group);
+    stageRef.current.envSat = env;
+    stageRef.current.hall = hall;
 
     const holder = new THREE.Group();
     scene.add(holder);
@@ -385,7 +391,7 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
       last = now;
       if (!visible || document.hidden) return;
       const st = stageRef.current;
-      if (!rot.dragging) rot.yaw += 0.24 * dt;
+      if (!rot.dragging && st.view !== 'rocket') rot.yaw += 0.24 * dt; // toa tich hop: dung yen, nhin tu phia truoc
       // gap/mo canh pin muot (khoang 1,4 giay)
       if (st.rig?.setDeploy && Math.abs(st.fTarget - st.f) > 1e-4) {
         st.f += Math.sign(st.fTarget - st.f) * Math.min(Math.abs(st.fTarget - st.f), dt / 1.4);
@@ -398,9 +404,17 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
         const target = st.fallback || st.rig.root;
         target.scale.setScalar(fit * st.pop);
       }
-      // camera luon nhin vao TAM model (tam o do cao 0.1 tren ban xoay)
-      const ty = 0.15;
-      camera.position.set(rot.zoom * Math.cos(rot.pitch) * Math.sin(rot.yaw), ty + rot.zoom * Math.sin(rot.pitch), rot.zoom * Math.cos(rot.pitch) * Math.cos(rot.yaw));
+      // camera luon nhin vao TAM model; mode ten lua: lui xa va nhin cao hon de thay ca toa tich hop
+      const rocketView = st.view === 'rocket';
+      // ngoai troi (toa tich hop) -> nen troi xanh; trong xuong sach -> nen xam
+      scene.background.set(rocketView ? 0xa9c9e6 : theme === 'light' ? 0xdfe6ea : 0x1a2229);
+      scene.fog.color.copy(scene.background);
+      scene.fog.near = rocketView ? 14 : 9; scene.fog.far = rocketView ? 40 : 22;
+      const ty = rocketView ? 0.45 : 0.15;
+      const zoom = rocketView ? rot.zoom * 1.3 : rot.zoom;
+      const pitch = rocketView ? Math.min(rot.pitch, 0.3) : rot.pitch;
+      const yaw = rocketView ? Math.max(-0.7, Math.min(0.7, Math.atan2(Math.sin(rot.yaw), Math.cos(rot.yaw)))) : rot.yaw;
+      camera.position.set(zoom * Math.cos(pitch) * Math.sin(yaw), ty + zoom * Math.sin(pitch), zoom * Math.cos(pitch) * Math.cos(yaw));
       camera.lookAt(0, ty, 0);
       renderer.render(scene, camera);
     };
@@ -416,6 +430,7 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
       dom.removeEventListener('pointercancel', onUp);
       dom.removeEventListener('wheel', onWheel);
       env.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+      hall.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
       if (stageRef.current.fallback) disposeGroup(stageRef.current.fallback);
       stageRef.current = { holder: null, rig: null, fallback: null, f: 0, fTarget: 0, pop: 1, fitStowed: 1, fitOpen: 1 };
       renderer.dispose();
@@ -456,10 +471,15 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
         st.fitStowed = st.fitOpen = 1;
         halfH = 0.95;
       }
-      // dat model vao mot nhom trung gian de phong to quanh tam cua no; day model dung tren mat ban xoay (y = -0.92)
+      // dat model vao mot nhom trung gian de phong to quanh tam cua no.
+      // VE TINH: day dung tren mat ban xoay (y = -0.92). TEN LUA: dung tren be phong di dong trong toa tich hop.
       const pivot = new THREE.Group();
       pivot.add(obj);
-      pivot.position.y = -0.92 + halfH + 0.02;
+      const rocketView = view === 'rocket';
+      st.view = view;
+      if (st.envSat) st.envSat.visible = !rocketView;
+      if (st.hall) st.hall.group.visible = rocketView;
+      pivot.position.y = (rocketView && st.hall ? st.hall.mlpTop : -0.92) + halfH + 0.02;
       st.holder.add(pivot);
       if (rig) { st.rig = { ...rig, root: pivot }; }
       else { st.fallback = pivot; }

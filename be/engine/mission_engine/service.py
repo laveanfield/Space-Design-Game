@@ -56,7 +56,8 @@ class Engine:
         for iid in design.get("instruments", []):
             ins = self.catalog.get("instruments", iid)
             if ins.get("science_category") == "Earth observation":       # thiet bi chup anh mat dat -> tu dong chup dam chay
-                imaging = {"sensor": ins.get("kind", "imager_rgb"), "name": ins.get("name", iid), "id": iid}
+                imaging = {"sensor": ins.get("kind", "imager_rgb"), "name": ins.get("name", iid), "id": iid,
+                           "gb_per_day": ins.get("data_generated_gb_per_day")}       # de fe uoc luong dung luong moi anh
                 break
         return _lifetime(report, mission.life_years, design.get("seed", 0) if seed is None else seed, imaging)
 

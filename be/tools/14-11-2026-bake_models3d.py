@@ -48,7 +48,20 @@ def mb_arrays(mb, offset=(0.0, 0.0, 0.0)):
     if C.max() > 1.5:                       # phong khi mau luu theo 0..255
         C = C / 255.0
     T = np.concatenate([np.asarray(t, np.uint32).reshape(-1, 3) for t in mb.T])
-    return P, N, C, T
+    return P, N, C, fix_winding(P, N, T)
+
+
+def fix_winding(P, N, T):
+    """Thu vien goc (Ursina, double_sided=True) khong giu chieu quan tam giac: mat am cua hop dung cung thu tu dinh
+    voi mat duong. Three.js cat mat sau (backface culling) nen nua so mat bien mat -> hinh ve tinh 'vo vun'.
+    Sua: tam giac nao co phap tuyen hinh hoc (tich co huong) nguoc voi phap tuyen dinh thi dao 2 dinh."""
+    a, b, c = T[:, 0], T[:, 1], T[:, 2]
+    g = np.cross(P[b] - P[a], P[c] - P[a])
+    vn = N[a] + N[b] + N[c]
+    flip = np.einsum("ij,ij->i", g, vn) < 0
+    T = T.copy()
+    T[flip, 1], T[flip, 2] = c[flip], b[flip]
+    return T
 
 
 def merge(arrays):
@@ -121,15 +134,23 @@ def bake_satellite(L, bus_id, comm_id):
         model = L["model_cubesat"].build(3 if bus_id == "BUS-3U" else 6, comm_id)      # ban ve theo kich thuoc NASA
     else:
         model = L["model_satellite_buses"].build(bus_id, comm_id)
+    W, meshes, parts = model_meshes(model, with_adapter=True)
+    stem = "sat_%s__%s" % (bus_id, comm_id)
+    return write_model_dict(L, model, stem, dict(kind="sat", bus=bus_id, comm=comm_id, envelope=stowed_envelope(L, model)), W, meshes, parts)
+
+
+def model_meshes(model, with_adapter=True):
+    """Luoi than + adapter + bo phan co khop cua mot model dict (ve tinh / thiet bi / ang-ten)."""
     W = BinWriter()
     meshes = []
     for key, solar in (("w", False), ("t", True)):
         a = mb_arrays(getattr(model["body"], key))
         if a is not None:
             meshes.append(W.mesh("body_" + key, a, role="body", part=-1, solar=solar))
-    a = mb_arrays(model["adapter"].w)
-    if a is not None:
-        meshes.append(W.mesh("adapter", a, role="adapter", part=-1, solar=False))
+    if with_adapter:
+        a = mb_arrays(model["adapter"].w)
+        if a is not None:
+            meshes.append(W.mesh("adapter", a, role="adapter", part=-1, solar=False))
     parts = []
     for i, p in enumerate(model["parts"]):
         parts.append(dict(name=p["name"], parent=int(p["parent"]), pivot=r5(p["pivot"]), axis=r5(p["axis"]),
@@ -139,13 +160,35 @@ def bake_satellite(L, bus_id, comm_id):
             a = mb_arrays(getattr(p["B"], key))
             if a is not None:
                 meshes.append(W.mesh(p["name"] + "_" + key, a, role="part", part=i, solar=solar))
-    stem = "sat_%s__%s" % (bus_id, comm_id)
+    return W, meshes, parts
+
+
+def write_model_dict(L, model, stem, extra, W=None, meshes=None, parts=None):
+    if W is None:
+        W, meshes, parts = model_meshes(model, with_adapter=extra.get("kind") == "sat")
     size = W.save(os.path.join(OUT_DIR, stem + ".bin"))
-    info = dict(kind="sat", id=stem, bus=bus_id, comm=comm_id, dims=r5(model["dims"]), bin=stem + ".bin", meshes=meshes, parts=parts,
-                envelope=stowed_envelope(L, model))
+    info = dict(id=stem, dims=r5(model["dims"]), bin=stem + ".bin", meshes=meshes, parts=parts, **extra)
     with open(os.path.join(OUT_DIR, stem + ".json"), "w", encoding="utf-8") as fh:
         json.dump(info, fh, separators=(",", ":"))
     return stem, size, sum(m["nv"] for m in meshes)
+
+
+def bake_parts_library(L, index):
+    """Thiet bi chup anh (nhung cai da co ban ve) va 8 kieu ang-ten lien lac, dung rieng (khong co than ve tinh)."""
+    index["instruments"], index["comms"] = {}, {}
+    INS = L["model_payload_instruments"]
+    for ins_id in sorted(INS.INSTRUMENTS):
+        m = INS.build(ins_id)
+        if m is None:
+            continue
+        stem, size, nv = write_model_dict(L, m, "ins_" + ins_id, dict(kind="ins", ins=ins_id))
+        index["instruments"][ins_id] = stem
+    CM = L["model_comms"]
+    for comm_id in CM.COMM_TAG:
+        m = CM.build(comm_id, with_host=False)
+        stem, size, nv = write_model_dict(L, m, "comm_" + comm_id, dict(kind="comm", comm=comm_id))
+        index["comms"][comm_id] = stem
+    print("  thiet bi: %s | ang-ten: %d" % (", ".join(index["instruments"]), len(index["comms"])))
 
 
 # ---------------------------------------------------------------- ten lua
@@ -185,6 +228,79 @@ def bake_rocket(L, vid):
     return stem, size, sum(m["nv"] for m in meshes)
 
 
+# ---------------------------------------------------------------- bai phong (lay tu model_launch_sites cua game Ursina)
+SITE_KEYS = ('concrete', 'steel', 'paint', 'grass', 'sand', 'gravel', 'asphalt', 'brick', 'build', 'dark', 'water', 'shadow', 'foliage')
+# (texture, do bong) giong bang LOOK cua 14-11-2026-model_viewer.py
+SITE_LOOK = dict(concrete=('concrete', .05), steel=('steel', .45), paint=(None, .15), grass=('grass', 0), sand=('sand', 0), gravel=('gravel', 0),
+                 asphalt=('asphalt', .08), brick=('brick', .05), build=('build', .1), dark=(None, .3), water=(None, .9), foliage=(None, 0), shadow=(None, 0))
+SUN = (0.55, 0.42, -0.72)
+
+
+def bake_textures(L):
+    """Texture thu tuc cua gfx_core (cung thuat toan voi game Ursina) -> PNG trong fe/public/models/tex/."""
+    from PIL import Image
+    G = L["gfx_core"]
+    real_mk = G.mk_tex
+    G.mk_tex = lambda arr, mip=True, aniso=8: arr          # chi lay mang numpy, khong tao Texture Ursina
+    out = os.path.join(OUT_DIR, "tex")
+    os.makedirs(out, exist_ok=True)
+    try:
+        for name, fn, size in (("concrete", G.tex_concrete, 256), ("steel", G.tex_steel, 128), ("grass", G.tex_grass, 512), ("sand", G.tex_sand, 256),
+                               ("gravel", G.tex_gravel, 256), ("asphalt", G.tex_asphalt, 256), ("brick", G.tex_brick, 256), ("build", G.tex_building, 256)):
+            arr = np.clip(np.asarray(fn(size) if fn.__code__.co_argcount else fn()), 0, 255).astype(np.uint8)
+            Image.fromarray(arr[..., :3]).save(os.path.join(out, name + ".jpg"), quality=86)
+        for name, fn in (("puff", G.tex_puff), ("glow", G.tex_glow)):
+            arr = np.clip(np.asarray(fn()), 0, 255).astype(np.uint8)
+            Image.fromarray(arr, "RGBA").save(os.path.join(out, name + ".png"))
+    finally:
+        G.mk_tex = real_mk
+
+
+def site_arrays(mb):
+    """Nhu mb_arrays nhung giu UV + alpha (bong do la tam trong suot)."""
+    if mb is None or not getattr(mb, "n", 0):
+        return None
+    P = np.concatenate(mb.P).astype(np.float32)
+    N = np.concatenate(mb.N).astype(np.float32)
+    UV = np.concatenate(mb.UV).astype(np.float32)
+    C = np.concatenate(mb.C).astype(np.float32)
+    if C.max() > 1.5:
+        C = C / 255.0
+    T = np.concatenate([np.asarray(t, np.uint32).reshape(-1, 3) for t in mb.T])
+    return P, N, UV, C, fix_winding(P, N, T)
+
+
+def bake_site(L, site_id, vid):
+    """Bai phong (toa do y-up, met) cho ten lua vid tai site_id: luoi theo tung texture + can noi + thong tin dat ten lua."""
+    V = L["model_rocket_vehicles"].build(vid)
+    S, arms, PI = L["model_launch_sites"].build_pad(SUN, V, site_id)
+    W = BinWriter()
+    meshes = []
+    for key in SITE_KEYS:
+        a = site_arrays(S.get(key))
+        if a is None:
+            continue
+        P, N, UV, C, T = a
+        m = W.mesh(key, (P, N, C[:, :3], T), role="site", tex=SITE_LOOK[key][0], gloss=SITE_LOOK[key][1])
+        m["uv"] = W.add(UV.astype(np.float32))
+        m["a"] = W.add(np.clip(np.round(C[:, 3] * 255), 0, 255).astype(np.uint8))
+        meshes.append(m)
+    pad_mod = L["model_launch_pad_classic"]
+    arm_info = []
+    for i, arm in enumerate(arms):
+        a = mb_arrays(pad_mod.build_arm(arm["L"]))
+        if a is not None:
+            meshes.append(W.mesh("arm%d" % i, a, role="arm", index=i))
+            arm_info.append(dict(y=float(arm["y"]), L=float(arm["L"])))
+    stem = "site_%s__%s" % (site_id, vid)
+    size = W.save(os.path.join(OUT_DIR, stem + ".bin"))
+    info = dict(kind="site", id=stem, site=site_id, vehicle=vid, bin=stem + ".bin", meshes=meshes, arms=arm_info,
+                pad={k: (float(v) if isinstance(v, (int, float, np.floating)) and not isinstance(v, bool) else v) for k, v in PI.items()})
+    with open(os.path.join(OUT_DIR, stem + ".json"), "w", encoding="utf-8") as fh:
+        json.dump(info, fh, separators=(",", ":"))
+    return stem, size, sum(m["nv"] for m in meshes)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     ap.add_argument("--lib", default=DEFAULT_LIB, help="thu muc '3D model' chua cac file 14-11-2026-model_*.py")
@@ -210,6 +326,19 @@ def main():
         index["rockets"][vid] = stem
         total += size
         print("  %-14s %6d dinh  %7.1f KB" % (vid, nv, size / 1024))
+    bake_parts_library(L, index)
+    # bai phong: moi cap (bai, ten lua) theo compatible_site_ids cua catalog
+    bake_textures(L)
+    index["sites"] = {}
+    cat_path = os.path.normpath(os.path.join(HERE, "..", "build", "catalog.json"))
+    with open(cat_path, encoding="utf-8") as fh:
+        lvs = json.load(fh)["tables"]["launch_vehicles"]
+    for vid, lv in lvs.items():
+        for site in lv.get("compatible_site_ids", []):
+            stem, size, nv = bake_site(L, site, vid)
+            index["sites"]["%s__%s" % (site, vid)] = stem
+            total += size
+            print("  %-34s %7d dinh  %7.1f KB" % (stem, nv, size / 1024))
     with open(os.path.join(OUT_DIR, "index.json"), "w", encoding="utf-8") as fh:
         json.dump(index, fh, indent=1)
     print("da ghi %s  (tong .bin %.2f MB)" % (OUT_DIR, total / 1e6))

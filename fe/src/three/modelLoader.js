@@ -16,9 +16,11 @@ const srgbToLinear = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1
 const LINEAR_LUT = Float32Array.from({ length: 256 }, (_, i) => srgbToLinear(i / 255));
 
 // Vat lieu dung chung: than (mau theo dinh) va tam pin mat troi (bong hon, hoi phat xanh)
+// DoubleSide: cac tam mong 1 lop (chao ang-ten, dia, tam pin) phai thay duoc ca 2 mat, giong Ursina double_sided=True.
+// Chieu quan tam giac da duoc sua khop phap tuyen luc bake, nen anh sang 2 mat deu dung.
 export const MATERIALS = {
-  hull: new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.35, roughness: 0.55 }),
-  solar: new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.6, roughness: 0.25, emissive: 0x04102e }),
+  hull: new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.35, roughness: 0.55, side: THREE.DoubleSide }),
+  solar: new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.6, roughness: 0.25, emissive: 0x04102e, side: THREE.DoubleSide }),
 };
 
 export function loadIndex() {
@@ -80,6 +82,71 @@ export async function loadSatellite(busId, commId) {
 export async function loadRocket(vehicleId) {
   const index = await loadIndex();
   return loadModel(index.rockets?.[vehicleId]);
+}
+
+// ---------------------------------------------------------------- bai phong (tu game Ursina, toa do y-up, met)
+const texLoader = new THREE.TextureLoader();
+const siteTex = new Map();
+export function siteTexture(name, srgb = true) {
+  if (!siteTex.has(name)) {
+    const ext = name === 'puff' || name === 'glow' ? 'png' : 'jpg';
+    const t = texLoader.load(`${BASE}tex/${name}.${ext}`);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    siteTex.set(name, t);
+  }
+  return siteTex.get(name);
+}
+
+const siteCache = new Map();
+/** Tai bai phong cho cap (bai, ten lua). Tra { info, group, arms: [Object3D] } hoac null. */
+export async function loadSite(siteId, vehicleId) {
+  const index = await loadIndex();
+  const stem = index.sites?.[`${siteId}__${vehicleId}`];
+  if (!stem) return null;
+  if (!siteCache.has(stem)) {
+    siteCache.set(stem, (async () => {
+      const info = await fetch(`${BASE}${stem}.json`).then((r) => r.json());
+      const buffer = await fetch(`${BASE}${info.bin}`).then((r) => r.arrayBuffer());
+      return { info, buffer };
+    })().catch(() => null));
+  }
+  const raw = await siteCache.get(stem);
+  if (!raw) return null;
+  const { info, buffer } = raw;
+  const group = new THREE.Group();
+  const arms = [];
+  for (const m of info.meshes) {
+    const geo = geometryOf(m, buffer);
+    if (m.role === 'arm') {
+      // can noi: dung doc truc x tu ban le ve phia ten lua; quay quanh truc dung tai ban le khi T-0
+      const pivot = new THREE.Group();
+      pivot.position.set(info.pad.hinge_x, info.arms[m.index].y, 0);
+      const mesh = new THREE.Mesh(geo, MATERIALS.hull);
+      mesh.rotation.x = -Math.PI / 2; // luoi can noi la z-up (giong ten lua)
+      pivot.add(mesh);
+      group.add(pivot);
+      arms.push(pivot);
+      continue;
+    }
+    const uv = new Float32Array(buffer, m.uv, m.nv * 2);
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    const alpha = new Uint8Array(buffer, m.a, m.nv);
+    const col = geo.getAttribute('color');
+    const rgba = new Float32Array(m.nv * 4);
+    for (let i = 0; i < m.nv; i++) { rgba[i * 4] = col.array[i * 3]; rgba[i * 4 + 1] = col.array[i * 3 + 1]; rgba[i * 4 + 2] = col.array[i * 3 + 2]; rgba[i * 4 + 3] = alpha[i] / 255; }
+    geo.setAttribute('color', new THREE.BufferAttribute(rgba, 4));
+    const shadow = m.name === 'shadow';
+    const mat = new THREE.MeshStandardMaterial({
+      vertexColors: true, map: m.tex ? siteTexture(m.tex) : null, side: THREE.DoubleSide,
+      roughness: 1 - Math.min(0.9, m.gloss || 0) * 0.8, metalness: m.name === 'steel' ? 0.35 : 0.0,
+      transparent: shadow, depthWrite: !shadow, polygonOffset: shadow, polygonOffsetFactor: -2,
+    });
+    if (shadow) { mat.color.set(0x000000); }
+    group.add(new THREE.Mesh(geo, mat));
+  }
+  return { info, group, arms };
 }
 
 const smoothstep = (a, b, x) => {

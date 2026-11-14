@@ -8,6 +8,7 @@ import { BossPanel, DatasheetTotals, Dossier, LifePhase, Logbook, tx } from './c
 import StoryScene from './story/StoryScene';
 import { SCENES } from './story/14-11-2026-script';
 import { LaunchPadLive } from './anatomy/LaunchPadFigure';
+import PartCard from './components/PartCard';
 
 // Vong choi chinh: che tao -> phong 3D -> 12 moc tren quy dao -> tong ket.
 // (Man "ops" va "debrief" cu van con, mo bang nut "VAN HANH TAY" o man tong ket.)
@@ -681,14 +682,11 @@ export default function App() {
                   <p style={{ marginTop: 0 }}>
                     {missionDetail.meta?.brief?.vi || scenario.description_simple}
                   </p>
-                  <p className="small boss-quote">
-                    Bạn là Kỹ sư trưởng. Sếp Penny-Pincher duyệt ngân sách và hạn chót, còn vật lý thì không
-                    thương lượng. Không ai nói trước thiết kế của bạn đúng hay sai: cứ phóng, rồi tên lửa và vệ
-                    tinh sẽ trả lời. Mỗi lần mất tên lửa hoặc mất vệ tinh, bạn mất một vạch uy tín.
+                  <p className="small boss-quote" title="Không ai nói trước thiết kế đúng hay sai: cứ phóng, tên lửa và vệ tinh sẽ trả lời. Mất tên lửa/vệ tinh → mất 1 vạch uy tín.">
+                    👷 Bạn là Kỹ sư trưởng · 👔 Sếp giữ tiền · ❤❤❤ uy tín
                   </p>
                   <p className="muted">
-                    <strong>Mục tiêu:</strong>{' '}
-                    {missionDetail.objective?.statement?.vi || missionDetail.objective?.statement?.en}
+                    🎯 {missionDetail.objective?.statement?.vi || missionDetail.objective?.statement?.en}
                   </p>
 
                   <div className="kpi-grid" style={{ marginTop: 12 }}>
@@ -801,64 +799,35 @@ export default function App() {
                   const disallowed =
                     (activeSlot === 'orbit' && allowedOrbits.length > 0 && !allowedOrbits.includes(item.id)) || noFit;
 
+                  const pick = () =>
+                    updateDesign((d) => {
+                      if (isInstr) {
+                        const cur = d.instruments || [];
+                        if (cur.includes(item.id)) {
+                          if (cur.length > 1) d.instruments = cur.filter((x) => x !== item.id);
+                        } else {
+                          d.instruments = [...cur, item.id];
+                        }
+                      } else if (isLaunch) {
+                        const sites = item.compatible_site_ids || [];
+                        const nextSite = sites.includes(d.launch?.site) ? d.launch.site : sites[0] || d.launch?.site;
+                        d.launch = { vehicle: item.id, site: nextSite };
+                      } else {
+                        d[activeSlot] = item.id;
+                      }
+                    });
+
+                  // The linh kien = anh 3D + ten + 3 chi so ngan; chi tiet + ly do khong lap duoc nam trong tooltip
                   return (
-                    <button
+                    <PartCard
                       key={item.id}
-                      className={`option-item ${selected ? 'selected' : ''} ${disallowed ? 'disallowed' : ''}`}
-                      disabled={noFit && !selected}
-                      title={noFit ? tx(fit.reason) : undefined}
-                      onClick={() => {
-                        updateDesign((d) => {
-                          if (isInstr) {
-                            const cur = d.instruments || [];
-                            if (cur.includes(item.id)) {
-                              if (cur.length > 1) {
-                                d.instruments = cur.filter((x) => x !== item.id);
-                              }
-                            } else {
-                              d.instruments = [...cur, item.id];
-                            }
-                          } else if (isLaunch) {
-                            const sites = item.compatible_site_ids || [];
-                            const nextSite = sites.includes(d.launch?.site)
-                              ? d.launch.site
-                              : sites[0] || d.launch?.site;
-                            d.launch = { vehicle: item.id, site: nextSite };
-                          } else {
-                            d[activeSlot] = item.id;
-                          }
-                        });
-                      }}
-                    >
-                      <div className="row-between">
-                        <strong>{item.name || item.id}</strong>
-                        <span className="small muted">
-                          {item.cost_musd != null ? `$${Number(item.cost_musd).toFixed(1)}M` : ''}
-                        </span>
-                      </div>
-                      {/* The linh kien = datasheet: chi so tho, khong co loi khuyen */}
-                      <div className="small muted" style={{ marginTop: 2 }}>
-                        {item.id}
-                        {item.tier ? ` • [${String(item.tier).toUpperCase()}]` : ''}
-                        {item.mass_kg != null ? ` • ${item.mass_kg} kg` : ''}
-                        {item.max_total_mass_kg != null ? ` • chịu tối đa ${item.max_total_mass_kg} kg` : ''}
-                        {item.altitude_km != null ? ` • ${item.altitude_km} km` : ''}
-                        {item.inclination_deg != null ? ` • nghiêng ${item.inclination_deg}°` : ''}
-                        {item.generation_w != null ? ` • phát ${item.generation_w} W` : ''}
-                        {item.power_operating_w != null ? ` • dùng ${item.power_operating_w} W` : ''}
-                        {item.power_w != null ? ` • dùng ${item.power_w} W` : ''}
-                        {item.capacity_wh != null ? ` • ${item.capacity_wh} Wh` : ''}
-                        {item.data_generated_gb_per_day != null ? ` • ${item.data_generated_gb_per_day} GB/ngày` : ''}
-                        {item.downlink_mbps != null ? ` • ${item.downlink_mbps} Mbps` : ''}
-                        {item.pointing_accuracy_deg != null ? ` • giữ hướng ±${item.pointing_accuracy_deg}°` : ''}
-                        {item.pointing_required_deg != null ? ` • cần hướng ±${item.pointing_required_deg}°` : ''}
-                        {item.rad_tolerance_krad != null ? ` • ${item.rad_tolerance_krad} krad` : ''}
-                        {item.leo_capacity_kg != null ? ` • LEO ${item.leo_capacity_kg} kg` : ''}
-                        {item.lead_time_months != null ? ` • đặt ${item.lead_time_months} tháng` : ''}
-                        {isLaunch && item.fairing_diameter_m != null ? ` • fairing Ø${item.fairing_diameter_m} m` : ''}
-                      </div>
-                      {noFit && <div className="small nofit">✕ KHÔNG LẮP ĐƯỢC: {tx(fit.reason)}</div>}
-                    </button>
+                      slot={activeSlot}
+                      item={item}
+                      selected={selected}
+                      disabled={disallowed}
+                      noFitText={noFit ? tx(fit.reason) : null}
+                      onPick={pick}
+                    />
                   );
                 })}
               </div>

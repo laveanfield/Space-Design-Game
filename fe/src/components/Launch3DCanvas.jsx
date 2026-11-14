@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { decodeF32, decodeU8, playSoundAsset } from '../api/client';
-import { buildRocket, buildSatellite, loadRocket, loadSatellite } from '../three/modelLoader';
+import { buildRocket, buildSatellite, loadRocket, loadSatellite, loadSite } from '../three/modelLoader';
 import { buildLaunchComplex, buildServiceTower } from '../three/environments';
+import { Puffs, drivePlume, emitLaunchSmoke, padFires, plumeGroup } from '../three/launchFx';
 
 /**
  * Launch3DCanvas -- canh phong 3D: ten lua THAT bay theo du lieu /fly cua backend.
@@ -17,7 +18,6 @@ import { buildLaunchComplex, buildServiceTower } from '../three/environments';
 const SKY_DAY = new THREE.Color(0x6fa8dc);
 const SKY_HIGH = new THREE.Color(0x0a1430);
 const SKY_SPACE = new THREE.Color(0x020308);
-const PLUME_COLOR = { hydrolox: [0xbfe4ff, 0x7fb8ff], methalox: [0xd8e6ff, 0x8f9dff], solid: [0xffffff, 0xffc27a], kerolox: [0xfff2c2, 0xff9a3c] };
 const EARTH_R = 6000; // ban kinh Trai Dat trong canh (don vi canh, khong phai km): chi de thay duong chan troi cong
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -151,30 +151,25 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
     scene.add(stack);
     const fx = new THREE.Group();
     scene.add(fx);
-    let rig = null, satRig = null, H = 20, R = 1, mount = 1.5;
+    let rig = null, satRig = null, H = 20, R = 1, mount = 1.5, kf = 0.6;
     const plumes = []; // {mesh, stage|booster index}
     const debris = []; // {obj, v, w, ttl}
-    const trail = makeParticles(260, { color: 0xffd9a0, size: 3, additive: true, opacity: 0.85 });
-    const smoke = makeParticles(220, { color: 0x9a9a9a, size: 9, additive: false, opacity: 0.5 });
     const sparks = makeParticles(320, { color: 0xffb060, size: 2.2, additive: true });
     const soot = makeParticles(60, { color: 0x2a2624, size: 26, additive: false, opacity: 0.7 });
-    fx.add(trail.points, smoke.points, sparks.points, soot.points);
+    fx.add(sparks.points, soot.points);
+    // khoi be (thuat toan Puffs cua game Ursina) song trong he mat dat de troi dat cung khoi khi ten lua len cao
+    const puffs = new Puffs(420);
+    ground.add(puffs.points);
+    const fires = padFires(ground);
     const fireballs = [], rings = [];
     let shards = null;
 
-    const addPlume = (parent, [x, y, z, r], kind, key) => {
-      const [core, outer] = PLUME_COLOR[kind] || PLUME_COLOR.kerolox;
-      const g = new THREE.Group();
-      g.position.set(x, y, z);
-      for (const [color, w, len, op] of [[outer, 1.5, 7, 0.45], [core, 0.8, 4.5, 0.9]]) {
-        const cone = new THREE.Mesh(new THREE.ConeGeometry(r * w, r * len, 14, 1, true), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
-        cone.rotation.x = Math.PI / 2; // dinh non o mieng phun, loe ve phia -z
-        cone.position.z = -(r * len) / 2;
-        g.add(cone);
-      }
-      g.visible = false;
-      parent.add(g);
-      plumes.push({ g, key, r });
+    // lua dong co: plume_mesh cua game (outer + core + quang sang), dat tai tung mieng phun
+    const addPlume = (parent, nozzle, kind, key) => {
+      const p = plumeGroup(nozzle, kind);
+      p.g.visible = false;
+      parent.add(p.g);
+      plumes.push({ ...p, key });
     };
 
     (async () => {
@@ -196,10 +191,24 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
         addPlume(body, [0, 0, 0, 0.8], 'kerolox', 's0');
       }
       stack.add(rig.root);
-      tower = buildServiceTower(H, R);
-      ground.add(tower.group);
-      padSlab.scale.set(Math.max(1, R * 0.9), 1, Math.max(1, R * 0.9));
-      if (rig.extras.length) {
+      kf = 0.55 + (0.45 * R) / 2.7;
+      // Bai phong THAT cua game Ursina (thap, can noi, bon, nha xuong, bo bien...) neu da bake; khong thi dung khu phong du phong
+      const site = await loadSite(design?.launch?.site, design?.launch?.vehicle);
+      if (disposed) return;
+      if (site) {
+        ground.remove(complex); ground.remove(padSlab);
+        ground.add(site.group);
+        tower = { arms: site.arms, armSign: 1 };
+        mount = site.info.pad.rocket_y;
+        rig.extras.forEach((x) => ground.attach(x));
+      } else {
+        tower = buildServiceTower(H, R);
+        ground.add(tower.group);
+        padSlab.scale.set(Math.max(1, R * 0.9), 1, Math.max(1, R * 0.9));
+      }
+      if (site) {
+        // (be TEL / chan de da nam trong bai phong)
+      } else if (rig.extras.length) {
         // phan phu cua model (vi du be TEL cua Electron) thuoc ve BE PHONG: o lai mat dat, khong bay theo ten lua
         mount = 0;
         rig.extras.forEach((x) => ground.attach(x));
@@ -348,9 +357,11 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
           F.pitch = lerp(F.pitch, Math.PI * 0.62, clamp01(real * 0.5)); // chui mui xuong
         } else {
           F.altKm = s.alt;
-          F.pitch = (80 * Math.PI) / 180 * smooth(0.03, 0.92, s.vel / vMax);
+          // Nguoi xem luon thay ten lua bay gan nhu THANG DUNG (camera bam theo, mat dat tut xuong duoi).
+          // Goc nghieng nhin thay chi toi da 8 do khi da len cao, giong cach game Ursina dat camera theo truc ten lua.
+          F.pitch = ((8 * Math.PI) / 180) * smooth(0.25, 0.95, s.vel / vMax);
         }
-        F.downrange += s.vel * Math.sin(F.pitch) * dt;
+        F.downrange = 0; // khong truot ngang tren man hinh
         // --- su kien theo thoi gian
         for (const e of events) {
           if (F.t >= e.t && fire(e.name)) {
@@ -412,25 +423,24 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
       scene.fog.far = 6000 + altM * 4; // len cao thi thay xa hon
       starMat.opacity = clamp01((F.altKm - 35) / 60);
 
-      // ---------- lua dong co: chi tang dang chay; loe rong va dai hon khi len cao
+      // ---------- lua dong co (drive() cua game): luc day th: dem nguoc tang dan tu luc danh lua, bay = 1
       const burning = (F.phase === 'ascent' && F.t <= tLast + 0.5) || (F.phase === 'countdown' && F.t > -1.2);
-      const vac = 1 + 1.8 * smooth(15, 90, F.altKm);
+      const th = F.phase === 'countdown' ? smooth(-1.2, 0, F.t) : 1;
       for (const p of plumes) {
         const mine = p.key === `s${F.stageNow}` || (p.key === 'b' && !F.done.has('BOOSTER_SEP')) || (p.key === 's0' && F.stageNow === 0);
-        p.g.visible = burning && mine && p.g.parent?.parent !== scene;
-        if (p.g.visible) { const fl = 0.9 + Math.random() * 0.22; p.g.scale.set(vac, vac, fl * (F.phase === 'countdown' ? 0.4 : 1)); }
+        const attached = p.g.parent?.parent !== scene;
+        drivePlume(p, burning && mine && attached ? th : 0, altM);
       }
-      // ---------- vet khoi / tia lua o tam thap
-      if (burning && F.altKm < 30) {
-        const tail = stack.localToWorld(new THREE.Vector3(0, -0.5, 0));
-        const back = axisOf().multiplyScalar(-1);
-        for (let i = 0; i < 3; i++) {
-          trail.spawn(tail, back.clone().multiplyScalar(rand(H * 1.2, H * 2.4)).add(tmp.randomDirection().multiplyScalar(R * 1.5)), rand(0.25, 0.6));
-          smoke.spawn(tail.clone().addScaledVector(back, H * 0.4), back.clone().multiplyScalar(rand(H * 0.5, H * 1.1)).add(tmp.randomDirection().multiplyScalar(R * 3)), rand(1.2, 2.6));
-        }
-        trail.mat.size = R * 2.4; smoke.mat.size = R * 7;
-      }
-      trail.step(fxDt, 1.5); smoke.step(fxDt, 0.8); sparks.step(fxDt, 0.5); soot.step(fxDt, 0.6);
+      // ---------- khoi be + lua nen (thuat toan Puffs cua game, toa do theo be)
+      const lower = burning ? th : 0;
+      const tailW = stack.localToWorld(new THREE.Vector3(0, -0.5, 0));
+      const tailG = ground.worldToLocal(tailW.clone());
+      emitLaunchSmoke(puffs, { pad: new THREE.Vector3(0, 0, 0), kf, lower, h: altM, held: F.phase === 'countdown', tail: tailG, dt: fxDt * (cinematic ? 1 : Math.min(4, ctl.warp)) });
+      puffs.update(fxDt, (camera.fov * Math.PI) / 180, renderer.domElement.height);
+      fires.drive(lower, altM, kf);
+      // rung khi phong (shake cua game): manh khi con gan mat dat, tat dan tu 100 -> 700 m
+      if (lower > 0.1 && altM < 700) cam.shake = Math.max(cam.shake, 0.9 * lower * (1 - smooth(100, 700, altM)));
+      sparks.step(fxDt, 0.5); soot.step(fxDt, 0.6);
 
       // ---------- manh vo, cau lua, song xung kich
       for (let i = debris.length - 1; i >= 0; i--) {

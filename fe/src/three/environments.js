@@ -130,7 +130,7 @@ export function buildHangarEnv({ floorY = -1.15, tall = false } = {}) {
   const hook = box(0.22, 0.28, 0.22, yellow); hook.position.set(-1.6, floorY + H - 2.75, 0.4); g.add(hook);
   // gian cong tac (work stand) 2 tang o mot ben + lan can
   const steel = new THREE.MeshStandardMaterial({ color: 0x9aa3a8, metalness: 0.6, roughness: 0.45 });
-  const sx = 2.9, sz = -0.9;
+  const sx = 4.6, sz = -2.2; // dat xa ban xoay de khong che model
   const segs = [];
   for (const [x, z] of [[sx - 0.8, sz - 1], [sx + 0.8, sz - 1], [sx + 0.8, sz + 1], [sx - 0.8, sz + 1]]) segs.push([[x, floorY, z], [x, floorY + 2.4, z]]);
   for (const y of [1.15, 2.3]) {
@@ -143,6 +143,111 @@ export function buildHangarEnv({ floorY = -1.15, tall = false } = {}) {
   const cart = box(0.7, 0.55, 0.45, new THREE.MeshStandardMaterial({ color: 0x2f6f9f, roughness: 0.6 })); cart.position.set(-2.8, floorY + 0.4, 1.6); g.add(cart);
   const crate = box(0.6, 0.6, 0.6, new THREE.MeshStandardMaterial({ color: 0x8a6a3c, roughness: 0.9 })); crate.position.set(-3.4, floorY + 0.3, -1.9); g.add(crate);
   return g;
+}
+
+// ======================================================================= TOA TICH HOP THANG DUNG (mode TEN LUA)
+/**
+ * Toa tich hop thang dung (kieu Vertical Integration Facility trong anh thuc te, khong logo):
+ * 2 thap op panel xam hai ben, khung giang cheo + ban cong nhieu tang phia ngoai, khoang giua mo de lap ten lua,
+ * san cong tac ben trong, dam cau truc mau cam tren noc, be phong di dong toi mau duoi ten lua, xe tai + container o chan.
+ * Don vi = don vi canh cua Hangar. rocketH = chieu cao ten lua sau chuan hoa; toa cao rocketH / 0.75 (ten lua ~75 % toa).
+ */
+export function buildIntegrationHall({ floorY = -1.15, rocketH = 2.6, rocketR = 0.12 } = {}) {
+  const g = new THREE.Group();
+  const H = rocketH / 0.75, W = rocketH * 0.95, D = rocketH * 0.42;
+  const towerW = W * 0.27, gap = W - 2 * towerW; // khoang mo giua
+  const y0 = floorY;
+  // be mat panel xam (ghep tam, lien mach) + noi that toi
+  const clad = canvasTexture('clad', 256, (c, s) => {
+    noiseFill(c, s, [150, 156, 160], 10, 21);
+    c.strokeStyle = 'rgba(70,76,82,0.55)'; c.lineWidth = 2;
+    for (let i = 0; i <= 4; i++) { c.beginPath(); c.moveTo(0, (i * s) / 4); c.lineTo(s, (i * s) / 4); c.stroke(); }
+    c.beginPath(); c.moveTo(s / 2, 0); c.lineTo(s / 2, s); c.stroke();
+  }, [2, 6]);
+  const cladMat = new THREE.MeshStandardMaterial({ map: clad, roughness: 0.8 });
+  const steel = new THREE.MeshStandardMaterial({ color: 0xb7bdc2, metalness: 0.55, roughness: 0.45 });
+  const darkSteel = new THREE.MeshStandardMaterial({ color: 0x2c3136, metalness: 0.4, roughness: 0.7 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xe9ecee, roughness: 0.6 });
+  const orange = new THREE.MeshStandardMaterial({ color: 0xe49a1c, metalness: 0.3, roughness: 0.5 });
+  const rust = new THREE.MeshStandardMaterial({ color: 0x7d5a44, roughness: 0.9 });
+
+  // san be tong truoc toa + vach vang
+  const apronTex = canvasTexture('apron', 256, (c, s) => { noiseFill(c, s, [176, 176, 170], 14, 31); c.strokeStyle = 'rgba(90,90,86,0.4)'; c.lineWidth = 2; c.strokeRect(0, 0, s, s); }, [8, 8]);
+  const apron = new THREE.Mesh(new THREE.PlaneGeometry(W * 4, W * 4), new THREE.MeshStandardMaterial({ map: apronTex, roughness: 0.9 }));
+  apron.rotation.x = -Math.PI / 2; apron.position.set(0, y0, W * 0.6); g.add(apron);
+  for (const x of [-gap / 2, gap / 2]) { const l = box(0.03, 0.004, W * 1.6, new THREE.MeshBasicMaterial({ color: 0xe1b320 })); l.position.set(x, y0 + 0.003, W * 0.8); g.add(l); }
+
+  // 2 thap op panel
+  for (const sx of [-1, 1]) {
+    const t = box(towerW, H, D, cladMat);
+    t.position.set(sx * (gap / 2 + towerW / 2), y0 + H / 2, 0);
+    g.add(t);
+    // chan thap mau trang (phong may / van phong)
+    const base = box(towerW * 1.02, H * 0.12, D * 1.02, white);
+    base.position.set(sx * (gap / 2 + towerW / 2), y0 + H * 0.06, 0); g.add(base);
+  }
+  // tuong sau khoang giua: xam sang co den chieu (nhu anh thuc te) de ten lua mau toi van noi ro, co ong ky thuat
+  const backTex = canvasTexture('hallback', 256, (c, s) => {
+    noiseFill(c, s, [118, 124, 130], 10, 41);
+    c.fillStyle = 'rgba(255,244,214,0.35)';
+    for (let i = 0; i < 4; i++) c.fillRect(s * 0.1 + i * s * 0.22, s * 0.05, s * 0.06, s * 0.02); // den chieu
+  }, [1, 4]);
+  const back = box(gap, H, 0.05, new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.85 })); back.position.set(0, y0 + H / 2, -D / 2); g.add(back);
+  const lamp = new THREE.PointLight(0xfff2d8, 2.2, H * 1.6, 1.2); lamp.position.set(0, y0 + H * 0.6, D * 0.3); g.add(lamp);
+  const levels = 9;
+  for (let i = 1; i < levels; i++) {
+    const y = y0 + (H * i) / levels;
+    for (const sx of [-1, 1]) {
+      // san cong tac ben trong: dua tu tuong ra sat ten lua (de lai khe cho than ten lua)
+      const len = gap / 2 - rocketR * 1.6;
+      const deck = box(len, 0.025, D * 0.55, steel);
+      deck.position.set(sx * (gap / 2 - len / 2), y, -D * 0.12);
+      g.add(deck);
+    }
+  }
+  const pipeSegs = [];
+  for (const x of [-gap * 0.36, -gap * 0.3, gap * 0.33]) pipeSegs.push([[x, y0 + 0.05, -D / 2 + 0.06], [x, y0 + H * 0.92, -D / 2 + 0.06]]);
+  g.add(beams(pipeSegs, 0.03, rust));
+
+  // khung giang cheo + ban cong nhieu tang o mat ngoai 2 thap
+  const frameSegs = [];
+  for (const sx of [-1, 1]) {
+    const xo = sx * (gap / 2 + towerW + 0.16);
+    for (const z of [D / 2 - 0.02, -D / 2 + 0.02]) {
+      frameSegs.push([[xo, y0, z], [xo, y0 + H, z]]);
+      for (let i = 0; i < 7; i++) {
+        const ya = y0 + H * 0.08 + (H * 0.9 * i) / 7, yb = ya + (H * 0.9) / 7;
+        frameSegs.push([[xo, ya, z], [sx * (gap / 2 + towerW), yb, z]]);
+      }
+    }
+    for (let i = 1; i <= 7; i++) {
+      const y = y0 + H * 0.08 + (H * 0.9 * i) / 7;
+      const deck = box(0.34, 0.02, D * 1.05, steel);
+      deck.position.set(sx * (gap / 2 + towerW + 0.12), y, 0); g.add(deck);
+      frameSegs.push([[sx * (gap / 2 + towerW + 0.29), y, -D * 0.52], [sx * (gap / 2 + towerW + 0.29), y + 0.08, -D * 0.52]]);
+      frameSegs.push([[sx * (gap / 2 + towerW + 0.29), y + 0.08, -D * 0.52], [sx * (gap / 2 + towerW + 0.29), y + 0.08, D * 0.52]]); // lan can
+    }
+  }
+  g.add(beams(frameSegs, 0.018, steel));
+
+  // noc: dam ngang + cau truc mau cam + khung mai
+  const roof = box(W + 0.4, 0.12, D + 0.2, cladMat); roof.position.set(0, y0 + H + 0.06, 0); g.add(roof);
+  const girder = box(gap, 0.14, 0.16, orange); girder.position.set(0, y0 + H * 0.9, D * 0.1); g.add(girder);
+  const trolley = box(0.22, 0.12, 0.22, orange); trolley.position.set(0, y0 + H * 0.9 - 0.12, D * 0.1); g.add(trolley);
+  const roofTruss = [];
+  for (let i = 0; i <= 6; i++) { const x = -W / 2 - 0.2 + ((W + 0.4) * i) / 6; roofTruss.push([[x, y0 + H + 0.12, D / 2], [x, y0 + H + 0.36, D / 2]]); }
+  roofTruss.push([[-W / 2 - 0.2, y0 + H + 0.36, D / 2], [W / 2 + 0.2, y0 + H + 0.36, D / 2]]);
+  g.add(beams(roofTruss, 0.02, steel));
+
+  // be phong di dong (MLP) toi mau duoi ten lua + cot ho tro duoi
+  const mlp = box(gap * 0.82, 0.16, D * 0.75, darkSteel); mlp.position.set(0, y0 + 0.08, 0.02); g.add(mlp);
+  const tsm = box(0.08, 0.5, 0.08, rust); tsm.position.set(gap * 0.18, y0 + 0.41, -0.06); g.add(tsm);
+  // xe tai + container trang o chan toa
+  const trailer = box(W * 0.42, 0.42, 0.42, white); trailer.position.set(-W * 0.62, y0 + 0.21, D * 0.9); g.add(trailer);
+  const cab = box(0.28, 0.3, 0.32, white); cab.position.set(gap * 0.05, y0 + 0.15, D * 1.25); g.add(cab);
+  const cabWin = box(0.29, 0.1, 0.2, new THREE.MeshStandardMaterial({ color: 0x1c2a36, roughness: 0.2, metalness: 0.4 })); cabWin.position.set(gap * 0.05, y0 + 0.24, D * 1.25); g.add(cabWin);
+  const bed = box(0.5, 0.08, 0.36, darkSteel); bed.position.set(gap * 0.05, y0 + 0.06, D * 1.25 - 0.4); g.add(bed);
+  return { group: g, height: H, width: W, mlpTop: y0 + 0.16 };
 }
 
 // ======================================================================= KHU PHONG

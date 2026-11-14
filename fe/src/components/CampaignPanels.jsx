@@ -25,29 +25,27 @@ export function BossPanel({ scenario, metrics, reputation, attempts }) {
   const budget = Number(scenario?.budget_musd || 0);
   const months = Number(metrics?.['schedule.months'] || 0);
   const deadline = Number(scenario?.deadline_months || 0);
+  // gon: 2 thanh do (tien, thoi gian) + vach uy tin; luat choi nam trong tooltip
+  const bar = (v, max) => `${Math.min(100, max ? (v / max) * 100 : 0)}%`;
   return (
     <div className="boss-panel">
       <div className="row-between">
-        <strong className="small">SẾP PENNY-PINCHER</strong>
-        <span className="small muted">chuyến bay #{attempts + 1}</span>
-      </div>
-      <div className="kpi-grid" style={{ marginTop: 6 }}>
-        <div className="kpi-box">
-          <div className="kpi-label">ĐÃ CHI / NGÂN SÁCH</div>
-          <div className={`kpi-val ${budget && cost > budget ? 'over' : ''}`}>${num(cost)}M / ${budget || '-'}M</div>
-        </div>
-        <div className="kpi-box">
-          <div className="kpi-label">ĐẶT HÀNG / HẠN CHÓT</div>
-          <div className={`kpi-val ${deadline && months > deadline ? 'over' : ''}`}>{num(months, 0)} / {deadline || '-'} tháng</div>
-        </div>
-      </div>
-      <div className="rep-row">
-        <span className="kpi-label">UY TÍN VỚI SẾP</span>
-        <span className="rep-pips">
+        <strong className="small">👔 SẾP</strong>
+        <span className="rep-pips" title="Uy tín: mất tên lửa hoặc vệ tinh → trừ 1 vạch. Hết vạch → hủy dự án.">
           {[0, 1, 2].map((i) => <span key={i} className={`rep-pip ${i < reputation ? 'on' : ''}`} />)}
         </span>
+        <span className="small muted">🚀#{attempts + 1}</span>
       </div>
-      <div className="small muted">Mỗi lần mất tên lửa hoặc mất vệ tinh, Sếp trừ một vạch. Hết vạch: dự án bị hủy.</div>
+      <div className="boss-meter" title="Đã chi / ngân sách">
+        <span>💰</span>
+        <div className="gauge-bar"><div className={`gauge-fill ${budget && cost > budget ? 'err' : ''}`} style={{ width: bar(cost, budget) }} /></div>
+        <b className={budget && cost > budget ? 'over' : ''}>${num(cost)}/{budget || '-'}M</b>
+      </div>
+      <div className="boss-meter" title="Thời gian đặt hàng / hạn chót">
+        <span>⏱</span>
+        <div className="gauge-bar"><div className={`gauge-fill ${deadline && months > deadline ? 'err' : ''}`} style={{ width: bar(months, deadline) }} /></div>
+        <b className={deadline && months > deadline ? 'over' : ''}>{num(months, 0)}/{deadline || '-'} th</b>
+      </div>
     </div>
   );
 }
@@ -55,20 +53,22 @@ export function BossPanel({ scenario, metrics, reputation, attempts }) {
 /** Bang cong datasheet: chi la tong cac con so tren the linh kien. Khong co nguong, khong co mau dat/truot. */
 export function DatasheetTotals({ metrics }) {
   if (!metrics) return null;
+  // [bieu tuong, ten day du (tooltip), gia tri]
   const rows = [
-    ['KHỐI LƯỢNG KHÔ', `${num(metrics['mass.dry_kg'], 2)} kg`],
-    ['ĐIỆN PHÁT (ngoài nắng)', `${num(metrics['power.gen_avg_w'])} W`],
-    ['ĐIỆN TIÊU THỤ', `${num(metrics['power.load_w'])} W`],
-    ['DỮ LIỆU SINH RA', `${num(metrics['data.generated_gb_per_day'], 2)} GB/ngày`],
-    ['TỐC ĐỘ ĐƯỜNG TRUYỀN', `${num(metrics['comm.downlink_mbps'], 3)} Mbps`],
-    ['ĐỘ CAO QUỸ ĐẠO', `${num(metrics['orbit.altitude_km'], 0)} km`],
+    ['⚖', 'Khối lượng khô', `${num(metrics['mass.dry_kg'], 2)} kg`],
+    ['☀', 'Điện phát (ngoài nắng)', `${num(metrics['power.gen_avg_w'])} W`],
+    ['⚡', 'Điện tiêu thụ', `${num(metrics['power.load_w'])} W`],
+    ['💾', 'Dữ liệu sinh ra', `${num(metrics['data.generated_gb_per_day'], 2)} GB/ng`],
+    ['📡', 'Tốc độ đường truyền', `${num(metrics['comm.downlink_mbps'], 3)} Mbps`],
+    ['⤒', 'Độ cao quỹ đạo', `${num(metrics['orbit.altitude_km'], 0)} km`],
   ];
   return (
-    <div className="datasheet">
-      <div className="small muted" style={{ marginBottom: 4 }}>BẢNG CỘNG DATASHEET (số thô, chưa ai kiểm chứng trên quỹ đạo)</div>
-      {rows.map(([k, v]) => (
-        <div key={k} className="row-between small datasheet-row"><span className="muted">{k}</span><strong>{v}</strong></div>
-      ))}
+    <div className="datasheet" title="Cộng số trên datasheet — chưa kiểm chứng trên quỹ đạo">
+      <div className="datasheet-grid">
+        {rows.map(([icon, name, v]) => (
+          <div key={name} className="datasheet-cell" title={name}><i>{icon}</i><strong>{v}</strong></div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -77,8 +77,8 @@ export function DatasheetTotals({ metrics }) {
 export function Logbook({ entries }) {
   return (
     <div className="logbook">
-      <div className="small muted" style={{ marginBottom: 4 }}>SỔ TAY KỸ SƯ ({entries.length} chuyến bay)</div>
-      {entries.length === 0 && <div className="small muted">Chưa có chuyến bay nào. Mọi bài học sẽ được ghi lại ở đây sau mỗi lần phóng.</div>}
+      <div className="small muted" style={{ marginBottom: 4 }}>📓 SỔ TAY ({entries.length})</div>
+      {entries.length === 0 && <div className="small muted">—</div>}
       <div className="constraint-list" style={{ maxHeight: 230 }}>
         {entries.map((e) => (
           <div key={e.n} className={`constraint-row ${e.success ? 'pass' : 'fail'}`}>
@@ -210,7 +210,8 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
         </div>
         {life.imaging && (
           <div style={{ marginTop: 10 }}>
-            <EvidenceGallery evidence={life.evidence || []} need={life.evidence_need} step={cur ? cur.k : 0} sensorName={life.imaging.name} />
+            <EvidenceGallery evidence={life.evidence || []} need={life.evidence_need} step={cur ? cur.k : 0} sensorName={life.imaging.name}
+                             imaging={life.imaging} altKm={cur ? cur.alt_km : alt0} />
           </div>
         )}
         <div className="small muted" style={{ margin: '10px 0 4px 0' }}>NHẬT KÝ QUỸ ĐẠO</div>

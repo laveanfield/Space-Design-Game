@@ -70,7 +70,7 @@ export default function TrajectoryScope({ flight, runs = 0 }) {
       // duong Karman 100 km (ranh gioi khong gian)
       g.setLineDash([4, 4]); g.beginPath(); g.moveTo(pad.l, Y(100)); g.lineTo(W - pad.r, Y(100)); g.stroke(); g.setLineDash([]);
       g.fillText('100 km', pad.l + 4, Y(100) - 3);
-      if (!data) { g.fillText('Bấm "MÔ PHỎNG QUỸ ĐẠO PHÓNG" để chạy thử đường bay của thiết kế hiện tại.', pad.l + 8, H / 2); return; }
+      if (!data) { g.fillText('▶ MÔ PHỎNG → xem trước đường bay', pad.l + 8, H / 2); return; }
       // duong bay
       const n = Math.max(2, Math.floor(data.pts.length * upto));
       g.strokeStyle = C.line; g.lineWidth = 1.6; g.shadowColor = C.line; g.shadowBlur = 6;
