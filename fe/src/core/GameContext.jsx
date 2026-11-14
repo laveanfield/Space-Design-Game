@@ -402,7 +402,7 @@ export function GameProvider({ children }) {
     if (!d) return;
     setDesign(d);
     if (unlockAll) {
-      setBuildStage(3);
+      setBuildStage(SLOTS.length); // mo khoa du 9 muc (truoc day chi 3 -> nut DEV preset van khoa 5 muc cuoi)
     }
     beep(audioOn, 920, 0.05);
     evaluateDesign(d, selectedMissionId);
@@ -859,6 +859,7 @@ export function GameProvider({ children }) {
     playScene,
     closeStory,
     tutorialOpen,
+    setTutorialOpen, // OrbitScreen (Gunnystg) goi ham nay khi ket thuc 12 thang o Sandbox; truoc day khong duoc xuat -> sap trang
     tutorialStep,
     setTutorialStep,
     openTutorial,

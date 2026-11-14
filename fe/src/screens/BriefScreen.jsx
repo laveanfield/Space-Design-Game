@@ -133,7 +133,7 @@ export default function BriefScreen() {
                   className="btn"
                   disabled={busy}
                   onClick={() => {
-                    applyPreset('good');
+                    applyPreset('good', true); // DEV: mo khoa du 9 muc de thu nhanh
                     setPhase('design');
                   }}
                 >

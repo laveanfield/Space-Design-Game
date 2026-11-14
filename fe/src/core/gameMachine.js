@@ -677,7 +677,9 @@ export function evaluateInspectionOutcome(defects, fixedIds) {
   }
   const hasRocketFault = unfixed.some((d) => d.id === 'GAS_LEAK_AUDIO' || (d.id === 'STRUCT_CRACK_XRAY' && !d.hiddenInPayload));
   if (unfixed.length >= 2 || hasRocketFault) {
-    const names = unfixed.map((d) => d.label).join(', ');
+    // nhan nhiem vu dang "1. RÒ RỈ KHÍ GA [NGHE AUDIO]" -> bo so thu tu va phan trong [ ] cho tieu de su co gon, de doc
+    const shortName = (label) => String(label || '').replace(/^\d+\.\s*/, '').replace(/\s*\[[^\]]*\]\s*$/, '');
+    const names = unfixed.map((d) => shortName(d.label)).join(', ');
     return {
       mode: 'launch_explode',
       unfixed,
@@ -694,7 +696,7 @@ export function evaluateInspectionOutcome(defects, fixedIds) {
           vi: `Đội kiểm định đã bỏ sót ${unfixed.length} lỗi phần cứng nghiêm trọng (${names}) trước khi rời bệ. Tên lửa mất ổn định và phát nổ trên đường bay.`,
           en: `Pre-flight inspection missed critical hardware defects (${names}). The stack suffered catastrophic failure in flight.`,
         },
-        numbers: unfixed.map((d) => ({ label: d.label, value: 'UNFIXED' })),
+        numbers: unfixed.map((d) => ({ label: shortName(d.label), value: 'UNFIXED' })),
       },
       orbitFault: null,
     };
