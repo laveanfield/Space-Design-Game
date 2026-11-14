@@ -117,6 +117,13 @@ def create_app(root: str = ".") -> FastAPI:
         except Exception as exc:
             _handle_err(exc)
 
+    @app.post("/campaign/lifetime")
+    def campaign_lifetime(req: DesignRequest):
+        try:
+            return eng.lifetime(req.design, mission_id=req.mission_id, seed=req.seed)
+        except Exception as exc:
+            _handle_err(exc)
+
     @app.post("/ops")
     def ops_open(req: OpsOpenRequest):
         try:

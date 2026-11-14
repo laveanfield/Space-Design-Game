@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "be-api",
+      "runtimeExecutable": "C:\\Users\\OS\\AppData\\Local\\Temp\\claude\\941a53247b21b598\\f4f3c7df-f495-4b64-a203-a716bdd03f7c\\scratchpad\\venv\\Scripts\\python.exe",
+      "runtimeArgs": ["be/run_server.py"],
+      "port": 8000
+    },
+    {
+      "name": "fe-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "fe", "run", "dev"],
+      "port": 5173
+    }
+  ]
+}

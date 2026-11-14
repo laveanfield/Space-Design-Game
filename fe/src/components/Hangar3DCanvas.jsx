@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { buildRocket, buildSatellite, loadRocket, loadSatellite } from '../three/modelLoader';
 
 const BUS_DIMS = {
   'BUS-3U': [0.1, 0.1, 0.34],
-  'BUS-6U': [0.1, 0.2263, 0.366],
+  'BUS-6U': [0.1, 0.2, 0.34], // theo model 14-11-2026 (NASA CubeSat 101: 20 cm la suy ra tu trang 14)
   'BUS-12U': [0.2263, 0.2263, 0.366],
   'BUS-ESPA': [0.7, 0.6, 0.95],
   'BUS-SMALL500': [1.0, 1.0, 1.5],
@@ -269,10 +270,8 @@ function buildSatelliteGroup(design, catalog, report) {
   }
 
   // Diagnostic Status Ring around Hangar Base
-  let ringColor = 0x48c9ff;
-  if (report) {
-    ringColor = report.ok ? 0x38e594 : report.launch_allowed ? 0xffb84d : 0xff5c6c;
-  }
+  // Vong de trung tinh: KHONG doi mau theo dat/khong dat (man che tao khong phan xet thiet ke)
+  const ringColor = 0x48c9ff;
   const ringMat = new THREE.MeshBasicMaterial({
     color: ringColor,
     transparent: true,
@@ -286,11 +285,43 @@ function buildSatelliteGroup(design, catalog, report) {
   return root;
 }
 
-export default function Hangar3DCanvas({ design, catalog, report, theme }) {
+/** Giai phong hinh hoc/vat lieu cua mot nhom du phong (model that dung chung cache nen KHONG giai phong). */
+function disposeGroup(group) {
+  group.traverse((obj) => {
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material) (Array.isArray(obj.material) ? obj.material : [obj.material]).forEach((m) => m.dispose());
+  });
+}
+
+/** Hop bao cua mot nhom o trang thai hien tai -> [kich thuoc lon nhat, tam]. */
+function fitOf(object) {
+  const box = new THREE.Box3().setFromObject(object);
+  const size = box.getSize(new THREE.Vector3());
+  return { max: Math.max(size.x, size.y, size.z) || 1, center: box.getCenter(new THREE.Vector3()) };
+}
+
+/**
+ * Xuong lap rap 3D.
+ * - view "sat": ve tinh THAT theo (bus, comm) da chon, co nut gap/mo canh pin, roi ang-ten.
+ * - view "rocket": ten lua THAT theo launch vehicle da chon.
+ * Model chua co trong thu muc /models -> dung model du phong (cac khoi hop) nhu truoc.
+ * Chi dung lai khi bus/comm/vehicle doi; khong dung lai moi lan /evaluate tra ve.
+ */
+export default function Hangar3DCanvas({ design, catalog, theme }) {
   const containerRef = useRef(null);
-  const satGroupRef = useRef(null);
   const sceneRef = useRef(null);
+  const stageRef = useRef({ holder: null, rig: null, fallback: null, f: 0, fTarget: 0, pop: 1, fitStowed: 1, fitOpen: 1 });
   const rotRef = useRef({ yaw: 0.55, pitch: 0.35, zoom: 4.1, dragging: false, lx: 0, ly: 0 });
+  const [view, setView] = useState('sat');
+  const [deployed, setDeployed] = useState(false);
+  const [source, setSource] = useState('');
+
+  const busId = design?.bus;
+  const commId = design?.comm;
+  const vehicleId = design?.launch?.vehicle;
+  const powerId = design?.power;
+  const instrumentsKey = (design?.instruments || []).join(',');
+  const orbitId = design?.orbit;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -298,31 +329,36 @@ export default function Hangar3DCanvas({ design, catalog, report, theme }) {
 
     const scene = new THREE.Scene();
     sceneRef.current = scene;
-
     const width = el.clientWidth || 500;
     const height = el.clientHeight || 410;
     const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
-
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(width, height);
     el.innerHTML = '';
     el.appendChild(renderer.domElement);
 
-    const ambient = new THREE.AmbientLight(0xd9f5ea, 0.72);
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
+    scene.add(new THREE.AmbientLight(0xd9f5ea, 0.72));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
     keyLight.position.set(4, 6, 5);
-    const rimLight = new THREE.DirectionalLight(0x38e594, 0.65);
+    const rimLight = new THREE.DirectionalLight(0x8fd8ff, 0.7);
     rimLight.position.set(-4, -2, -4);
-    scene.add(ambient, keyLight, rimLight);
+    scene.add(keyLight, rimLight);
 
     const gridColor = theme === 'light' ? 0x4b7565 : 0x1e4a38;
     const grid = new THREE.GridHelper(6, 16, gridColor, gridColor);
     grid.position.y = -1.12;
     scene.add(grid);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.015, 8, 64), new THREE.MeshBasicMaterial({ color: 0x48c9ff, transparent: true, opacity: 0.45 }));
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = -1.1;
+    scene.add(ring);
+
+    const holder = new THREE.Group();
+    scene.add(holder);
+    stageRef.current.holder = holder;
 
     const resizeObserver = new ResizeObserver(() => {
-      if (!el) return;
       const w = el.clientWidth || 500;
       const h = el.clientHeight || 410;
       camera.aspect = w / h;
@@ -331,93 +367,150 @@ export default function Hangar3DCanvas({ design, catalog, report, theme }) {
     });
     resizeObserver.observe(el);
 
-    const onDown = (e) => {
-      rotRef.current.dragging = true;
-      rotRef.current.lx = e.clientX;
-      rotRef.current.ly = e.clientY;
-    };
+    const rot = rotRef.current;
+    const onDown = (e) => { rot.dragging = true; rot.lx = e.clientX; rot.ly = e.clientY; };
     const onMove = (e) => {
-      if (!rotRef.current.dragging) return;
-      const dx = e.clientX - rotRef.current.lx;
-      const dy = e.clientY - rotRef.current.ly;
-      rotRef.current.lx = e.clientX;
-      rotRef.current.ly = e.clientY;
-      rotRef.current.yaw += dx * 0.01;
-      rotRef.current.pitch = Math.max(-1.2, Math.min(1.2, rotRef.current.pitch + dy * 0.01));
+      if (!rot.dragging) return;
+      rot.yaw += (e.clientX - rot.lx) * 0.01;
+      rot.pitch = Math.max(-1.2, Math.min(1.2, rot.pitch + (e.clientY - rot.ly) * 0.01));
+      rot.lx = e.clientX; rot.ly = e.clientY;
     };
-    const onUp = () => {
-      rotRef.current.dragging = false;
-    };
-    const onWheel = (e) => {
-      e.preventDefault();
-      rotRef.current.zoom = Math.max(2.3, Math.min(7.5, rotRef.current.zoom + e.deltaY * 0.002));
-    };
-
+    const onUp = () => { rot.dragging = false; };
+    const onWheel = (e) => { e.preventDefault(); rot.zoom = Math.max(2.3, Math.min(7.5, rot.zoom + e.deltaY * 0.002)); };
     const dom = renderer.domElement;
     dom.addEventListener('pointerdown', onDown);
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     dom.addEventListener('wheel', onWheel, { passive: false });
 
+    // Khong ve khi canvas khong nam trong man hinh hoac tab bi an -> may nhe hon
+    let visible = true;
+    const io = new IntersectionObserver((entries) => { visible = entries[entries.length - 1].isIntersecting; });
+    io.observe(el);
+
     let rafId = 0;
-    const animate = () => {
+    let last = performance.now();
+    const animate = (now) => {
       rafId = requestAnimationFrame(animate);
-      if (!rotRef.current.dragging) {
-        rotRef.current.yaw += 0.004;
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      if (!visible || document.hidden) return;
+      const st = stageRef.current;
+      if (!rot.dragging) rot.yaw += 0.24 * dt;
+      // gap/mo canh pin muot (khoang 1,4 giay)
+      if (st.rig?.setDeploy && Math.abs(st.fTarget - st.f) > 1e-4) {
+        st.f += Math.sign(st.fTarget - st.f) * Math.min(Math.abs(st.fTarget - st.f), dt / 1.4);
+        st.rig.setDeploy(st.f);
       }
-      const { yaw, pitch, zoom } = rotRef.current;
-      camera.position.set(
-        zoom * Math.cos(pitch) * Math.sin(yaw),
-        zoom * Math.sin(pitch) + 0.15,
-        zoom * Math.cos(pitch) * Math.cos(yaw)
-      );
+      // model moi "bat" vao vi tri: phong nhe tu 0.86 -> 1
+      st.pop += (1 - st.pop) * Math.min(1, dt * 9);
+      if (st.rig || st.fallback) {
+        const fit = st.fitStowed + (st.fitOpen - st.fitStowed) * st.f;
+        const target = st.fallback || st.rig.root;
+        target.scale.setScalar(fit * st.pop);
+      }
+      camera.position.set(rot.zoom * Math.cos(rot.pitch) * Math.sin(rot.yaw), rot.zoom * Math.sin(rot.pitch) + 0.15, rot.zoom * Math.cos(rot.pitch) * Math.cos(rot.yaw));
       camera.lookAt(0, -0.1, 0);
       renderer.render(scene, camera);
     };
-    animate();
+    rafId = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
+      io.disconnect();
       dom.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       dom.removeEventListener('wheel', onWheel);
+      if (stageRef.current.fallback) disposeGroup(stageRef.current.fallback);
+      stageRef.current = { holder: null, rig: null, fallback: null, f: 0, fTarget: 0, pop: 1, fitStowed: 1, fitOpen: 1 };
       renderer.dispose();
     };
   }, [theme]);
 
+  // Doi model khi linh kien lien quan doi
   useEffect(() => {
-    const scene = sceneRef.current;
-    if (!scene || !design) return;
+    const st = stageRef.current;
+    if (!st.holder || !design) return undefined;
+    let cancelled = false;
+    const place = (rig, fallback, label) => {
+      if (cancelled || !st.holder) return;
+      if (st.fallback) disposeGroup(st.fallback);
+      st.holder.clear();
+      st.rig = rig;
+      st.fallback = fallback;
+      const obj = fallback || rig.root;
+      obj.scale.setScalar(1);
+      obj.position.set(0, 0, 0);
+      if (rig?.setDeploy) {
+        rig.setDeploy(1);
+        const open = fitOf(obj);
+        rig.setDeploy(0);
+        const stowed = fitOf(obj);
+        st.fitStowed = 2.3 / stowed.max;
+        st.fitOpen = 2.9 / open.max;
+        obj.position.copy(stowed.center).multiplyScalar(-1);
+        rig.setDeploy(st.f);
+      } else if (rig) {
+        const fit = fitOf(obj);
+        st.fitStowed = st.fitOpen = 2.6 / fit.max;
+        obj.position.copy(fit.center).multiplyScalar(-1);
+      } else {
+        st.fitStowed = st.fitOpen = 1;
+      }
+      // dat model vao mot nhom trung gian de phong to quanh tam cua no
+      const pivot = new THREE.Group();
+      pivot.add(obj);
+      pivot.position.y = -0.05;
+      st.holder.add(pivot);
+      if (rig) { st.rig = { ...rig, root: pivot }; }
+      else { st.fallback = pivot; }
+      st.pop = 0.86;
+      setSource(label);
+    };
+    (async () => {
+      if (view === 'rocket') {
+        const model = await loadRocket(vehicleId);
+        if (model) return place(buildRocket(model), null, 'MODEL THAT');
+      } else {
+        const model = await loadSatellite(busId, commId);
+        if (model) return place(buildSatellite(model), null, 'MODEL THAT');
+      }
+      return place(null, buildSatelliteGroup(design, catalog, null), 'MODEL DU PHONG');
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, busId, commId, vehicleId, powerId, instrumentsKey, orbitId, catalog, theme]);
 
-    if (satGroupRef.current) {
-      scene.remove(satGroupRef.current);
-      satGroupRef.current.traverse((obj) => {
-        if (obj.geometry) obj.geometry.dispose();
-        if (obj.material) {
-          if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose());
-          else obj.material.dispose();
-        }
-      });
+  // Nut gap/mo: chi doi muc tieu, vong lap ve tu chay muot toi do
+  useEffect(() => {
+    const st = stageRef.current;
+    st.fTarget = deployed && view === 'sat' ? 1 : 0;
+    if (st.rig?.inner) {
+      st.rig.inner.traverse((o) => { if (o.userData?.role === 'adapter') o.visible = !deployed; });
     }
-
-    const nextSat = buildSatelliteGroup(design, catalog, report);
-    satGroupRef.current = nextSat;
-    scene.add(nextSat);
-  }, [design, catalog, report]);
+  }, [deployed, view, source, busId, commId]);
 
   const busDims = BUS_DIMS[design?.bus] || null;
   return (
     <div className="viewport-box">
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       <div className="viewport-overlay">
-        HANGAR_3D // {design?.bus || 'NO_BUS'}
-        {busDims ? ` (${busDims[0]}×${busDims[1]}×${busDims[2]} m)` : ''}
+        {view === 'sat' ? `HANGAR_3D // ${design?.bus || 'NO_BUS'}` : `HANGAR_3D // ${design?.launch?.vehicle || 'NO_LV'}`}
+        {view === 'sat' && busDims ? ` (${busDims[0]}×${busDims[1]}×${busDims[2]} m)` : ''}
         <br />
-        PWR: {design?.power || '-'} | COM: {design?.comm || '-'}
+        PWR: {design?.power || '-'} | COM: {design?.comm || '-'} | {source}
       </div>
-      <div className="viewport-hint">Drag to orbit • Scroll to zoom</div>
+      <div className="viewport-tools">
+        <button className={`btn small ${view === 'sat' ? 'primary' : ''}`} onClick={() => setView('sat')}>VỆ TINH</button>
+        <button className={`btn small ${view === 'rocket' ? 'primary' : ''}`} onClick={() => setView('rocket')}>TÊN LỬA</button>
+        {view === 'sat' && (
+          <button className="btn small" onClick={() => setDeployed((d) => !d)}>{deployed ? 'GẬP CÁNH' : 'MỞ CÁNH / ĂNG-TEN'}</button>
+        )}
+      </div>
+      <div className="viewport-hint">Kéo để xoay • Cuộn để phóng to</div>
     </div>
   );
 }
+

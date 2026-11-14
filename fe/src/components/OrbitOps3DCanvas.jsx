@@ -45,7 +45,7 @@ export default function OrbitOps3DCanvas({ snapshot, design, catalog }) {
     const camera = new THREE.PerspectiveCamera(44, width / height, 0.1, 150);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(width, height);
     el.innerHTML = '';
     el.appendChild(renderer.domElement);
@@ -212,7 +212,13 @@ export default function OrbitOps3DCanvas({ snapshot, design, catalog }) {
     const animate = () => {
       rafId = requestAnimationFrame(animate);
       const snap = latestSnapRef.current;
-      const simT = Number(snap?.t || 0);
+      // snap.auto: man "12 thang tren quy dao" khong co dong ho backend -> tu quay theo dong ho trinh duyet
+      const simT = snap?.auto ? (performance.now() / 1000) * 12 : Number(snap?.t || 0);
+      if (snap?.dead) {
+        // ve tinh chet: lon nhao, khong con giu huong
+        satPivot.rotation.x += 0.03;
+        satPivot.rotation.z += 0.021;
+      }
 
       earthMesh.rotation.y += 0.0012;
 

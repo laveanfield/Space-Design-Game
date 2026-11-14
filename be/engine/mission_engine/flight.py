@@ -4,6 +4,7 @@ from .errors import NoGoCapacity
 from .kernels import ascent, orbit as korbit
 from .rules import metrics
 from .contract.pack import encode_f32, encode_u8
+from .campaign import launch_failure
 
 
 def fly(design, mission, catalog, seed=0, ballast_kg=0.0):
@@ -28,4 +29,5 @@ def fly(design, mission, catalog, seed=0, ballast_kg=0.0):
                    "thrust_n": encode_f32(s["thrust_n"]), "stage_idx": encode_u8(s["stage_idx"])},
         "orbit": {"a_km": a / 1e3, "e": 0.0, "i_deg": orb["inclination_deg"], "period_s": korbit.period(a)},
         "separation": {"t": out["t_sep"], "dv_ms": 1.0},
+        "failure": launch_failure(m, out),          # None = phong sach; nguoc lai: su co (no o Max-Q, hut van toc...)
     }

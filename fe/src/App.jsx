@@ -1,17 +1,33 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { apiFetch, beep, decodeF32, decodeU8, playSoundAsset } from './api/client';
+import { apiFetch, beep, playSoundAsset } from './api/client';
 import Hangar3DCanvas from './components/Hangar3DCanvas';
 import OrbitOps3DCanvas from './components/OrbitOps3DCanvas';
-import LaunchCanvas from './components/LaunchCanvas';
-import MassBalanceSvg from './components/MassBalanceSvg';
+import Launch3DCanvas from './components/Launch3DCanvas';
+import TrajectoryScope from './components/TrajectoryScope';
+import { BossPanel, DatasheetTotals, Dossier, LifePhase, Logbook, tx } from './components/CampaignPanels';
 
+// Vong choi chinh: che tao -> phong 3D -> 12 moc tren quy dao -> tong ket.
+// (Man "ops" va "debrief" cu van con, mo bang nut "VAN HANH TAY" o man tong ket.)
 const PHASES = [
   { id: 'brief', label: '01.BRIEF' },
-  { id: 'design', label: '02.DESIGN_DESK' },
-  { id: 'launch', label: '03.LAUNCH_CTRL' },
-  { id: 'ops', label: '04.SAT_OPS_3D' },
-  { id: 'debrief', label: '05.DEBRIEF' },
+  { id: 'design', label: '02.BUILD' },
+  { id: 'launch', label: '03.LAUNCH_3D' },
+  { id: 'life', label: '04.ORBIT_12M' },
+  { id: 'review', label: '05.REVIEW' },
 ];
+
+// ?dev=1 tren URL: hien lai preset dap an va thanh seed (chi de nhom phat trien thu nhanh)
+const DEV = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('dev');
+const LOG_KEY = 'smdg.logbook.v1';
+const REP_MAX = 3;
+
+function readLogbook() {
+  try {
+    return JSON.parse(window.localStorage.getItem(LOG_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
 
 const SLOTS = [
   { id: 'orbit', label: 'ORBIT' },
@@ -82,11 +98,21 @@ export default function App() {
   const [design, setDesign] = useState(null);
   const [evalReport, setEvalReport] = useState(null);
 
-  // Launch replay state
+  // Launch state: du lieu /fly cua chuyen bay that + ban xem truoc tren scope
   const [flightData, setFlightData] = useState(null);
   const [launchPlaying, setLaunchPlaying] = useState(false);
-  const [launchWarp, setLaunchWarp] = useState(8);
-  const [launchCursor, setLaunchCursor] = useState(0);
+  const [preview, setPreview] = useState(null);
+  const [previewRuns, setPreviewRuns] = useState(0);
+  const [launchFired, setLaunchFired] = useState([]);
+  const [launchResult, setLaunchResult] = useState(null);
+  const [launchSeq, setLaunchSeq] = useState(0);
+
+  // Campaign state: vong doi tren quy dao, ket cuc, uy tin voi Sep, so tay ky su
+  const [lifeData, setLifeData] = useState(null);
+  const [outcome, setOutcome] = useState(null);
+  const [reputation, setReputation] = useState(REP_MAX);
+  const [attempts, setAttempts] = useState(0);
+  const [logbook, setLogbook] = useState(readLogbook);
 
   // Ops 3D simulation state
   const [opsId, setOpsId] = useState(null);
@@ -137,6 +163,13 @@ export default function App() {
         const d = resolvePresetDesign(detail.presets, starterId, detail);
         setDesign(d);
         setFlightData(null);
+        setPreview(null);
+        setPreviewRuns(0);
+        setLaunchResult(null);
+        setLifeData(null);
+        setOutcome(null);
+        setReputation(REP_MAX);
+        setAttempts(0);
         setOpsId(null);
         setOpsSnap(null);
         setOpsRunning(false);
@@ -174,36 +207,14 @@ export default function App() {
     };
   }, [loadMission]);
 
-  // Launch replay timer
-  const decodedFlight = useMemo(() => {
-    if (!flightData?.series?.t) return null;
-    return {
-      t: decodeF32(flightData.series.t),
-      alt: decodeF32(flightData.series.alt_km),
-      vel: decodeF32(flightData.series.v_inertial_ms),
-      mass: decodeF32(flightData.series.mass_kg),
-      thrust: decodeF32(flightData.series.thrust_n),
-      stage: decodeU8(flightData.series.stage_idx),
-    };
-  }, [flightData]);
-
+  // So tay ky su luu trong trinh duyet de bai hoc con lai giua cac lan choi
   useEffect(() => {
-    if (phase !== 'launch' || !launchPlaying || !decodedFlight) return undefined;
-    const total = decodedFlight.t.length;
-    if (total === 0) return undefined;
-    const id = setInterval(() => {
-      setLaunchCursor((prev) => {
-        const step = Math.max(1, Math.round(launchWarp * 0.5));
-        const nxt = prev + step;
-        if (nxt >= total - 1) {
-          setLaunchPlaying(false);
-          return total - 1;
-        }
-        return nxt;
-      });
-    }, 80);
-    return () => clearInterval(id);
-  }, [phase, launchPlaying, launchWarp, decodedFlight]);
+    try {
+      window.localStorage.setItem(LOG_KEY, JSON.stringify(logbook.slice(0, 40)));
+    } catch {
+      // khong luu duoc cung khong sao
+    }
+  }, [logbook]);
 
   // Ops real-time simulation loop
   const stepOps = useCallback(
@@ -248,7 +259,8 @@ export default function App() {
     const next = structuredClone(design);
     mutator(next);
     setDesign(next);
-    beep(audioOn, 740, 0.035);
+    setPreview(null); // thiet ke da doi: duong bay xem truoc cu khong con dung
+    playSoundAsset(audioOn, '08-11-2026-relay_click.wav', 0.25);
     evaluateDesign(next, selectedMissionId);
   };
 
@@ -256,12 +268,51 @@ export default function App() {
     const d = resolvePresetDesign(missionDetail?.presets, presetId, missionDetail);
     if (!d) return;
     setDesign(d);
+    setPreview(null);
     beep(audioOn, 920, 0.05);
     evaluateDesign(d, selectedMissionId);
   };
 
+  // Tom tat thiet ke de ghi vao so tay
+  const buildLine = (d) =>
+    [d.bus, d.power, d.battery, d.comm, d.obc, d.adcs, (d.instruments || []).join('+'), d.orbit, d.launch?.vehicle]
+      .filter(Boolean)
+      .join(' • ');
+
+  const addLog = (success, headline, lesson) => {
+    setLogbook((prev) => [
+      {
+        n: (prev[0]?.n || 0) + 1,
+        success,
+        headline,
+        lesson,
+        build: buildLine(design),
+        when: selectedMissionId.replace('MP-', ''),
+      },
+      ...prev,
+    ]);
+  };
+
+  // Nut "MO PHONG QUY DAO PHONG": chay /fly cho thiet ke hien tai, chi de VE duong bay (khong phong that)
+  const runPreview = async () => {
+    if (!design) return;
+    setBusy(true);
+    setErrorMsg('');
+    try {
+      const fl = await apiFetch('/fly', { method: 'POST', body: { design, mission_id: selectedMissionId } });
+      setPreview(fl);
+      setPreviewRuns((n) => n + 1);
+      playSoundAsset(audioOn, '06-11-2026-blip.wav', 0.3);
+    } catch (err) {
+      setErrorMsg(`Trajectory preview failed: ${err.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // "Launch anything": khong chan phong vi thiet ke sai. Hau qua se tu noi.
   const startLaunch = async () => {
-    if (!design || !evalReport?.launch_allowed) return;
+    if (!design) return;
     setBusy(true);
     setErrorMsg('');
     try {
@@ -270,15 +321,75 @@ export default function App() {
         body: { design, mission_id: selectedMissionId },
       });
       setFlightData(fl);
-      setLaunchCursor(0);
+      setLaunchFired([]);
+      setLaunchResult(null);
+      setLifeData(null);
+      setOutcome(null);
       setLaunchPlaying(true);
+      setLaunchSeq((n) => n + 1); // moi lan phong la mot canh 3D moi
       setPhase('launch');
-      playSoundAsset(audioOn, '06-11-2026-ignition.wav', 0.35);
     } catch (err) {
       setErrorMsg(`Flight simulation failed: ${err.message}`);
     } finally {
       setBusy(false);
     }
+  };
+
+  const onLaunchEvent = useCallback((name) => setLaunchFired((prev) => [...prev, name]), []);
+
+  const onLaunchEnd = useCallback(
+    (result) => {
+      setLaunchResult(result);
+      if (!result.success) {
+        setAttempts((n) => n + 1);
+        setReputation((r) => Math.max(0, r - 1));
+        addLog(false, tx(result.failure?.title) || 'Mất tên lửa', tx(result.failure?.cause));
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [design, selectedMissionId]
+  );
+
+  const startLife = async () => {
+    if (!design) return;
+    setBusy(true);
+    setErrorMsg('');
+    try {
+      const life = await apiFetch('/campaign/lifetime', {
+        method: 'POST',
+        body: { design, mission_id: selectedMissionId },
+      });
+      setLifeData(life);
+      setPhase('life');
+      playSoundAsset(audioOn, '06-11-2026-chime.wav', 0.3);
+    } catch (err) {
+      setErrorMsg(`Orbit simulation failed: ${err.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Het 12 moc (hoac mat ve tinh): tinh ket cuc, tru uy tin, ghi so tay
+  const finishLife = () => {
+    if (!lifeData) return;
+    if (outcome) {
+      setPhase('review'); // da tong ket chuyen nay roi: khong tru uy tin lan hai
+      return;
+    }
+    const o = lifeData.outcome;
+    const loss = (o.success ? 0 : 1) + (o.boss_fail.length > 0 ? 1 : 0);
+    const repAfter = Math.max(0, reputation - loss);
+    const headline = o.success
+      ? o.boss_fail.length
+        ? 'Sống đủ vòng đời, nhưng Sếp không quyết toán'
+        : 'Nhiệm vụ hoàn thành'
+      : tx(lifeData.dossier?.title) || 'Nhiệm vụ thất bại';
+    setReputation(repAfter);
+    setAttempts((n) => n + 1);
+    addLog(o.success && !o.boss_fail.length, headline, tx(lifeData.dossier?.lesson));
+    setOutcome({ ...o, headline, repLoss: loss, repAfter, dossier: lifeData.dossier, score: lifeData.score });
+    setPhase('review');
+    playSoundAsset(audioOn, o.success ? '06-11-2026-chime.wav' : '08-11-2026-power_down.wav', 0.35);
   };
 
   const startOps = async () => {
@@ -400,10 +511,11 @@ export default function App() {
         <nav className="stepper">
           {PHASES.map((p) => {
             const disabled =
+              (phase === 'launch' && !launchResult) || // dang bay: khong bo di giua chung duoc
               (p.id === 'design' && !design) ||
               (p.id === 'launch' && !flightData) ||
-              (p.id === 'ops' && !opsSnap) ||
-              (p.id === 'debrief' && !debrief);
+              (p.id === 'life' && !lifeData) ||
+              (p.id === 'review' && !outcome);
             return (
               <button
                 key={p.id}
@@ -488,6 +600,11 @@ export default function App() {
                   <p style={{ marginTop: 0 }}>
                     {missionDetail.meta?.brief?.vi || scenario.description_simple}
                   </p>
+                  <p className="small boss-quote">
+                    Bạn là Kỹ sư trưởng. Sếp Penny-Pincher duyệt ngân sách và hạn chót, còn vật lý thì không
+                    thương lượng. Không ai nói trước thiết kế của bạn đúng hay sai: cứ phóng, rồi tên lửa và vệ
+                    tinh sẽ trả lời. Mỗi lần mất tên lửa hoặc mất vệ tinh, bạn mất một vạch uy tín.
+                  </p>
                   <p className="muted">
                     <strong>Mục tiêu:</strong>{' '}
                     {missionDetail.objective?.statement?.vi || missionDetail.objective?.statement?.en}
@@ -528,9 +645,9 @@ export default function App() {
                         setPhase('design');
                       }}
                     >
-                      VÀO DESIGN DESK (STARTER) →
+                      VÀO XƯỞNG CHẾ TẠO →
                     </button>
-                    {missionDetail.presets?.some((p) => p.id === 'good') && (
+                    {DEV && missionDetail.presets?.some((p) => p.id === 'good') && (
                       <button
                         className="btn"
                         disabled={busy}
@@ -561,13 +678,15 @@ export default function App() {
                 <span className="small muted">{design.orbit}</span>
               </h2>
 
-              <div className="row-wrap" style={{ marginBottom: 8 }}>
-                {(missionDetail?.presets || []).map((p) => (
-                  <button key={p.id} className="btn small" onClick={() => applyPreset(p.id)}>
-                    {p.id}
-                  </button>
-                ))}
-              </div>
+              {DEV && (
+                <div className="row-wrap" style={{ marginBottom: 8 }}>
+                  {(missionDetail?.presets || []).map((p) => (
+                    <button key={p.id} className="btn small" onClick={() => applyPreset(p.id)}>
+                      {p.id}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="slot-tabs">
                 {SLOTS.map((s) => (
@@ -629,18 +748,29 @@ export default function App() {
                     >
                       <div className="row-between">
                         <strong>{item.name || item.id}</strong>
-                        <span className="small muted">${Number(item.cost_musd || 0).toFixed(1)}M</span>
+                        <span className="small muted">
+                          {item.cost_musd != null ? `$${Number(item.cost_musd).toFixed(1)}M` : ''}
+                        </span>
                       </div>
+                      {/* The linh kien = datasheet: chi so tho, khong co loi khuyen */}
                       <div className="small muted" style={{ marginTop: 2 }}>
                         {item.id}
+                        {item.tier ? ` • [${String(item.tier).toUpperCase()}]` : ''}
                         {item.mass_kg != null ? ` • ${item.mass_kg} kg` : ''}
+                        {item.max_total_mass_kg != null ? ` • chịu tối đa ${item.max_total_mass_kg} kg` : ''}
                         {item.altitude_km != null ? ` • ${item.altitude_km} km` : ''}
-                        {item.avg_power_w != null ? ` • ${item.avg_power_w}W` : ''}
-                        {item.capacity_wh != null ? ` • ${item.capacity_wh}Wh` : ''}
-                        {item.data_rate_mbps != null ? ` • ${item.data_rate_mbps} Mbps` : ''}
-                        {item.pointing_accuracy_deg != null ? ` • ±${item.pointing_accuracy_deg}°` : ''}
+                        {item.inclination_deg != null ? ` • nghiêng ${item.inclination_deg}°` : ''}
+                        {item.generation_w != null ? ` • phát ${item.generation_w} W` : ''}
+                        {item.power_operating_w != null ? ` • dùng ${item.power_operating_w} W` : ''}
+                        {item.power_w != null ? ` • dùng ${item.power_w} W` : ''}
+                        {item.capacity_wh != null ? ` • ${item.capacity_wh} Wh` : ''}
+                        {item.data_generated_gb_per_day != null ? ` • ${item.data_generated_gb_per_day} GB/ngày` : ''}
+                        {item.downlink_mbps != null ? ` • ${item.downlink_mbps} Mbps` : ''}
+                        {item.pointing_accuracy_deg != null ? ` • giữ hướng ±${item.pointing_accuracy_deg}°` : ''}
+                        {item.pointing_required_deg != null ? ` • cần hướng ±${item.pointing_required_deg}°` : ''}
                         {item.rad_tolerance_krad != null ? ` • ${item.rad_tolerance_krad} krad` : ''}
-                        {item.payload_to_leo_kg != null ? ` • LEO ${item.payload_to_leo_kg}kg` : ''}
+                        {item.leo_capacity_kg != null ? ` • LEO ${item.leo_capacity_kg} kg` : ''}
+                        {item.lead_time_months != null ? ` • đặt ${item.lead_time_months} tháng` : ''}
                       </div>
                     </button>
                   );
@@ -670,250 +800,230 @@ export default function App() {
                 </div>
               )}
 
-              <div className="slider-row">
-                <div className="row-between small">
-                  <span className="muted">HAZARD SEED</span>
-                  <span>#{design.seed ?? 0}</span>
+              {DEV && (
+                <div className="slider-row">
+                  <div className="row-between small">
+                    <span className="muted">HAZARD SEED</span>
+                    <span>#{design.seed ?? 0}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="99"
+                    value={Number(design.seed ?? 0)}
+                    onChange={(e) => {
+                      const seed = Number(e.target.value);
+                      updateDesign((d) => {
+                        d.seed = seed;
+                      });
+                    }}
+                  />
                 </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="99"
-                  value={Number(design.seed ?? 0)}
-                  onChange={(e) => {
-                    const seed = Number(e.target.value);
-                    updateDesign((d) => {
-                      d.seed = seed;
-                    });
-                  }}
-                />
-              </div>
+              )}
             </section>
 
-            {/* Center 3D Hangar */}
+            {/* Center: xuong lap rap 3D + scope xem truoc quy dao phong */}
             <section className="panel">
               <h2 className="panel-title">
-                <span>SPACECRAFT ASSEMBLY HANGAR (THREE.JS)</span>
-                {evalReport && (
-                  <span className={`badge ${evalReport.ok ? 'ok' : evalReport.launch_allowed ? 'warn' : 'err'}`}>
-                    {evalReport.ok ? 'NOMINAL PASS' : evalReport.launch_allowed ? 'FLIGHT RISKS' : 'BLOCKED'}
-                  </span>
-                )}
+                <span>XƯỞNG LẮP RÁP 3D</span>
+                <span className="small muted">{(design.instruments || []).join(', ')}</span>
               </h2>
 
-              <Hangar3DCanvas design={design} catalog={catalog} report={evalReport} theme={theme} />
-              <MassBalanceSvg mass={evalReport?.mass} metrics={evalReport?.metrics} />
+              <Hangar3DCanvas design={design} catalog={catalog} theme={theme} />
+              <TrajectoryScope flight={preview} runs={previewRuns} />
 
               <div className="row-between" style={{ marginTop: 12 }}>
-                <div className="small muted">
-                  Instruments: {(design.instruments || []).join(', ')} • LV: {design.launch?.vehicle} @{' '}
-                  {design.launch?.site}
-                </div>
-                <button
-                  className="btn primary"
-                  disabled={busy || !evalReport?.launch_allowed}
-                  onClick={startLaunch}
-                >
-                  PROCEED TO LAUNCH CTRL →
+                <button className="btn" disabled={busy} onClick={runPreview}>
+                  ◉ MÔ PHỎNG QUỸ ĐẠO PHÓNG
+                </button>
+                <button className="btn primary hazard" disabled={busy || reputation <= 0} onClick={startLaunch}>
+                  GO FOR LAUNCH →
                 </button>
               </div>
             </section>
 
-            {/* Right Verification & Constraints */}
+            {/* Right: luat cua Sep + so lieu tho + so tay. KHONG co bang dat/truot, khong co goi y sua. */}
             <section className="panel">
               <h2 className="panel-title">
-                <span>SYSTEM EVALUATION</span>
-                {evalReport?.score && (
-                  <span className="badge info">
-                    {Number(evalReport.score.total).toFixed(1)} ({evalReport.score.grade})
-                  </span>
-                )}
+                <span>BÀN KỸ SƯ TRƯỞNG</span>
+                <span className="small muted">
+                  {design.launch?.vehicle} @ {design.launch?.site}
+                </span>
               </h2>
-
-              {evalReport && (
-                <>
-                  <div className="kpi-grid">
-                    <div className="kpi-box">
-                      <div className="kpi-label">COST / BUDGET</div>
-                      <div className="kpi-val">
-                        ${Number(evalReport.metrics?.['cost.total_musd'] || 0).toFixed(1)}M / $
-                        {scenario.budget_musd ?? '-'}M
-                      </div>
-                    </div>
-                    <div className="kpi-box">
-                      <div className="kpi-label">POWER MARGIN</div>
-                      <div className="kpi-val">
-                        {Number(evalReport.metrics?.['power.margin_pct'] || 0).toFixed(1)}%
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="constraint-list">
-                    {(evalReport.constraints || []).map((c) => (
-                      <div key={c.id} className={`constraint-row ${c.pass ? 'pass' : 'fail'}`}>
-                        <div className="row-between">
-                          <strong>
-                            {c.id.toUpperCase()} {c.critical ? '*' : ''}
-                          </strong>
-                          <span className={`badge ${c.pass ? 'ok' : 'err'}`}>
-                            {c.pass ? 'PASS' : c.fault || 'FAIL'}
-                          </span>
-                        </div>
-                        <div className="small muted" style={{ marginTop: 2 }}>
-                          val={typeof c.value === 'number' ? c.value.toFixed(2) : String(c.value)} {c.op}{' '}
-                          {typeof c.limit === 'number' ? c.limit.toFixed(2) : String(c.limit)}{' '}
-                          {c.unit || ''}
-                        </div>
-                        {c.why && <div className="small">{c.why}</div>}
-                      </div>
-                    ))}
-                  </div>
-
-                  {(evalReport.hints || []).length > 0 && (
-                    <div style={{ marginTop: 10 }}>
-                      <div className="small muted" style={{ marginBottom: 4 }}>
-                        ADVISOR QUICK FIXES
-                      </div>
-                      {evalReport.hints.map((h, idx) => (
-                        <div
-                          key={idx}
-                          className="constraint-row"
-                          style={{ marginBottom: 4, borderLeftColor: 'var(--warn)' }}
-                        >
-                          <div className="small">
-                            Fix <strong>{h.constraint}</strong>:
-                          </div>
-                          <div className="row-wrap" style={{ marginTop: 4 }}>
-                            {(h.fixes || []).map((fx, fIdx) => (
-                              <button
-                                key={fIdx}
-                                className="btn small"
-                                onClick={() =>
-                                  updateDesign((d) => {
-                                    if (fx.slot === 'instruments') {
-                                      d.instruments = Array.isArray(fx.to) ? fx.to : [fx.to];
-                                    } else if (fx.slot === 'launch') {
-                                      d.launch = fx.to;
-                                    } else {
-                                      d[fx.slot] = fx.to;
-                                    }
-                                  })
-                                }
-                              >
-                                {fx.slot} → {typeof fx.to === 'object' ? fx.to.vehicle : fx.to}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
+              <BossPanel
+                scenario={scenario}
+                metrics={evalReport?.metrics}
+                reputation={reputation}
+                attempts={attempts}
+              />
+              <DatasheetTotals metrics={evalReport?.metrics} />
+              <Logbook entries={logbook} />
             </section>
           </div>
         )}
 
-        {/* PHASE 3: LAUNCH CTRL */}
+        {/* PHASE 3: LAUNCH 3D */}
         {phase === 'launch' && flightData && (
           <div className="launch-grid">
             <section className="panel">
               <h2 className="panel-title">
                 <span>
-                  ASCENT TRAJECTORY // {flightData.meta?.vehicle} @ {flightData.meta?.site}
+                  LAUNCH 3D // {flightData.meta?.vehicle} @ {flightData.meta?.site}
                 </span>
-                <span className={`badge ${flightData.meta?.reaches_orbit ? 'ok' : 'err'}`}>
-                  {flightData.meta?.reaches_orbit ? 'ORBIT INSERTION OK' : 'INSERTION FAILED'}
-                </span>
+                <span className="small muted">tải {Number(flightData.meta?.payload_kg || 0).toFixed(1)} kg</span>
               </h2>
 
-              <LaunchCanvas flight={flightData} cursorIdx={launchCursor} />
-
-              <div className="row-between" style={{ marginTop: 10 }}>
-                <div className="row-wrap">
-                  <button className="btn primary" onClick={() => setLaunchPlaying((p) => !p)}>
-                    {launchPlaying ? 'PAUSE' : 'PLAY'}
-                  </button>
-                  <button
-                    className="btn"
-                    onClick={() => {
-                      setLaunchPlaying(false);
-                      setLaunchCursor(0);
-                    }}
-                  >
-                    RESET
-                  </button>
-                  {[2, 8, 20].map((w) => (
-                    <button
-                      key={w}
-                      className={`btn ${launchWarp === w ? 'primary' : ''}`}
-                      onClick={() => setLaunchWarp(w)}
-                    >
-                      {w}x
-                    </button>
-                  ))}
-                </div>
-                <div className="small muted">
-                  Δv ideal: {Number(flightData.meta?.dv_ideal_ms || 0).toFixed(0)} m/s / req:{' '}
-                  {Number(flightData.meta?.dv_needed_ms || 0).toFixed(0)} m/s
-                </div>
-              </div>
-
-              {decodedFlight && decodedFlight.t.length > 0 && (
-                <div className="slider-row">
-                  <input
-                    type="range"
-                    min="0"
-                    max={decodedFlight.t.length - 1}
-                    value={launchCursor}
-                    onChange={(e) => {
-                      setLaunchPlaying(false);
-                      setLaunchCursor(Number(e.target.value));
-                    }}
-                  />
-                  <div className="row-between small">
-                    <span>MET: T+{decodedFlight.t[launchCursor]?.toFixed(1)}s</span>
-                    <span>ALT: {decodedFlight.alt[launchCursor]?.toFixed(1)} km</span>
-                    <span>VEL: {(decodedFlight.vel[launchCursor] / 1000)?.toFixed(2)} km/s</span>
-                    <span>MASS: {decodedFlight.mass[launchCursor]?.toFixed(0)} kg</span>
-                  </div>
-                </div>
-              )}
+              <Launch3DCanvas
+                key={launchSeq}
+                flight={flightData}
+                design={design}
+                audioOn={audioOn}
+                onEvent={onLaunchEvent}
+                onEnd={onLaunchEnd}
+              />
             </section>
 
             <section className="panel">
               <h2 className="panel-title">
-                <span>ASCENT EVENTS & SEQUENCER</span>
+                <span>ASCENT SEQUENCER</span>
                 <span className="small muted">{flightData.meta?.physics}</span>
               </h2>
 
               <div className="constraint-list">
-                {(flightData.events || []).map((ev, i) => {
-                  const curT = decodedFlight?.t[launchCursor] || 0;
-                  const reached = curT >= ev.t;
-                  return (
-                    <div key={i} className={`constraint-row ${reached ? 'pass' : ''}`}>
-                      <div className="row-between">
-                        <strong>{ev.name}</strong>
-                        <span className="small muted">T+{Number(ev.t).toFixed(1)}s</span>
-                      </div>
+                {[{ name: 'IGNITION' }, ...(flightData.events || [])].map((ev, i) => (
+                  <div key={i} className={`constraint-row ${launchFired.includes(ev.name) ? 'pass' : ''}`}>
+                    <div className="row-between">
+                      <strong>{ev.name}</strong>
+                      <span className="small muted">{ev.t != null ? `T+${Number(ev.t).toFixed(0)}s` : 'T-1s'}</span>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
 
+              {!launchResult && (
+                <div className="small muted" style={{ marginTop: 10 }}>
+                  Đang bay. Không còn sửa được gì nữa: chỉ còn chờ xem thiết kế của bạn chịu được đến đâu.
+                </div>
+              )}
+
+              {launchResult && !launchResult.success && (
+                <>
+                  <div className="halt-banner">⚠ CRITICAL LAUNCH FAILURE</div>
+                  <Dossier dossier={launchResult.failure} />
+                </>
+              )}
+              {launchResult?.success && (
+                <div className="ok-banner">
+                  ĐÃ VÀO QUỸ ĐẠO. Phóng được mới là bắt đầu: vệ tinh còn phải sống trọn vòng đời nhiệm vụ.
+                </div>
+              )}
+
               <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <button
-                  className="btn primary"
-                  disabled={busy || !flightData.meta?.reaches_orbit}
-                  onClick={startOps}
-                >
-                  ENTER ORBIT OPERATIONS 3D →
-                </button>
-                <button className="btn" onClick={() => setPhase('design')}>
-                  ← BACK TO DESIGN DESK
-                </button>
+                {launchResult?.success && (
+                  <button className="btn primary" disabled={busy} onClick={startLife}>
+                    THEO DÕI 12 MỐC TRÊN QUỸ ĐẠO →
+                  </button>
+                )}
+                {launchResult && !launchResult.success && reputation > 0 && (
+                  <button className="btn primary" onClick={() => setPhase('design')}>
+                    ← VỀ XƯỞNG LÀM LẠI (còn {reputation}/{REP_MAX} vạch uy tín)
+                  </button>
+                )}
+                {launchResult && !launchResult.success && reputation <= 0 && (
+                  <button className="btn warn" onClick={() => loadMission(selectedMissionId)}>
+                    DỰ ÁN BỊ HỦY — NHẬN LẠI NHIỆM VỤ TỪ ĐẦU
+                  </button>
+                )}
               </div>
+            </section>
+          </div>
+        )}
+
+        {/* PHASE 4: 12 MOC TREN QUY DAO */}
+        {phase === 'life' && lifeData && (
+          <LifePhase life={lifeData} design={design} catalog={catalog} audioOn={audioOn} onDone={finishLife} />
+        )}
+
+        {/* PHASE 5: HOP TONG KET -- chi o day moi co danh gia, sau khi hau qua da xay ra */}
+        {phase === 'review' && outcome && (
+          <div className="debrief-grid">
+            <section className="panel">
+              <h2 className="panel-title">
+                <span>HỌP TỔNG KẾT VỚI SẾP</span>
+                <span className={`badge ${outcome.success ? 'ok' : 'err'}`}>
+                  {outcome.success ? 'MISSION COMPLETE' : 'MISSION FAILED'}
+                </span>
+              </h2>
+              <h3 style={{ margin: '0 0 10px 0', color: outcome.success ? 'var(--ok)' : 'var(--err)' }}>
+                {outcome.headline}
+              </h3>
+
+              <div className="kpi-grid">
+                <div className="kpi-box">
+                  <div className="kpi-label">SỐNG ĐƯỢC</div>
+                  <div className="kpi-val">
+                    {outcome.survived_steps} / {lifeData?.steps_total ?? 12} mốc
+                  </div>
+                </div>
+                <div className="kpi-box">
+                  <div className="kpi-label">DỮ LIỆU DÙNG ĐƯỢC</div>
+                  <div className="kpi-val">
+                    {Number(outcome.usable_gb).toFixed(1)} / {Number(outcome.generated_gb).toFixed(1)} GB
+                  </div>
+                </div>
+                <div className="kpi-box">
+                  <div className="kpi-label">UY TÍN VỚI SẾP</div>
+                  <div className="kpi-val">
+                    {outcome.repLoss > 0 ? `-${outcome.repLoss} → ` : ''}còn {outcome.repAfter}/{REP_MAX}
+                  </div>
+                </div>
+                <div className="kpi-box">
+                  <div className="kpi-label">ĐIỂM THIẾT KẾ</div>
+                  <div className="kpi-val">
+                    {outcome.score ? `${Number(outcome.score.total).toFixed(1)} (${outcome.score.grade})` : '-'}
+                  </div>
+                </div>
+              </div>
+
+              <Dossier dossier={outcome.dossier} />
+
+              <div className="constraint-list" style={{ marginTop: 10 }}>
+                {(outcome.review || []).map((r) => (
+                  <div key={r.id} className={`constraint-row ${r.pass ? 'pass' : 'fail'}`}>
+                    <div className="row-between small">
+                      <span>{r.pass ? `Đạt: ${r.id.toUpperCase()}` : tx(r.title)}</span>
+                      <span className={`badge ${r.pass ? 'ok' : 'err'}`}>{r.pass ? 'OK' : 'KHÔNG ĐẠT'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="row-wrap" style={{ marginTop: 14 }}>
+                {outcome.repAfter > 0 ? (
+                  <button className="btn primary" onClick={() => setPhase('design')}>
+                    {outcome.success ? '← THỬ MỘT THIẾT KẾ KHÁC' : '← VỀ XƯỞNG SỬA THIẾT KẾ'}
+                  </button>
+                ) : (
+                  <button className="btn warn" onClick={() => loadMission(selectedMissionId)}>
+                    DỰ ÁN BỊ HỦY — NHẬN LẠI NHIỆM VỤ TỪ ĐẦU
+                  </button>
+                )}
+                <button className="btn" onClick={() => setPhase('brief')}>
+                  CHỌN NHIỆM VỤ KHÁC
+                </button>
+                {outcome.survived_steps > 0 && (
+                  <button className="btn" disabled={busy} onClick={startOps}>
+                    VẬN HÀNH TAY 2 NGÀY (ADCS / RCS)
+                  </button>
+                )}
+              </div>
+            </section>
+
+            <section className="panel">
+              <h2 className="panel-title">
+                <span>SỔ TAY KỸ SƯ</span>
+              </h2>
+              <Logbook entries={logbook} />
             </section>
           </div>
         )}

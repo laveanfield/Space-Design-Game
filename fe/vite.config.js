@@ -10,6 +10,7 @@ const BACKEND_ROUTES = [
   '/ops',
   '/advise',
   '/validity',
+  '/campaign',
 ];
 
 export default defineConfig({
