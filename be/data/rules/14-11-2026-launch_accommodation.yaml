@@ -1,0 +1,31 @@
+# Luat "ten lua nao cho duoc ve tinh nao" (launch accommodation).
+#
+# Can cu (thu muc reference/Space App NASA):
+#   - NASA CubeSat 101, tr.13-14: CubeSat bay trong DISPENSER dung form factor (dispenser 3U giu toi da 3U;
+#     dispenser 6U giu 1 x 6U hoac 2 x 3U...). Khong co dispenser phu hop thi khong lap duoc.
+#   - NASA CubeSat 101, tr.16: ten lua phai "co du bien nang luc, bay toi dung quy dao, va lap duoc dispenser".
+#   - NASA "Build It Yourself: Telescope" (gametext.pdf): ve tinh lon hon -> ten lua lon hon ("a bigger rocket launches").
+# Hai dieu kien deu phai dung:
+#   1) Lot fairing: duong cheo mat cat ngang cua ve tinh GAP (kem adapter/dispenser, do tu model 3D 14-11-2026,
+#      file payload_envelope.json) <= duong kinh dung duoc cua fairing = fairing_diameter_m x USABLE_FACTOR.
+#   2) Cung nhom kich co: ten lua chi co giao dien lap (dispenser / vong ESPA / adapter tai chinh) cho mot so nhom bus.
+# USABLE_FACTOR = 0.9 la [estimate]: phan chua cho lop cach am, rung dong va khe an toan trong fairing.
+usable_factor: 0.9
+
+# Nhom bus lay tu catalog (buses.class): nano (CubeSat), micro (~180 kg, ESPA), small (~500 kg), large (2-4 t)
+interfaces:
+  nano:  { vi: "dispenser CubeSat đúng form factor (3U / 6U / 12U)", en: "CubeSat dispenser of the matching form factor" }
+  micro: { vi: "cổng vòng ESPA (tải phụ)", en: "ESPA ring port (rideshare)" }
+  small: { vi: "adapter tải chính cỡ nhỏ", en: "small primary payload adapter" }
+  large: { vi: "adapter tải chính cỡ lớn", en: "large primary payload adapter" }
+
+# accepts = cac nhom bus ma ten lua nay co giao dien lap (luat game, [estimate] theo cach cac hang dang phuc vu thi truong)
+launch_vehicles:
+  LV-ELECTRON:   { accepts: [nano],         note: "ten lua nho, chuyen cho CubeSat trong dispenser" }
+  LV-VEGAC:      { accepts: [micro, small], note: "ten lua co trung, cho tai phu ESPA va ve tinh nho" }
+  LV-LVM3:       { accepts: [small, large], note: "ten lua hang nang" }
+  LV-ARIANE62:   { accepts: [small, large], note: "ten lua hang nang, 2 booster" }
+  LV-ARIANE64:   { accepts: [large],        note: "ten lua hang nang, 4 booster" }
+  LV-VULCAN-VC6: { accepts: [large],        note: "ten lua hang nang" }
+  LV-NEWGLENN:   { accepts: [large],        note: "ten lua sieu nang, fairing 7 m" }
+  LV-H3-24L:     { accepts: [large],        note: "ten lua hang nang" }

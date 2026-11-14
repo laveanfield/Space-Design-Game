@@ -1,0 +1,65 @@
+# Thong so cac tang ten lua cho 8 phuong tien phong (suy ra tu 07-11-2026-rocket_catalog.py, nguon Wikipedia/ESA/ISRO/JAXA/Rocket Lab/ULA/Blue Origin).
+LV-ELECTRON:
+  stages:
+    - { name: stage_1, thrust_n: 1.90e5, isp_s: 311.0, propellant_kg: 9250, dry_kg: 1006 }
+    - { name: stage_2, thrust_n: 2.20e4, isp_s: 343.0, propellant_kg: 2150, dry_kg: 250 }
+  _prov:
+    stages: { source: derived, reason: "07-11-2026-rocket_catalog.py (Rocket Lab / Wikipedia)" }
+
+LV-ARIANE62:
+  stages:
+    - { name: boosters_2x_p120c, thrust_n: 5.422e6, isp_s: 280.0, propellant_kg: 282800, dry_kg: 26000 }
+    - { name: core_vulcain21, thrust_n: 1.37e6, isp_s: 436.0, propellant_kg: 150000, dry_kg: 21500 }
+    - { name: upper_vinci, thrust_n: 1.80e5, isp_s: 457.0, propellant_kg: 32000, dry_kg: 6000 }
+  _prov:
+    stages: { source: derived, reason: "07-11-2026-rocket_catalog.py (ESA / CNES)" }
+
+LV-ARIANE64:
+  stages:
+    - { name: boosters_4x_p120c, thrust_n: 1.0844e7, isp_s: 280.0, propellant_kg: 565600, dry_kg: 52000 }
+    - { name: core_vulcain21, thrust_n: 1.37e6, isp_s: 436.0, propellant_kg: 150000, dry_kg: 21500 }
+    - { name: upper_vinci, thrust_n: 1.80e5, isp_s: 457.0, propellant_kg: 32000, dry_kg: 6000 }
+  _prov:
+    stages: { source: derived, reason: "07-11-2026-rocket_catalog.py (ESA / CNES)" }
+
+LV-VEGAC:
+  stages:
+    - { name: stage_1_p120c, thrust_n: 2.681e6, isp_s: 279.0, propellant_kg: 141634, dry_kg: 13400 }
+    - { name: stage_2_zefiro40, thrust_n: 1.123e6, isp_s: 293.5, propellant_kg: 36239, dry_kg: 3230 }
+    - { name: stage_3_zefiro9, thrust_n: 2.564e5, isp_s: 295.9, propellant_kg: 10567, dry_kg: 929 }
+    - { name: stage_4_avum_plus, thrust_n: 2.42e3, isp_s: 315.8, propellant_kg: 740, dry_kg: 695 }
+  _prov:
+    stages: { source: derived, reason: "07-11-2026-rocket_catalog.py (ESA / Avio)" }
+
+LV-LVM3:
+  stages:
+    - { name: boosters_2x_s200, thrust_n: 7.58e6, isp_s: 274.5, propellant_kg: 410000, dry_kg: 62000 }
+    - { name: core_l110, thrust_n: 1.468e6, isp_s: 293.0, propellant_kg: 116000, dry_kg: 9000 }
+    - { name: upper_c25, thrust_n: 1.90e5, isp_s: 443.0, propellant_kg: 28000, dry_kg: 5000 }
+  _prov:
+    stages: { source: derived, reason: "07-11-2026-rocket_catalog.py (ISRO)" }
+
+LV-VULCAN-VC6:
+  stages:
+    - { name: boosters_6x_gem63xl, thrust_n: 8.448e6, isp_s: 280.3, propellant_kg: 287118, dry_kg: 31062 }
+    - { name: core_be4, thrust_n: 4.80e6, isp_s: 340.0, propellant_kg: 353400, dry_kg: 28600 }
+    - { name: upper_centaur_v, thrust_n: 2.036e5, isp_s: 453.8, propellant_kg: 54000, dry_kg: 3500 }
+  _prov:
+    stages: { source: derived, reason: "07-11-2026-rocket_catalog.py (ULA / Northrop Grumman)" }
+
+LV-NEWGLENN:
+  liftoff_mass_kg: 1325000
+  stages:
+    - { name: stage_1_gs1, thrust_n: 1.71e7, isp_s: 340.0, propellant_kg: 1000000, dry_kg: 90000 }
+    - { name: stage_2_gs2, thrust_n: 1.422e6, isp_s: 445.0, propellant_kg: 210000, dry_kg: 25000 }
+  _prov:
+    liftoff_mass_kg: { source: estimate, reason: "Sum of estimated stage masses (1090t + 235t); Blue Origin does not publish official liftoff mass" }
+    stages: { source: estimate, reason: "07-11-2026-rocket_catalog.py (Blue Origin estimates)" }
+
+LV-H3-24L:
+  stages:
+    - { name: boosters_4x_srb3, thrust_n: 6.232e6, isp_s: 283.6, propellant_kg: 268800, dry_kg: 36000 }
+    - { name: stage_1_le9, thrust_n: 2.942e6, isp_s: 425.0, propellant_kg: 226000, dry_kg: 15000 }
+    - { name: stage_2_le5b3, thrust_n: 1.37e5, isp_s: 448.0, propellant_kg: 24600, dry_kg: 3400 }
+  _prov:
+    stages: { source: derived, reason: "07-11-2026-rocket_catalog.py (JAXA / MHI)" }

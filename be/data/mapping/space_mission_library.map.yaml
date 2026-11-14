@@ -1,0 +1,167 @@
+# Mapping cho dataset day du space_mission_library.py (73 muc, 10 bang chuan).
+tables:
+  - table: scenarios
+    source: { file: space_mission_library.py, sheet: scenarios }
+    id: { from: "item_id", expect_prefix: "SC-" }
+    fields:
+      name: { from: "item_name" }
+      difficulty: { from: "difficulty" }
+      objective_text: { from: "description_simple" }
+      budget_musd: { from: "budget_musd", unit: MUSD }
+      min_science_pts: { from: "min_science_pts" }
+      min_mission_life_years: { from: "min_mission_life_years" }
+      deadline_months: { from: "deadline_months" }
+      allowed_orbit_ids: { from: "allowed_orbit_ids", split: ";" }
+      learning_goal: { from: "learning_goal" }
+    defaults: { mission_type: earth_observation }
+
+  - table: orbits
+    source: { file: space_mission_library.py, sheet: orbits }
+    id: { from: "item_id", expect_prefix: "ORB-" }
+    fields:
+      name: { from: "item_name" }
+      altitude_km: { from: "altitude_apogee_km", unit: km }
+      perigee_km: { from: "altitude_perigee_km", unit: km }
+      inclination_deg: { from: "inclination_deg", unit: deg }
+      period_min: { from: "period_min" }
+      eclipse_fraction: { from: "eclipse_fraction" }
+      ground_contact_min_per_day: { from: "ground_contact_min_per_day" }
+      radiation_dose_krad_per_year: { from: "radiation_dose_krad_per_year" }
+      orbital_lifetime_years_no_reboost: { from: "orbital_lifetime_years_no_reboost" }
+      lv_payload_ref: { from: "lv_payload_ref" }
+      lv_payload_factor: { from: "lv_payload_factor" }
+      description_simple: { from: "description_simple" }
+    defaults: { orbital_lifetime_years_no_reboost: 1000.0 }
+
+  - table: instruments
+    source: { file: space_mission_library.py, sheet: instruments }
+    id: { from: "item_id", expect_prefix: "INS-" }
+    fields:
+      name: { from: "item_name" }
+      tier: { from: "tier", lower: true }
+      science_category: { from: "science_category" }
+      science_value_pts: { from: "science_value_pts" }
+      mass_kg: { from: "mass_kg", unit: kg }
+      power_operating_w: { from: "power_operating_w", unit: W }
+      duty_cycle_pct: { from: "duty_cycle_pct" }
+      data_generated_gb_per_day: { from: "data_generated_gb_per_day", unit: GB/day }
+      pointing_required_deg: { from: "pointing_required_deg", unit: deg }
+      cost_musd: { from: "cost_musd", unit: MUSD }
+      lead_time_months: { from: "lead_time_months" }
+      compatible_orbit_ids: { from: "compatible_orbit_ids", split: ";" }
+      description_simple: { from: "description_simple" }
+    defaults: { tier: basic }
+
+  - table: buses
+    source: { file: space_mission_library.py, sheet: spacecraft_buses }
+    id: { from: "item_id", expect_prefix: "BUS-" }
+    fields:
+      name: { from: "item_name" }
+      class: { from: "class", lower: true }
+      form_factor: { from: "form_factor" }
+      tier: { from: "tier", lower: true }
+      mass_kg: { from: "structure_mass_kg", unit: kg }
+      max_total_mass_kg: { from: "max_total_mass_kg", unit: kg }
+      max_payload_mass_kg: { from: "max_payload_mass_kg", unit: kg }
+      max_payload_power_w: { from: "max_payload_power_w", unit: W }
+      housekeeping_power_w: { from: "housekeeping_power_w", unit: W }
+      cost_musd: { from: "cost_musd", unit: MUSD }
+      lead_time_months: { from: "lead_time_months" }
+      description_simple: { from: "description_simple" }
+    defaults: { size_m: 0.5 }
+
+  - table: power_arrays
+    source: { file: space_mission_library.py, sheet: power_systems }
+    where: { type: solar_array }
+    id: { from: "item_id", expect_prefix: "PWR-" }
+    fields:
+      name: { from: "item_name" }
+      tier: { from: "tier", lower: true }
+      generation_w: { from: "power_output_w_1au", unit: W }
+      area_m2: { from: "area_m2" }
+      degradation_pct_per_year: { from: "degradation_pct_per_year" }
+      mass_kg: { from: "mass_kg", unit: kg }
+      cost_musd: { from: "cost_musd", unit: MUSD }
+      lead_time_months: { from: "lead_time_months" }
+      description_simple: { from: "description_simple" }
+    defaults: { kind: deployable }
+
+  - table: batteries
+    source: { file: space_mission_library.py, sheet: power_systems }
+    where: { type: battery }
+    id: { from: "item_id", expect_prefix: "BAT-" }
+    fields:
+      name: { from: "item_name" }
+      tier: { from: "tier", lower: true }
+      capacity_wh: { from: "capacity_wh", unit: Wh }
+      usable_dod: { from: "usable_dod" }
+      mass_kg: { from: "mass_kg", unit: kg }
+      cost_musd: { from: "cost_musd", unit: MUSD }
+      lead_time_months: { from: "lead_time_months" }
+      description_simple: { from: "description_simple" }
+
+  - table: comms
+    source: { file: space_mission_library.py, sheet: communications }
+    id: { from: "item_id", expect_prefix: "COM-" }
+    fields:
+      name: { from: "item_name" }
+      band: { from: "band" }
+      tier: { from: "tier", lower: true }
+      antenna_gain_dbi: { from: "antenna_gain_dbi" }
+      tx_power_w: { from: "tx_power_w", unit: W }
+      power_w: { from: "power_draw_w", unit: W }
+      downlink_mbps: { from: "data_rate_mbps_at_ref", unit: Mbps }
+      max_range_km: { from: "max_range_km", unit: km }
+      pointing_required_deg: { from: "pointing_required_deg", unit: deg }
+      mass_kg: { from: "mass_kg", unit: kg }
+      cost_musd: { from: "cost_musd", unit: MUSD }
+      lead_time_months: { from: "lead_time_months" }
+      description_simple: { from: "description_simple" }
+    defaults: { antenna_gain_dbi: 110.0 }
+
+  - table: avionics
+    source: { file: space_mission_library.py, sheet: avionics }
+    id: { from: "item_id" }
+    fields:
+      name: { from: "item_name" }
+      type: { from: "avionics_type", lower: true }
+      tier: { from: "tier", lower: true }
+      storage_gb: { from: "storage_gb" }
+      rad_tolerance_krad: { from: "rad_tolerance_krad", unit: krad }
+      pointing_accuracy_deg: { from: "pointing_accuracy_deg", unit: deg }
+      power_w: { from: "power_draw_w", unit: W }
+      mass_kg: { from: "mass_kg", unit: kg }
+      cost_musd: { from: "cost_musd", unit: MUSD }
+      lead_time_months: { from: "lead_time_months" }
+      description_simple: { from: "description_simple" }
+    defaults: { torque_nm: 0.001 }
+
+  - table: launch_vehicles
+    source: { file: space_mission_library.py, sheet: launch_vehicles }
+    id: { from: "item_id", expect_prefix: "LV-" }
+    fields:
+      name: { from: "item_name" }
+      variant: { from: "variant" }
+      manufacturer: { from: "manufacturer" }
+      height_m: { from: "height_m", unit: m }
+      diameter_m: { from: "diameter_m", unit: m }
+      fairing_diameter_m: { from: "fairing_diameter_m", unit: m }
+      liftoff_mass_kg: { from: "liftoff_mass_kg", unit: kg }
+      leo_capacity_kg: { from: "payload_to_leo_kg", unit: kg }
+      sso_capacity_kg: { from: "payload_to_sso_kg", unit: kg }
+      gto_capacity_kg: { from: "payload_to_gto_kg", unit: kg }
+      propulsion: { from: "propulsion_system" }
+      fuel: { from: "propellant" }
+      cost_musd: { from: "cost_per_launch_musd", unit: MUSD }
+      reliability: { from: "reliability_game" }
+      lead_time_months: { from: "lead_time_months" }
+      compatible_site_ids: { from: "launch_site_ids", split: ";" }
+
+  - table: launch_sites
+    source: { file: space_mission_library.py, sheet: launch_sites }
+    id: { from: "item_id", expect_prefix: "SITE-" }
+    fields:
+      name: { from: "item_name" }
+      country: { from: "country" }
+      lat_deg: { from: "latitude_deg", unit: deg }
+      lon_deg: { from: "longitude_deg", unit: deg }

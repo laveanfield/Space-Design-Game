@@ -1,0 +1,60 @@
+# DATA DOCTOR  catalog d810d608
+
+nguon: space_mission_library.py
+ERROR 0   WARN 52   INFO 0
+
+- **WARN** `D08` scenarios.SC-01.mission_type: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` scenarios.SC-02.mission_type: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` scenarios.SC-03.mission_type: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` scenarios.SC-04.mission_type: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` scenarios.SC-05.mission_type: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` scenarios.SC-06.mission_type: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` scenarios.SC-07.mission_type: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` scenarios.SC-08.mission_type: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` orbits.ORB-MEO-20200.orbital_lifetime_years_no_reboost: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` orbits.ORB-MEO-20200.class: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` orbits.ORB-GTO.orbital_lifetime_years_no_reboost: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` orbits.ORB-GTO.class: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` orbits.ORB-GEO.orbital_lifetime_years_no_reboost: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` orbits.ORB-GEO.class: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` orbits.ORB-LEO-400.class: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` orbits.ORB-LEO-500.class: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` orbits.ORB-SSO-600.class: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` orbits.ORB-SSO-DD-600.class: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` orbits.ORB-POLAR-800.class: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` instruments.INS-01.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` instruments.INS-02.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` instruments.INS-03.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` instruments.INS-04.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` instruments.INS-05.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` instruments.INS-06.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` instruments.INS-07.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` instruments.INS-08.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` instruments.INS-09.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` instruments.INS-10.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` buses.BUS-3U.size_m: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` buses.BUS-6U.size_m: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` buses.BUS-12U.size_m: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` buses.BUS-ESPA.size_m: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` buses.BUS-SMALL500.size_m: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` buses.BUS-LARGE-LEO.size_m: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` buses.BUS-GEO.size_m: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` power_arrays.PWR-SA-BODY.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` power_arrays.PWR-SA-DEP.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` power_arrays.PWR-SA-SMALL.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` power_arrays.PWR-SA-LARGE.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` power_arrays.PWR-SA-GEO.kind: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` comms.COM-OPT-LEO.antenna_gain_dbi: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` avionics.OBC-BASIC.torque_nm: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` avionics.OBC-CUBE.torque_nm: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` avionics.OBC-SPACE.torque_nm: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` avionics.OBC-RADHARD.torque_nm: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` avionics.ADCS-MAG.torque_nm: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` avionics.ADCS-WHEEL.torque_nm: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` avionics.ADCS-STAR.torque_nm: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D08` avionics.ADCS-FINE.torque_nm: thieu trong dataset, Gateway dung gia tri mac dinh
+- **WARN** `D12` MP-SC03-SPACE-WEATHER: KHONG co thiet ke kha thi voi du lieu hien tai (xem advisor)
+- **WARN** `D12` MP-SC04-GHG: KHONG co thiet ke kha thi voi du lieu hien tai (xem advisor)
+- FEAS MP-SC01-FIRST-EYES: OK (40 thiet ke)
+- FEAS MP-SC03-SPACE-WEATHER: KHONG co thiet ke kha thi
+- FEAS MP-SC04-GHG: KHONG co thiet ke kha thi

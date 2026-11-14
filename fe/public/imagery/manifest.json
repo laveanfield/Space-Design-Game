@@ -1,0 +1,423 @@
+{
+ "note": "Anh minh hoa sinh bang thuat toan (be/tools/14-11-2026-render_imagery.py), khong phai anh ve tinh that.",
+ "size": [
+  640,
+  420
+ ],
+ "images": [
+  {
+   "file": "fire_FIRE-CALIFORNIA_0.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CALIFORNIA",
+   "biome": "rừng lá kim",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-CALIFORNIA_0_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CALIFORNIA",
+   "biome": "rừng lá kim",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-CALIFORNIA_1.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CALIFORNIA",
+   "biome": "rừng lá kim",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-CALIFORNIA_1_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CALIFORNIA",
+   "biome": "rừng lá kim",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-CALIFORNIA_2.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CALIFORNIA",
+   "biome": "rừng lá kim",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-CALIFORNIA_2_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CALIFORNIA",
+   "biome": "rừng lá kim",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-AMAZON_0.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-AMAZON",
+   "biome": "rừng mưa nhiệt đới",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-AMAZON_0_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-AMAZON",
+   "biome": "rừng mưa nhiệt đới",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-AMAZON_1.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-AMAZON",
+   "biome": "rừng mưa nhiệt đới",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-AMAZON_1_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-AMAZON",
+   "biome": "rừng mưa nhiệt đới",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-AMAZON_2.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-AMAZON",
+   "biome": "rừng mưa nhiệt đới",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-AMAZON_2_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-AMAZON",
+   "biome": "rừng mưa nhiệt đới",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-NSW_0.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-NSW",
+   "biome": "rừng bạch đàn",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-NSW_0_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-NSW",
+   "biome": "rừng bạch đàn",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-NSW_1.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-NSW",
+   "biome": "rừng bạch đàn",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-NSW_1_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-NSW",
+   "biome": "rừng bạch đàn",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-NSW_2.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-NSW",
+   "biome": "rừng bạch đàn",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-NSW_2_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-NSW",
+   "biome": "rừng bạch đàn",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-SIBERIA_0.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-SIBERIA",
+   "biome": "rừng taiga",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-SIBERIA_0_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-SIBERIA",
+   "biome": "rừng taiga",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-SIBERIA_1.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-SIBERIA",
+   "biome": "rừng taiga",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-SIBERIA_1_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-SIBERIA",
+   "biome": "rừng taiga",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-SIBERIA_2.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-SIBERIA",
+   "biome": "rừng taiga",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-SIBERIA_2_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-SIBERIA",
+   "biome": "rừng taiga",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-KALIMANTAN_0.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-KALIMANTAN",
+   "biome": "đất than bùn",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-KALIMANTAN_0_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-KALIMANTAN",
+   "biome": "đất than bùn",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-KALIMANTAN_1.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-KALIMANTAN",
+   "biome": "đất than bùn",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-KALIMANTAN_1_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-KALIMANTAN",
+   "biome": "đất than bùn",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-KALIMANTAN_2.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-KALIMANTAN",
+   "biome": "đất than bùn",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-KALIMANTAN_2_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-KALIMANTAN",
+   "biome": "đất than bùn",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-MEDITERRANEAN_0.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-MEDITERRANEAN",
+   "biome": "cây bụi Địa Trung Hải",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-MEDITERRANEAN_0_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-MEDITERRANEAN",
+   "biome": "cây bụi Địa Trung Hải",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-MEDITERRANEAN_1.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-MEDITERRANEAN",
+   "biome": "cây bụi Địa Trung Hải",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-MEDITERRANEAN_1_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-MEDITERRANEAN",
+   "biome": "cây bụi Địa Trung Hải",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-MEDITERRANEAN_2.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-MEDITERRANEAN",
+   "biome": "cây bụi Địa Trung Hải",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-MEDITERRANEAN_2_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-MEDITERRANEAN",
+   "biome": "cây bụi Địa Trung Hải",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-CANADA_0.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CANADA",
+   "biome": "rừng phương Bắc",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-CANADA_0_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CANADA",
+   "biome": "rừng phương Bắc",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-CANADA_1.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CANADA",
+   "biome": "rừng phương Bắc",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-CANADA_1_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CANADA",
+   "biome": "rừng phương Bắc",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-CANADA_2.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CANADA",
+   "biome": "rừng phương Bắc",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-CANADA_2_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-CANADA",
+   "biome": "rừng phương Bắc",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-UMINHTHUONG_0.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-UMINHTHUONG",
+   "biome": "rừng tràm trên than bùn",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-UMINHTHUONG_0_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-UMINHTHUONG",
+   "biome": "rừng tràm trên than bùn",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-UMINHTHUONG_1.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-UMINHTHUONG",
+   "biome": "rừng tràm trên than bùn",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-UMINHTHUONG_1_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-UMINHTHUONG",
+   "biome": "rừng tràm trên than bùn",
+   "band": "thermal"
+  },
+  {
+   "file": "fire_FIRE-UMINHTHUONG_2.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-UMINHTHUONG",
+   "biome": "rừng tràm trên than bùn",
+   "band": "rgb"
+  },
+  {
+   "file": "fire_FIRE-UMINHTHUONG_2_ir.jpg",
+   "theme": "wildfire",
+   "target": "FIRE-UMINHTHUONG",
+   "biome": "rừng tràm trên than bùn",
+   "band": "thermal"
+  },
+  {
+   "file": "coast_0.jpg",
+   "theme": "coast",
+   "band": "rgb"
+  },
+  {
+   "file": "coast_1.jpg",
+   "theme": "coast",
+   "band": "rgb"
+  },
+  {
+   "file": "coast_2.jpg",
+   "theme": "coast",
+   "band": "rgb"
+  },
+  {
+   "file": "coast_3.jpg",
+   "theme": "coast",
+   "band": "rgb"
+  },
+  {
+   "file": "coast_4.jpg",
+   "theme": "coast",
+   "band": "rgb"
+  },
+  {
+   "file": "coast_5.jpg",
+   "theme": "coast",
+   "band": "rgb"
+  },
+  {
+   "file": "ghg_methane_0.jpg",
+   "theme": "ghg",
+   "gas": "CH4",
+   "band": "spectral"
+  },
+  {
+   "file": "ghg_co2_0.jpg",
+   "theme": "ghg",
+   "gas": "CO2",
+   "band": "spectral"
+  },
+  {
+   "file": "ghg_methane_1.jpg",
+   "theme": "ghg",
+   "gas": "CH4",
+   "band": "spectral"
+  },
+  {
+   "file": "ghg_co2_1.jpg",
+   "theme": "ghg",
+   "gas": "CO2",
+   "band": "spectral"
+  },
+  {
+   "file": "ghg_methane_2.jpg",
+   "theme": "ghg",
+   "gas": "CH4",
+   "band": "spectral"
+  },
+  {
+   "file": "ghg_co2_2.jpg",
+   "theme": "ghg",
+   "gas": "CO2",
+   "band": "spectral"
+  },
+  {
+   "file": "ghg_methane_3.jpg",
+   "theme": "ghg",
+   "gas": "CH4",
+   "band": "spectral"
+  },
+  {
+   "file": "ghg_co2_3.jpg",
+   "theme": "ghg",
+   "gas": "CO2",
+   "band": "spectral"
+  }
+ ]
+}
