@@ -97,3 +97,47 @@ export function playSoundAsset(enabled, filename, volume = 0.35) {
     // ignore playback errors
   }
 }
+
+/**
+ * Phat tieng xi ga ap suat cao (filtered white noise hiss) theo do gan cua chuot voi diem ro ri.
+ */
+export function playGasHiss(enabled, intensity = 0.5, durationSec = 0.14) {
+  if (!enabled || typeof window === 'undefined' || intensity <= 0.02) return;
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    if (!sharedAudioCtx) sharedAudioCtx = new AudioCtx();
+    if (sharedAudioCtx.state === 'suspended') {
+      sharedAudioCtx.resume().catch(() => {});
+    }
+    const ctx = sharedAudioCtx;
+    const sampleRate = ctx.sampleRate;
+    const frameCount = Math.max(128, Math.floor(sampleRate * durationSec));
+    const buffer = ctx.createBuffer(1, frameCount, sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < frameCount; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 2600 + intensity * 2800;
+    filter.Q.value = 1.4;
+
+    const gain = ctx.createGain();
+    const vol = Math.min(0.32, 0.02 + intensity * 0.28);
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationSec);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start();
+    noise.stop(ctx.currentTime + durationSec);
+  } catch {
+    // ignore audio block
+  }
+}

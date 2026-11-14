@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { getPartInsight } from '../core/gameMachine';
 import { partThumb } from '../three/partThumbs';
 
 /**
- * PartCard -- The linh kien Terminal gon: anh 3D + tem phan loai + ten + toi da 3 chi so vat ly.
- * Khong khoa lua chon de ho tro triet ly "Launch Anything": canh bao mismatch nhung van cho chon va phong thu.
+ * PartCard -- The linh kien Terminal gon: anh 3D + tem phan loai + ten + chi so vat ly
+ * + Phan tich Dung o dau / Loi ich (+) / Tac hai (-) khi duoc chon.
  */
 
 const TAG_LABEL = {
@@ -119,9 +120,12 @@ function OrbitIcon() {
 export default function PartCard({ slot, item, selected, warnText, deadlineMonths, onPick }) {
   const stats = statsOf(slot, item);
   const tag = badgeOf(slot, item, deadlineMonths);
+  const insight = getPartInsight(slot, item);
   const tip = [
     item.name,
-    item.description_simple,
+    insight?.where || item.description_simple,
+    insight?.pros ? `+ Lợi ích: ${insight.pros}` : null,
+    insight?.cons ? `- Tác hại: ${insight.cons}` : null,
     item.lead_time_months != null ? `Lead time: ${item.lead_time_months} mo` : null,
     warnText,
   ]
@@ -136,6 +140,7 @@ export default function PartCard({ slot, item, selected, warnText, deadlineMonth
     >
       <div className={`part-card-ribbon ${tag.cls}`}>
         <span className="ribbon-label">[{tag.text}]</span>
+        {selected && <span className="part-selected-pill">✓ ĐANG CHỌN</span>}
       </div>
       <div className="part-card-main">
         <PartThumb slot={slot} id={item.id} />
@@ -157,6 +162,19 @@ export default function PartCard({ slot, item, selected, warnText, deadlineMonth
           {warnText && <div className="part-nofit">! {warnText}</div>}
         </div>
       </div>
+      {selected && insight && (
+        <div className="part-insight-drawer">
+          <div className="insight-row where">
+            <strong>📍 DÙNG Ở ĐÂU:</strong> {insight.where}
+          </div>
+          <div className="insight-row pros">
+            <strong>✅ LỢI ÍCH:</strong> {insight.pros}
+          </div>
+          <div className="insight-row cons">
+            <strong>⚠️ TÁC HẠI / RỦI RO:</strong> {insight.cons}
+          </div>
+        </div>
+      )}
     </button>
   );
 }

@@ -20,9 +20,40 @@ export default function ReviewScreen() {
     startOps,
     busy,
     logbook,
+    tutorialMode,
+    completeTutorialToBrief,
+    startTutorialSandbox,
   } = useGame();
 
-  if (!outcome) return null;
+  if (tutorialMode || outcome?.sandboxComplete || !outcome) {
+    return (
+      <div className="sandbox-end-wrap">
+        <section className="panel sandbox-end-card">
+          <div className="sandbox-end-badge">✓ HOÀN THÀNH HƯỚNG DẪN SANDBOX</div>
+          <h2 className="sandbox-end-title">Kết thúc sandbox, quay về cốt truyện</h2>
+          <p className="sandbox-end-desc">
+            Bạn đã hoàn tất toàn bộ quy trình từ thiết kế 9 thành phần vệ tinh, kiểm định 3 lỗi phần cứng (nghe tiếng xì ga, soi X-Ray vết nứt vàng, kéo trục pháp gương trùng trục đứng 0°), phóng tên lửa 3D tới vận hành 12 tháng trên quỹ đạo.
+          </p>
+          <div className="sandbox-end-actions">
+            <button
+              type="button"
+              className="btn neon-btn sandbox-return-btn"
+              onClick={completeTutorialToBrief}
+            >
+              ↩ RETURN (QUAY VỀ CỐT TRUYỆN)
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => startTutorialSandbox(false)}
+            >
+              🛠️ CHƠI LẠI SANDBOX (TẮT HƯỚNG DẪN)
+            </button>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="debrief-grid">

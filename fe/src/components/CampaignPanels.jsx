@@ -203,23 +203,44 @@ const EVENT_SOUND = {
 };
 
 /** 12 moc tren quy dao: vong doi ve tinh chay dan, dong ho rung theo so lieu that. */
-export function LifePhase({ life, design, catalog, audioOn, onDone }) {
+export function LifePhase({
+  life,
+  design,
+  catalog,
+  audioOn,
+  onDone,
+  onReturnCampaign,
+  tutorialMode = false,
+  tutorialPaused = false,
+  onResumeFromTutorial,
+  onTutorialFinishStep,
+}) {
   const [shown, setShown] = useState(0);
-  const [speed, setSpeed] = useState(1);
+  const [speed, setSpeed] = useState(tutorialMode ? 3 : 1);
   const [paused, setPaused] = useState(false);
   const audioRef = useRef(audioOn);
   audioRef.current = audioOn;
+  const finishNotifiedRef = useRef(false);
   const total = life.steps.length;
   const finished = shown >= total;
+  const effectivePaused = paused || (!finished && tutorialPaused);
   const cur = shown > 0 ? life.steps[shown - 1] : null;
   const dead = Boolean(cur && !cur.alive);
 
   useEffect(() => {
     setShown(0);
+    finishNotifiedRef.current = false;
   }, [life]);
 
   useEffect(() => {
-    if (finished || paused) return undefined;
+    if (finished && tutorialMode && !finishNotifiedRef.current) {
+      finishNotifiedRef.current = true;
+      onTutorialFinishStep?.();
+    }
+  }, [finished, tutorialMode, onTutorialFinishStep]);
+
+  useEffect(() => {
+    if (finished || effectivePaused) return undefined;
     const id = setTimeout(() => {
       const step = life.steps[shown];
       const crit = step.events.find((e) => e.level === 'crit');
@@ -239,7 +260,7 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
       setShown((s) => s + 1);
     }, shown === 0 ? 700 : 1400 / speed);
     return () => clearTimeout(id);
-  }, [shown, finished, paused, speed, life]);
+  }, [shown, finished, effectivePaused, speed, life]);
 
   const snapshot = {
     auto: true,
@@ -286,7 +307,33 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
               );
             })}
           </div>
+          {!finished && tutorialPaused && (
+            <div className="ok-banner" style={{ marginTop: 8 }}>
+              ⏸ ĐANG TẠM DỪNG MÔ PHỎNG QUỸ ĐẠO ĐỂ GIỚI THIỆU — XEM XONG BẤM [BẮT ĐẦU VẬN HÀNH ▶]
+            </div>
+          )}
           {dead && <div className="halt-banner">⚠ SIMULATION HALTED — MẤT VỆ TINH Ở THÁNG {cur.month}</div>}
+          {finished && tutorialMode && (
+            <div className="sandbox-end-inline" style={{ marginTop: 10 }}>
+              <div className="row-between" style={{ gap: 10, flexWrap: 'wrap' }}>
+                <div>
+                  <strong className="neon-green" style={{ fontSize: 15 }}>
+                    ★ Kết thúc sandbox, quay về cốt truyện
+                  </strong>
+                  <div className="small muted" style={{ marginTop: 2 }}>
+                    Bạn đã hoàn thành toàn bộ hướng dẫn Sandbox 12 tháng trên quỹ đạo!
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn neon-btn sandbox-return-btn"
+                  onClick={onReturnCampaign || onDone}
+                >
+                  ↩ RETURN (QUAY VỀ CỐT TRUYỆN)
+                </button>
+              </div>
+            </div>
+          )}
           {finished && (
             <div style={{ marginTop: 10 }}>
               <HumanityImpactCard
@@ -300,8 +347,19 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
           )}
           <div className="row-between" style={{ marginTop: 10 }}>
             <div className="row-wrap">
-              <button className="btn" disabled={finished} onClick={() => setPaused((p) => !p)}>
-                {paused ? 'RESUME' : 'PAUSE'}
+              <button
+                className={`btn ${!finished && tutorialPaused ? 'neon-btn' : ''}`}
+                disabled={finished}
+                onClick={() => {
+                  if (!finished && tutorialPaused) {
+                    setPaused(false);
+                    onResumeFromTutorial?.();
+                  } else {
+                    setPaused((p) => !p);
+                  }
+                }}
+              >
+                {effectivePaused ? '▶ BẮT ĐẦU / RESUME' : 'PAUSE'}
               </button>
               {[1, 3].map((w) => (
                 <button key={w} className={`btn ${speed === w ? 'primary' : ''}`} onClick={() => setSpeed(w)}>
@@ -313,9 +371,9 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
               className="btn primary hazard hazard-cta"
               data-tutorial="orbit-next"
               disabled={!finished}
-              onClick={onDone}
+              onClick={tutorialMode ? (onReturnCampaign || onDone) : onDone}
             >
-              [ {dead ? 'PRESENT PROOF TO DIRECTOR' : 'HỌP TỔNG KẾT VỚI SẾP'} ]
+              [ {tutorialMode ? '↩ RETURN — KẾT THÚC SANDBOX, QUAY VỀ CỐT TRUYỆN' : dead ? 'PRESENT PROOF TO DIRECTOR' : 'HỌP TỔNG KẾT VỚI SẾP'} ]
             </button>
           </div>
         </section>

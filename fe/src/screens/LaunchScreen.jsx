@@ -22,9 +22,28 @@ export default function LaunchScreen() {
     startLife,
     setPhase,
     loadMission,
+    tutorialOpen,
+    closeTutorial,
+    completeTutorialToBrief,
   } = useGame();
 
-  if (!flightData) return null;
+  if (!flightData) {
+    return (
+      <div className="sandbox-end-wrap">
+        <section className="panel sandbox-end-card">
+          <div className="sandbox-end-badge">✓ KẾT THÚC HƯỚNG DẪN SANDBOX</div>
+          <h2 className="sandbox-end-title">Kết thúc sandbox, quay về cốt truyện</h2>
+          <div className="sandbox-end-actions">
+            <button type="button" className="btn neon-btn sandbox-return-btn" onClick={completeTutorialToBrief}>
+              ↩ RETURN (QUAY VỀ CỐT TRUYỆN)
+            </button>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  const tutorialPaused = Boolean(tutorialOpen && !launchResult);
 
   return (
     <div className="launch-grid">
@@ -43,6 +62,8 @@ export default function LaunchScreen() {
           audioOn={audioOn}
           onEvent={onLaunchEvent}
           onEnd={onLaunchEnd}
+          tutorialPaused={tutorialPaused}
+          onResumeFromTutorial={closeTutorial}
         />
       </section>
 
@@ -93,8 +114,8 @@ export default function LaunchScreen() {
 
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {launchResult?.success && (
-            <button className="btn primary" disabled={busy} onClick={startLife}>
-              THEO DÕI 12 MỐC QUỸ ĐẠO [05] →
+            <button className="btn primary hazard hazard-cta" data-tutorial="launch-next" disabled={busy} onClick={startLife}>
+              [ THEO DÕI 12 MỐC QUỸ ĐẠO [05] → ]
             </button>
           )}
           {launchResult && !launchResult.success && reputation > 0 && (

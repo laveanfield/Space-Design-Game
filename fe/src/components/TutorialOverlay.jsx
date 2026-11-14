@@ -1,252 +1,353 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { EngineerCircleAvatar } from '../story/Portraits';
+import { SLOTS, getPartInsight } from '../core/gameMachine';
+import { useGame } from '../core/GameContext';
 
 /**
- * TutorialOverlay -- Lop phu huong dan tung man hinh (phase):
- * Khoanh vung (spotlight cutout) + ve mui ten SVG chi thang vao vung can thao tac.
+ * TutorialOverlay — Hướng dẫn Kỹ sư trưởng:
+ * 1. Khoanh vùng chính xác vị trí cần quan tâm + làm tối nhẹ vùng xung quanh (Spotlight Dimming) nhưng vẫn cho click tự do.
+ * 2. Đặt Hình tròn Kỹ sư trưởng + Ô hướng dẫn ở GÓC TRÊN PHẢI (có thể đổi vị trí) để KHÔNG che các nút bấm góc dưới phải.
+ * 3. Ở màn 02.BUILD: hướng dẫn tuần tự từng mục 1..9, hiển thị rõ Dùng ở đâu / Lợi ích (+) / Tác hại (-) của lựa chọn hiện tại,
+ *    chỉ qua mục tiếp theo khi người chơi nhấn nút [TIẾP THEO].
+ * 4. Ở màn 03.INSPECT: hướng dẫn cặn kẽ 3 nhiệm vụ (Audio xì ga, X-Ray mesh trắng thưa ở Full Stack / Payload Focus, Kéo góc Camera về 0°).
+ * 5. Ở màn 04.LAUNCH_3D & 05.ORBIT_12M: tạm dừng (pause) game khi đang giới thiệu, bấm [BẮT ĐẦU ▶] mới chạy.
  */
 
 export const TUTORIAL_STEPS = {
-  brief: [
-    {
-      target: 'brief-missions',
-      title: '1. CHỌN NHIỆM VỤ (MISSIONS)',
-      body: 'Chọn một chiến dịch ở cột trái (từ Level 1 tới các nhiệm vụ khó hơn). Mỗi màn sẽ có điều kiện quỹ đạo và lỗi vật lý riêng.',
-    },
-    {
-      target: 'brief-kpis',
-      title: '2. ĐỌC GIỚI HẠN NGÂN SÁCH & HẠN CHÓT',
-      body: 'Kiểm tra BUDGET LIMIT và DEADLINE. Vượt ngân sách hoặc trễ tiến độ đều bị Sếp trừ thời gian soi lỗi trước giờ phóng!',
-    },
-    {
-      target: 'brief-start',
-      title: '3. VÀO XƯỞNG CHẾ TẠO [02]',
-      body: 'Nhấn nút này để mở phòng lắp ráp vệ tinh 3D và bắt đầu chọn linh kiện.',
-    },
-  ],
   design: [
     {
       target: 'build-slots',
-      title: '1. KHO LINH KIỆN & TEM CẢNH BÁO',
-      body: 'Chuyển qua các tab (ORBIT, PAYLOAD, BUS, SOLAR, BATTERY, COMM, OBC, ADCS, LAUNCHER) để lắp ghép. Thẻ viền vàng [CHEAP/UNVERIFIED] rẻ nhưng dễ hỏng trên quỹ đạo!',
+      slotId: 'orbit',
+      title: 'BƯỚC 1/10 • CHỌN QUỸ ĐẠO BAY (1.ORBIT)',
+      body: (
+        <>
+          Bấm thử từng mức <span className="neon-green">1.ORBIT (Quỹ đạo)</span> ở cột trái để xem{' '}
+          <span className="neon-green">Dùng ở đâu, Lợi ích &amp; Tác hại</span>. Khi ưng ý, bấm{' '}
+          <span className="neon-green">[TIẾP THEO →]</span> để mở hệ phóng!
+        </>
+      ),
     },
     {
-      target: 'build-hangar',
-      title: '2. BÀN XOAY LẮP RÁP 3D & QUỸ ĐẠO LIVE',
-      body: 'Vệ tinh 3D và đồ thị quỹ đạo phía dưới tự cập nhật tức thì theo từng món đồ bạn gắn. Kéo chuột để xoay, cuộn để zoom, bấm GẬP/MỞ CÁNH để kiểm tra.',
+      target: 'build-slots',
+      slotId: 'launch',
+      title: 'BƯỚC 2/10 • CHỌN TÊN LỬA ĐẨY (2.LAUNCH)',
+      body: (
+        <>
+          Chọn <span className="neon-green">2.LAUNCH (Tên lửa &amp; Bãi phóng)</span>. Chú ý{' '}
+          <span className="neon-green">Sức nâng (CAP kg)</span> và{' '}
+          <span className="neon-green">Đường kính mũi (FAIR m)</span> rồi bấm{' '}
+          <span className="neon-green">[TIẾP THEO →]</span>!
+        </>
+      ),
     },
     {
-      target: 'build-telemetry',
-      title: '3. THEO DÕI 4 THANH SINH TỒN & SẾP',
-      body: 'Quan sát 4 thanh POWER, MASS, SIGNAL, INTEGRITY (10 nấc) cùng đồng hồ ngân sách/tiến độ để cân bằng chi phí và độ bền.',
+      target: 'build-slots',
+      slotId: 'bus',
+      title: 'BƯỚC 3/10 • CHỌN KHUNG VỆ TINH (3.BUS)',
+      body: (
+        <>
+          Chọn <span className="neon-green">3.BUS (Khung chịu lực chính)</span>. Khung quyết định{' '}
+          <span className="neon-green">Trần khối lượng (≤ kg)</span> và{' '}
+          <span className="neon-green">Công suất cấp cho thiết bị (W)</span>.
+        </>
+      ),
+    },
+    {
+      target: 'build-slots',
+      slotId: 'instruments',
+      title: 'BƯỚC 4/10 • CHỌN CAMERA / CẢM BIẾN (4.INSTR)',
+      body: (
+        <>
+          Chọn <span className="neon-green">4.INSTR (Thiết bị quan sát)</span>. Lưu ý camera{' '}
+          <span className="neon-green">giá rẻ (Basic)</span> nhẹ nhưng dễ lệch góc lắp ráp; camera lớn cần{' '}
+          <span className="neon-green">nhiều điện &amp; băng thông</span>!
+        </>
+      ),
+    },
+    {
+      target: 'build-slots',
+      slotId: 'power',
+      title: 'BƯỚC 5/10 • CHỌN CÁNH PIN MẶT TRỜI (5.POWER)',
+      body: (
+        <>
+          Chọn <span className="neon-green">5.POWER (Pin Mặt Trời)</span> để phát điện nuôi tàu khi có nắng.{' '}
+          <span className="neon-green">Công suất phát (GEN W)</span> phải lớn hơn tổng tải tiêu thụ!
+        </>
+      ),
+    },
+    {
+      target: 'build-slots',
+      slotId: 'battery',
+      title: 'BƯỚC 6/10 • CHỌN PIN DỰ TRỮ VÙNG TỐI (6.BATT)',
+      body: (
+        <>
+          Chọn <span className="neon-green">6.BATT (Ắc-quy Li-ion)</span> để nuôi vệ tinh khi bay vào{' '}
+          <span className="neon-green">bóng tối Trái Đất (Eclipse)</span>, tránh sập nguồn!
+        </>
+      ),
+    },
+    {
+      target: 'build-slots',
+      slotId: 'comm',
+      title: 'BƯỚC 7/10 • CHỌN ĂNG-TEN TRUYỀN TIN (7.COMM)',
+      body: (
+        <>
+          Chọn <span className="neon-green">7.COMM (Ăng-ten)</span>. Tốc độ{' '}
+          <span className="neon-green">Downlink (Mbps)</span> phải đủ nhanh để truyền hết lượng GB ảnh chụp mỗi ngày!
+        </>
+      ),
+    },
+    {
+      target: 'build-slots',
+      slotId: 'obc',
+      title: 'BƯỚC 8/10 • CHỌN MÁY TÍNH ĐIỀU KHIỂN (8.OBC)',
+      body: (
+        <>
+          Chọn <span className="neon-green">8.OBC (Máy tính trung tâm)</span>. Độ chịu bức xạ{' '}
+          <span className="neon-green">RAD (krad)</span> phải cao hơn bức xạ quỹ đạo để không bị cháy chip!
+        </>
+      ),
+    },
+    {
+      target: 'build-slots',
+      slotId: 'adcs',
+      title: 'BƯỚC 9/10 • CHỌN HỆ ĐIỀU HƯỚNG (9.ADCS)',
+      body: (
+        <>
+          Chọn <span className="neon-green">9.ADCS (Ổn định tư thế)</span>. Sai số góc{' '}
+          <span className="neon-green">PT (±°)</span> phải nhỏ hơn yêu cầu của Camera để ảnh chụp không bị nhòe!
+        </>
+      ),
     },
     {
       target: 'build-next',
-      title: '4. SANG PHÒNG KIỂM ĐỊNH [GO TO INSPECTION]',
-      body: 'Triết lý LAUNCH ANYTHING: mọi cấu hình đều được phép mang đi kiểm định & phóng thử. Bấm nút này để sang pha soi X-Ray!',
+      title: 'BƯỚC 10/10 • HOÀN TẤT LẮP RÁP → SANG TÌM LỖI!',
+      body: (
+        <>
+          Bạn đã nắm rõ cả 9 phân hệ! Bấm nút <span className="neon-green">[ GO TO INSPECTION ]</span> đang khoanh vùng ở dưới để vào{' '}
+          <span className="neon-green">Buồng Chẩn Đoán 3 Nhiệm Vụ Tìm Lỗi</span>!
+        </>
+      ),
     },
   ],
   inspect: [
     {
-      target: 'inspect-timer',
-      title: '1. ĐỒNG HỒ ĐẾM NGƯỢC TIỀN PHÓNG',
-      body: 'Bạn có thời gian giới hạn để tìm lỗi ẩn trước khi tên lửa cất cánh (chế tạo trễ deadline sẽ làm đồng hồ này ngắn đi!).',
-    },
-    {
       target: 'inspect-stage',
-      title: '2. ĐÈN SOI X-RAY TÌM 3 LỖI ẨN',
-      body: 'Rê chuột quanh mô hình tàu để rọi đèn X-Ray. Khi thấy đốm dị thường phát sáng, CLICK TRỰC TIẾP lên điểm đó để khắc phục ngay!',
+      title: 'NHIỆM VỤ 1/3 • NGHE TIẾNG XÌ GA TO/NHỎ ĐỂ BẤM',
+      body: (
+        <>
+          Mắt thường <span className="neon-green">không thấy điểm xì</span>! Hãy rê chuột dọc thân tên lửa, lắng nghe{' '}
+          <span className="neon-green">tiếng xì ga TO DẦN rồi NHỎ DẦN</span> (kèm đồng hồ{' '}
+          <span className="neon-green">1. AUDIO HISS</span>). Nghe to nhất ở đâu →{' '}
+          <span className="neon-green">CLICK chuột ngay vào đó</span>!
+        </>
+      ),
     },
     {
-      target: 'inspect-checklist',
-      title: '3. BÌA HỒ SƠ CHECKLIST & ĐỒNG HỒ ĐO',
-      body: 'Khi đèn quét tới gần điểm lỗi, đồng hồ đo nhiễu bên dưới sẽ rung mạnh và mục lỗi hiện lên bảng checklist (bạn cũng có thể bấm PATCH tại đây).',
+      target: 'inspect-tools',
+      title: 'NHIỆM VỤ 2/3 • X-RAY TÌM ĐƯỜNG NỨT VÀNG NHỎ',
+      body: (
+        <>
+          Bấm <span className="neon-green">[ 🩻 BẬT X-RAY MESH ]</span> để hiện lưới trắng thưa và tìm{' '}
+          <span className="neon-green">đường ngoằn nghoèo nhỏ màu vàng</span> để bấm hàn!{' '}
+          <span className="neon-green">Tên lửa dỏm có 2–3 vết</span> ở cả{' '}
+          <span className="neon-green">FULL STACK</span> lẫn giấu trong <span className="neon-green">PAYLOAD FOCUS</span>!
+        </>
+      ),
+    },
+    {
+      target: 'inspect-cam-align',
+      title: 'NHIỆM VỤ 3/3 • KÉO TRỤC PHÁP GƯƠNG TRÙNG TRỤC ĐỨNG (0.0°)',
+      body: (
+        <>
+          Ngay trên model 3D phía trên có <span className="neon-green">1 Trục Đứng (0.0°)</span> và{' '}
+          <span className="neon-green">1 Trục Pháp tuyến Gương</span> đang bị lệch (do camera dỏm bị rơ bánh răng &amp; kẹt lò xo). Hãy{' '}
+          <span className="neon-green">ghì kéo chuột trực tiếp trên model</span> đưa{' '}
+          <span className="neon-green">Trục Pháp trùng khít Trục Đứng (hiện màu XANH)</span> và{' '}
+          <span className="neon-green">giữ yên ở đó đến 100%</span>!
+        </>
+      ),
     },
     {
       target: 'inspect-finish',
-      title: '4. CHUYỂN RA BỆ PHÓNG [FINISH INSPECTION]',
-      body: 'Sau khi kiểm tra hoặc vá lỗi xong, nhấn nút này để bắt đầu phóng tên lửa 3D.',
+      title: 'ĐÃ SỬA XONG • ĐƯA TÊN LỬA RA BỆ PHÓNG!',
+      body: (
+        <>
+          Hoàn tất kiểm định! Bấm nút <span className="neon-green">[ FINISH INSPECTION ]</span> ở góc dưới phải để chuyển sang{' '}
+          <span className="neon-green">Màn Phóng Tên Lửa 3D</span>!
+        </>
+      ),
     },
   ],
   launch: [
     {
       target: 'launch-canvas',
-      title: '1. MÔ PHỎNG PHÓNG TÊN LỬA 3D',
-      body: 'Quan sát tên lửa rời bệ, vượt vùng áp suất Max-Q, tách tầng và bung fairing. Dùng các nút 4x / 12x / 30x ở góc dưới để tua nhanh.',
+      title: 'PHÓNG 3D (ĐANG PAUSE) • QUAN SÁT BỆ PHÓNG',
+      body: (
+        <>
+          Game đang <span className="neon-green">TẠM DỪNG</span> để bạn xem hướng dẫn. Khi phóng, tên lửa sẽ vượt{' '}
+          <span className="neon-green">Max-Q</span>, <span className="neon-green">tách tầng</span> và{' '}
+          <span className="neon-green">bung fairing</span>. Có thể dùng nút <span className="neon-green">4x / 12x / 30x</span> góc dưới để tua nhanh!
+        </>
+      ),
     },
     {
       target: 'launch-sequencer',
-      title: '2. BẢNG TRÌNH TỰ PHÓNG (ASCENT SEQUENCER)',
-      body: 'Theo dõi từng mốc sự kiện bay. Nếu vượt tải fairing hoặc còn lỗi lắp ráp chưa sửa, tên lửa sẽ nổ tại Max-Q kèm hồ sơ nguyên nhân!',
+      title: 'TRÌNH TỰ BAY • BẤM ĐỂ BẮT ĐẦU PHÓNG!',
+      body: (
+        <>
+          Bảng bên phải theo dõi từng mốc <span className="neon-green">IGNITION → LIFTOFF → MAX-Q → PAYLOAD_SEP</span>. Bấm{' '}
+          <span className="neon-green">[ ▶ BẮT ĐẦU PHÓNG! ]</span> bên dưới để tên lửa rời bệ ngay!
+        </>
+      ),
+    },
+    {
+      target: 'launch-next',
+      title: 'ĐẠT QUỸ ĐẠO 100% • SANG VẬN HÀNH VỆ TINH!',
+      body: (
+        <>
+          <span className="neon-green">PHÓNG THÀNH CÔNG!</span> Bấm nút{' '}
+          <span className="neon-green">[ THEO DÕI 12 MỐC QUỸ ĐẠO [05] → ]</span> đang khoanh vùng để kiểm tra vệ tinh chụp ảnh!
+        </>
+      ),
     },
   ],
   life: [
     {
       target: 'orbit-canvas',
-      title: '1. GIÁM SÁT QUỸ ĐẠO 12 THÁNG',
-      body: 'Theo dõi vệ tinh vận hành qua 12 mốc. Nếu chọn chip OBC yếu bức xạ hay thiếu điện vùng tối, hệ thống sẽ dừng ở mốc sự cố (SIMULATION HALTED).',
+      title: 'QUỸ ĐẠO 12 THÁNG (ĐANG PAUSE) • VÒNG ĐỜI TÀU',
+      body: (
+        <>
+          Mô phỏng đang <span className="neon-green">TẠM DỪNG</span>. Vệ tinh sẽ bay qua{' '}
+          <span className="neon-green">12 tháng</span> quanh Trái Đất, tự động sạc pin ngoài nắng và xả pin khi vào bóng tối.
+        </>
+      ),
     },
     {
       target: 'orbit-telemetry',
-      title: '2. TELEMETRY & BẰNG CHỨNG ẢNH CHỤP',
-      body: 'Xem mức pin (SOC), liều bức xạ tích lũy (RADIATION DOSE), đường truyền downlink và các bức ảnh chụp được từ payload.',
+      title: 'TELEMETRY & ẢNH VỆ TINH • BẮT ĐẦU CHẠY!',
+      body: (
+        <>
+          Bên phải hiển thị <span className="neon-green">Pin (SOC), Bức xạ (RAD)</span> và{' '}
+          <span className="neon-green">Ảnh chụp vệ tinh (Evidence Gallery)</span>. Bấm{' '}
+          <span className="neon-green">[ ▶ BẮT ĐẦU VẬN HÀNH! ]</span> để tàu bay và chụp ảnh!
+        </>
+      ),
     },
     {
       target: 'orbit-next',
-      title: '3. TRÌNH BẰNG CHỨNG CHO SẾP [06]',
-      body: 'Khi hết 12 mốc hoặc khi tàu gặp sự cố, nhấn nút này để mở hồ sơ chất vấn Sếp kế toán.',
+      title: 'KẾT THÚC SANDBOX, QUAY VỀ CỐT TRUYỆN!',
+      body: (
+        <>
+          <span className="neon-green">Kết thúc sandbox, quay về cốt truyện!</span> Bạn đã hoàn thành xuất sắc 12 tháng vận hành vệ tinh. Bấm nút{' '}
+          <span className="neon-green">[ ↩ RETURN ]</span> để quay về cốt truyện chính!
+        </>
+      ),
+    },
+  ],
+  brief: [
+    {
+      target: 'brief-missions',
+      title: '1. CHỌN CHIẾN DỊCH (MISSIONS)',
+      body: (
+        <>
+          Chọn một <span className="neon-green">Nhiệm vụ không gian</span> ở cột trái. Bạn cũng có thể bấm{' '}
+          <span className="neon-green">Chơi lại Sandbox (Có hoặc Tắt hướng dẫn)</span> bất cứ lúc nào!
+        </>
+      ),
+    },
+    {
+      target: 'brief-start',
+      title: '2. VÀO XƯỞNG CHẾ TẠO [02.BUILD]',
+      body: (
+        <>
+          Bấm <span className="neon-green">[ VÀO XƯỞNG CHẾ TẠO → ]</span> để bắt đầu thiết kế vệ tinh cho nhiệm vụ đã chọn!
+        </>
+      ),
     },
   ],
   review: [
     {
       target: 'review-impact',
-      title: '1. BÁO CÁO HẬU QUẢ NHÂN LOẠI',
-      body: 'Đọc câu chuyện hậu quả trực tiếp trên Trái Đất từ kết quả phóng và vận hành vệ tinh ở màn này (diện tích rừng, lưới điện, khí hậu...).',
-    },
-    {
-      target: 'review-dossier',
-      title: '2. HỒ SƠ NGUYÊN NHÂN GỐC (DOSSIER)',
-      body: 'Kiểm tra chính xác lý do nhiệm vụ thất bại hoặc thành công (bức xạ, thiếu nguồn, thiếu dữ liệu, sai góc chụp...).',
+      title: '1. BÁO CÁO HẬU QUẢ TRÁI ĐẤT',
+      body: (
+        <>
+          Xem <span className="neon-green">tác động thực tế</span> của chuyến bay và{' '}
+          <span className="neon-green">nguyên nhân gốc</span> trong hồ sơ kỹ thuật.
+        </>
+      ),
     },
     {
       target: 'review-confront',
-      title: '3. CHẤT VẤN SẾP (BOSS CONFRONTATION)',
-      body: 'Nếu tàu hỏng do bị Sếp ép ngân sách/deadline, chọn đúng thẻ chứng cứ khớp nguyên nhân rồi bấm TẤN CÔNG để mở khóa thêm tiền & thời gian!',
-    },
-    {
-      target: 'review-actions',
-      title: '4. QUAY VỀ XƯỞNG NÂNG CẤP HOẶC ĐỔI MÀN',
-      body: 'Sử dụng ngân sách vừa mở khóa quay lại Xưởng Chế Tạo để thay linh kiện xịn hơn và phóng lại.',
-    },
-  ],
-  ops: [
-    {
-      target: 'ops-controls',
-      title: 'VẬN HÀNH TAY (MANUAL OPS)',
-      body: 'Điều khiển góc hướng (ADCS) và xung đẩy (RCS) theo thời gian thực để tối ưu liên lạc trạm mặt đất.',
-    },
-  ],
-  debrief: [
-    {
-      target: 'ops-controls',
-      title: 'PHÂN TÍCH TỔNG QUAN',
-      body: 'Xem đồ thị đánh đổi và gợi ý tối ưu thiết kế cho nhiệm vụ hiện tại.',
+      title: '2. CHẤT VẤN SẾP MỞ KHÓA NGÂN SÁCH',
+      body: (
+        <>
+          Chọn <span className="neon-green">Thẻ bằng chứng khớp lỗi</span> để buộc Sếp mở khóa thêm{' '}
+          <span className="neon-green">Ngân sách &amp; Thời gian</span>!
+        </>
+      ),
     },
   ],
 };
 
-function computeOverlayGeometry(rect) {
+function computeFocusBox(rect) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const pad = 8;
+  const pad = 6;
   const topbarBottom = (document.querySelector('.topbar')?.getBoundingClientRect().bottom || 0) + 4;
-  const minY = Math.min(vh - 80, Math.max(8, topbarBottom));
+  const minY = Math.min(vh - 60, Math.max(6, topbarBottom));
 
   const boxX = Math.max(6, rect.left - pad);
   const boxY = Math.max(minY, rect.top - pad);
   const boxR = Math.min(vw - 6, rect.right + pad);
   const boxB = Math.min(vh - 6, rect.bottom + pad);
-  const box = {
+  return {
     x: boxX,
     y: boxY,
-    w: Math.max(40, boxR - boxX),
-    h: Math.max(40, boxB - boxY),
+    w: Math.max(36, boxR - boxX),
+    h: Math.max(36, boxB - boxY),
   };
-
-  const cardW = Math.min(300, vw - 28);
-  const cardH = 200;
-  const gap = 30;
-
-  // Pick placement side with enough room outside the spotlight box
-  const spaceRight = vw - (box.x + box.w);
-  const spaceLeft = box.x;
-  const spaceBottom = vh - (box.y + box.h);
-  const spaceTop = box.y - minY;
-
-  let side = 'right';
-  if (spaceRight >= cardW + gap) side = 'right';
-  else if (spaceLeft >= cardW + gap) side = 'left';
-  else if (spaceBottom >= cardH + gap) side = 'bottom';
-  else if (spaceTop >= cardH + gap) side = 'top';
-  else {
-    // Pick direction with largest clearance so arrow stays outside the card
-    const ranked = [
-      ['right', spaceRight],
-      ['left', spaceLeft],
-      ['bottom', spaceBottom],
-      ['top', spaceTop],
-    ].sort((a, b) => b[1] - a[1]);
-    side = ranked[0][0];
-  }
-
-  let cardX = box.x;
-  let cardY = box.y;
-  if (side === 'right') {
-    cardX = box.x + box.w + gap;
-    cardY = box.y + Math.min(box.h * 0.45, 160) - cardH / 2;
-  } else if (side === 'left') {
-    cardX = box.x - cardW - gap;
-    cardY = box.y + Math.min(box.h * 0.45, 160) - cardH / 2;
-  } else if (side === 'bottom') {
-    cardX = box.x + box.w / 2 - cardW / 2;
-    cardY = box.y + box.h + gap;
-  } else {
-    cardX = box.x + box.w / 2 - cardW / 2;
-    cardY = box.y - cardH - gap;
-  }
-
-  cardX = Math.max(12, Math.min(vw - cardW - 12, cardX));
-  cardY = Math.max(minY + 4, Math.min(vh - cardH - 12, cardY));
-
-  // Connect nearest edge of card to nearest edge of spotlight box so arrow never hides behind card
-  let sx = cardX + cardW / 2;
-  let sy = cardY + cardH / 2;
-  let tx = box.x + box.w / 2;
-  let ty = box.y + box.h / 2;
-
-  if (cardX >= box.x + box.w + 8) {
-    sx = cardX;
-    sy = cardY + cardH * 0.42;
-    tx = box.x + box.w + 4;
-    ty = Math.max(box.y + 24, Math.min(box.y + box.h - 24, sy));
-  } else if (cardX + cardW <= box.x - 8) {
-    sx = cardX + cardW;
-    sy = cardY + cardH * 0.42;
-    tx = box.x - 4;
-    ty = Math.max(box.y + 24, Math.min(box.y + box.h - 24, sy));
-  } else if (cardY >= box.y + box.h + 8) {
-    sx = cardX + cardW / 2;
-    sy = cardY;
-    tx = Math.max(box.x + 28, Math.min(box.x + box.w - 28, sx));
-    ty = box.y + box.h + 4;
-  } else if (cardY + cardH <= box.y - 8) {
-    sx = cardX + cardW / 2;
-    sy = cardY + cardH;
-    tx = Math.max(box.x + 28, Math.min(box.x + box.w - 28, sx));
-    ty = box.y - 4;
-  } else {
-    // Card overlaps box horizontally (fallback on ultra-tall zone): point from top corner of card up to spotlight title area
-    sx = cardX + cardW / 2;
-    sy = cardY;
-    tx = box.x + box.w / 2;
-    ty = box.y + 38;
-  }
-
-  const dx = tx - sx;
-  const dy = ty - sy;
-  const dist = Math.hypot(dx, dy);
-  const bend = Math.min(28, dist * 0.2);
-  const cx = (sx + tx) / 2 - (dy / Math.max(1, dist)) * bend;
-  const cy = (sy + ty) / 2 + (dx / Math.max(1, dist)) * bend;
-
-  return { box, cardX, cardY, cardW, sx, sy, cx, cy, tx, ty };
 }
 
 export default function TutorialOverlay({ phase, stepIndex, onStepChange, onClose }) {
+  const {
+    tutorialMode,
+    completeTutorialToBrief,
+    design,
+    catalog,
+    activeSlot,
+    selectSlot,
+    confirmSlotAndAdvance,
+    enterInspect,
+  } = useGame();
+
   const steps = TUTORIAL_STEPS[phase] || [];
   const safeIndex = Math.max(0, Math.min(steps.length - 1, stepIndex));
   const step = steps[safeIndex];
-  const [geom, setGeom] = useState(null);
+  const [box, setBox] = useState(null);
+  const [dockPos, setDockPos] = useState('top-right'); // 'top-right' mac dinh de khong che nut goc duoi phai
   const scrolledTargetRef = useRef('');
+
+  // Lay thong tin chi tiet (Dung o dau / Loi ich / Tac hai) cua linh kien dang chon o 02.BUILD
+  const buildInsightInfo = (() => {
+    if (phase !== 'design' || !design || !catalog?.tables) return null;
+    const slotId = step?.slotId || activeSlot;
+    if (!slotId) return null;
+    const t = catalog.tables;
+    let item = null;
+    if (slotId === 'orbit') item = t.orbits?.[design.orbit];
+    else if (slotId === 'launch') item = t.launch_vehicles?.[design.launch?.vehicle];
+    else if (slotId === 'bus') item = t.buses?.[design.bus];
+    else if (slotId === 'instruments') item = t.instruments?.[design.instruments?.[0]];
+    else if (slotId === 'power') item = t.power_arrays?.[design.power];
+    else if (slotId === 'battery') item = t.batteries?.[design.battery];
+    else if (slotId === 'comm') item = t.comms?.[design.comm];
+    else if (slotId === 'obc') item = t.avionics?.[design.obc];
+    else if (slotId === 'adcs') item = t.avionics?.[design.adcs];
+    if (!item) return null;
+    const ins = getPartInsight(slotId, item);
+    return { item, ins };
+  })();
 
   useLayoutEffect(() => {
     if (!step) return undefined;
@@ -255,11 +356,11 @@ export default function TutorialOverlay({ phase, stepIndex, onStepChange, onClos
     const measure = () => {
       const el = document.querySelector(`[data-tutorial="${step.target}"]`);
       if (!el) {
-        setGeom(null);
+        setBox(null);
         return;
       }
-      if (scrolledTargetRef.current !== `${phase}:${step.target}`) {
-        scrolledTargetRef.current = `${phase}:${step.target}`;
+      if (scrolledTargetRef.current !== `${phase}:${step.target}:${safeIndex}`) {
+        scrolledTargetRef.current = `${phase}:${step.target}:${safeIndex}`;
         const r0 = el.getBoundingClientRect();
         if (r0.top < 12 || r0.bottom > window.innerHeight - 12) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -267,9 +368,9 @@ export default function TutorialOverlay({ phase, stepIndex, onStepChange, onClos
       }
       const r = el.getBoundingClientRect();
       if (r.width > 0 && r.height > 0) {
-        setGeom(computeOverlayGeometry(r));
+        setBox(computeFocusBox(r));
       } else {
-        setGeom(null);
+        setBox(null);
       }
     };
 
@@ -278,7 +379,7 @@ export default function TutorialOverlay({ phase, stepIndex, onStepChange, onClos
       measure();
       raf = requestAnimationFrame(tick);
     };
-    const stopTimer = setTimeout(() => cancelAnimationFrame(raf), 420);
+    const stopTimer = setTimeout(() => cancelAnimationFrame(raf), 600);
     raf = requestAnimationFrame(tick);
 
     window.addEventListener('resize', measure);
@@ -289,153 +390,268 @@ export default function TutorialOverlay({ phase, stepIndex, onStepChange, onClos
       window.removeEventListener('resize', measure);
       window.removeEventListener('scroll', measure, true);
     };
-  }, [phase, step]);
+  }, [phase, step, safeIndex]);
 
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         onClose();
-      } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
-        e.preventDefault();
-        if (safeIndex + 1 >= steps.length) onClose();
-        else onStepChange(safeIndex + 1);
-      } else if (e.key === 'ArrowLeft' && safeIndex > 0) {
-        e.preventDefault();
-        onStepChange(safeIndex - 1);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [safeIndex, steps.length, onClose, onStepChange]);
+  }, [onClose]);
 
   if (!step) return null;
 
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 720;
-  const cardStyle = geom
-    ? { left: geom.cardX, top: geom.cardY, width: geom.cardW }
-    : { left: Math.max(16, (vw - 360) / 2), top: Math.max(72, vh * 0.28), width: Math.min(360, vw - 32) };
+
+  const handleNextStep = () => {
+    if (phase === 'design') {
+      if (safeIndex < SLOTS.length) {
+        confirmSlotAndAdvance();
+      } else {
+        enterInspect();
+      }
+      return;
+    }
+    if (phase === 'launch') {
+      if (safeIndex === 0) {
+        onStepChange(1);
+      } else if (safeIndex === 1) {
+        // Kich hoat bat dau phong (unpause Launch3DCanvas)
+        onClose();
+      } else {
+        onClose();
+      }
+      return;
+    }
+    if (phase === 'life') {
+      if (safeIndex === 0) {
+        onStepChange(1);
+      } else if (safeIndex === 1) {
+        // Kich hoat bat dau chay 12 thang quy dao (unpause LifePhase)
+        onClose();
+      } else if (tutorialMode) {
+        completeTutorialToBrief();
+      } else {
+        onClose();
+      }
+      return;
+    }
+    if (safeIndex + 1 < steps.length) {
+      onStepChange(safeIndex + 1);
+    } else {
+      onClose();
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (safeIndex <= 0) return;
+    const prevIdx = safeIndex - 1;
+    if (phase === 'design' && prevIdx < SLOTS.length) {
+      selectSlot(SLOTS[prevIdx].id);
+    } else {
+      onStepChange(prevIdx);
+    }
+  };
+
+  let nextBtnLabel = 'TIẾP THEO →';
+  if (phase === 'design') {
+    if (safeIndex < SLOTS.length - 1) {
+      nextBtnLabel = `TIẾP: MỞ ${SLOTS[safeIndex + 1].label} →`;
+    } else if (safeIndex === SLOTS.length - 1) {
+      nextBtnLabel = 'XONG 9 MỤC → XEM NÚT KIỂM ĐỊNH';
+    } else {
+      nextBtnLabel = 'VÀO PHÒNG TÌM LỖI [03] →';
+    }
+  } else if (phase === 'launch') {
+    if (safeIndex === 0) nextBtnLabel = 'TIẾP THEO →';
+    else if (safeIndex === 1) nextBtnLabel = '▶ BẮT ĐẦU PHÓNG!';
+    else nextBtnLabel = 'ĐÃ HIỂU ✓';
+  } else if (phase === 'life') {
+    if (safeIndex === 0) nextBtnLabel = 'TIẾP THEO →';
+    else if (safeIndex === 1) nextBtnLabel = '▶ BẮT ĐẦU VẬN HÀNH!';
+    else nextBtnLabel = '↩ RETURN (QUAY VỀ CỐT TRUYỆN)';
+  } else if (safeIndex + 1 >= steps.length) {
+    nextBtnLabel = 'ĐÃ HIỂU ✓';
+  }
 
   return (
-    <div className="tutorial-overlay" role="dialog" aria-modal="true" aria-label="Hướng dẫn pha chơi">
+    <div className="tutorial-overlay" aria-label="Hướng dẫn Kỹ sư trưởng">
+      {/* Khoanh vùng sáng rõ vị trí cần quan tâm + Giảm độ sáng xung quanh một chút (pointer-events: none để không chặn thao tác) */}
       <svg className="tutorial-svg" viewBox={`0 0 ${vw} ${vh}`} preserveAspectRatio="none">
         <defs>
           <mask id="tut-spotlight-mask">
             <rect x="0" y="0" width={vw} height={vh} fill="white" />
-            {geom && (
+            {box && (
               <rect
-                x={geom.box.x}
-                y={geom.box.y}
-                width={geom.box.w}
-                height={geom.box.h}
-                rx="6"
+                x={box.x}
+                y={box.y}
+                width={box.w}
+                height={box.h}
+                rx="8"
                 fill="black"
               />
             )}
           </mask>
-          <marker
-            id="tut-arrowhead"
-            viewBox="0 0 12 12"
-            refX="9"
-            refY="6"
-            markerWidth="9"
-            markerHeight="9"
-            orient="auto-start-reverse"
-          >
-            <path d="M 1 1 L 11 6 L 1 11 z" fill="#ffc44d" />
-          </marker>
         </defs>
 
-        {/* Backdrop with spotlight hole */}
-        <rect
-          x="0"
-          y="0"
-          width={vw}
-          height={vh}
-          fill="rgba(7, 9, 12, 0.78)"
-          mask="url(#tut-spotlight-mask)"
-        />
+        {box && (
+          <rect
+            x="0"
+            y="0"
+            width={vw}
+            height={vh}
+            fill="rgba(4, 8, 12, 0.56)"
+            mask="url(#tut-spotlight-mask)"
+          />
+        )}
 
-        {/* Highlighted zone + arrow */}
-        {geom && (
+        {box && (
           <g>
             <rect
-              className="tutorial-focus-ring"
-              x={geom.box.x}
-              y={geom.box.y}
-              width={geom.box.w}
-              height={geom.box.h}
-              rx="6"
-            />
-            <rect
-              className="tutorial-focus-dash"
-              x={geom.box.x - 4}
-              y={geom.box.y - 4}
-              width={geom.box.w + 8}
-              height={geom.box.h + 8}
+              className="tutorial-focus-ring-neon"
+              x={box.x}
+              y={box.y}
+              width={box.w}
+              height={box.h}
               rx="8"
             />
-            <path
-              className="tutorial-arrow-glow"
-              d={`M ${geom.sx} ${geom.sy} Q ${geom.cx} ${geom.cy} ${geom.tx} ${geom.ty}`}
+            <rect
+              className="tutorial-focus-dash-neon"
+              x={box.x - 4}
+              y={box.y - 4}
+              width={box.w + 8}
+              height={box.h + 8}
+              rx="10"
             />
-            <path
-              className="tutorial-arrow-path"
-              d={`M ${geom.sx} ${geom.sy} Q ${geom.cx} ${geom.cy} ${geom.tx} ${geom.ty}`}
-              markerEnd="url(#tut-arrowhead)"
-            />
-            <circle cx={geom.sx} cy={geom.sy} r="4.5" fill="#ffc44d" stroke="#181c20" strokeWidth="1.5" />
           </g>
         )}
       </svg>
 
-      {geom && (
+      {box && (
         <div
-          className="tutorial-zone-tag"
-          style={{ left: geom.box.x, top: Math.max(8, geom.box.y - 24) }}
+          className="tutorial-zone-tag neon"
+          style={{ left: box.x, top: Math.max(46, box.y - 24) }}
         >
-          [ KHOANH VÙNG {safeIndex + 1}/{steps.length} ]
+          [ VÙNG THAO TÁC {safeIndex + 1}/{steps.length} ]
         </div>
       )}
 
-      <div className="tutorial-card" style={cardStyle}>
-        <div className="tutorial-card-head">
-          <span className="tutorial-badge">FIELD MANUAL // {phase.toUpperCase()}</span>
-          <button className="btn small" onClick={onClose}>
-            ĐÓNG [ESC]
-          </button>
-        </div>
-
-        <h3 className="tutorial-card-title">{step.title}</h3>
-        <p className="tutorial-card-body">{step.body}</p>
-
-        <div className="tutorial-card-foot">
-          <div className="tutorial-dots">
-            {steps.map((_, idx) => (
+      {/* Dock Kỹ sư trưởng: Mặc định ở GÓC TRÊN BÊN PHẢI để không bao giờ che nút ở dưới */}
+      <aside
+        className={`eng-tutorial-dock ${dockPos === 'top-right' ? 'pos-top-right' : 'pos-bottom-right'}`}
+        role="region"
+        aria-live="polite"
+      >
+        <div className="eng-tutorial-bubble">
+          <div className="eng-tutorial-head">
+            <span className="eng-tutorial-kicker">
+              <span className="neon-dot" /> KỸ SƯ TRƯỞNG // {tutorialMode ? 'HƯỚNG DẪN SANDBOX' : 'HƯỚNG DẪN'}
+            </span>
+            <div className="eng-tutorial-meta">
               <button
-                key={idx}
-                className={`tutorial-dot ${idx === safeIndex ? 'active' : ''}`}
-                aria-label={`Bước ${idx + 1}`}
-                onClick={() => onStepChange(idx)}
-              />
-            ))}
-          </div>
-          <div className="row-wrap">
-            {safeIndex > 0 && (
-              <button className="btn small" onClick={() => onStepChange(safeIndex - 1)}>
-                ← TRƯỚC
+                type="button"
+                className="eng-skip-btn"
+                onClick={() => setDockPos((p) => (p === 'top-right' ? 'bottom-right' : 'top-right'))}
+                title="Chuyển vị trí hộp thoại Lên trên / Xuống dưới nếu vướng tầm nhìn"
+              >
+                ⇅ {dockPos === 'top-right' ? 'XUỐNG DƯỚI' : 'LÊN TRÊN'}
               </button>
-            )}
-            <button
-              className="btn small primary"
-              onClick={() => (safeIndex + 1 >= steps.length ? onClose() : onStepChange(safeIndex + 1))}
-            >
-              {safeIndex + 1 >= steps.length ? 'ĐÃ HIỂU ✓' : 'TIẾP THEO →'}
-            </button>
+              {tutorialMode && (
+                <button
+                  type="button"
+                  className="eng-skip-btn"
+                  onClick={completeTutorialToBrief}
+                  title="Bỏ qua màn hướng dẫn và vào thẳng Chọn Mission"
+                >
+                  CHỌN MISSION →
+                </button>
+              )}
+              <button
+                type="button"
+                className="eng-skip-btn"
+                onClick={onClose}
+                title="Tạm ẩn hộp thoại hướng dẫn (có thể bật lại ở thanh trên cùng)"
+              >
+                ẨN [ESC]
+              </button>
+            </div>
+          </div>
+
+          <div className="eng-tutorial-title">{step.title}</div>
+          <div className="eng-tutorial-body">{step.body}</div>
+
+          {/* Phan tich chi tiet linh kien dang chon o man 02.BUILD */}
+          {phase === 'design' && safeIndex < SLOTS.length && buildInsightInfo?.ins && (
+            <div className="eng-part-live-box">
+              <div className="eng-part-live-title">
+                ĐANG CHỌN: <span className="neon-green">{buildInsightInfo.item.name || buildInsightInfo.item.id}</span>
+              </div>
+              <div className="eng-part-live-row">
+                <b>📍 Dùng ở đâu:</b> {buildInsightInfo.ins.where}
+              </div>
+              <div className="eng-part-live-row pros">
+                <b>✅ Lợi ích (+):</b> {buildInsightInfo.ins.pros}
+              </div>
+              <div className="eng-part-live-row cons">
+                <b>⚠️ Tác hại (-):</b> {buildInsightInfo.ins.cons}
+              </div>
+            </div>
+          )}
+
+          <div className="eng-tutorial-foot">
+            <div className="tutorial-dots">
+              {steps.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className={`tutorial-dot neon ${idx === safeIndex ? 'active' : ''}`}
+                  aria-label={`Bước ${idx + 1}`}
+                  onClick={() => {
+                    if (phase === 'design' && idx < SLOTS.length) {
+                      selectSlot(SLOTS[idx].id);
+                    } else {
+                      onStepChange(idx);
+                    }
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="row-wrap">
+              {safeIndex > 0 && (
+                <button type="button" className="btn small" onClick={handlePrevStep}>
+                  ← TRƯỚC
+                </button>
+              )}
+              {phase === 'launch' && safeIndex === 0 && (
+                <button type="button" className="btn small neon-btn" onClick={onClose}>
+                  ▶ BẮT ĐẦU PHÓNG!
+                </button>
+              )}
+              {phase === 'life' && safeIndex === 0 && (
+                <button type="button" className="btn small neon-btn" onClick={onClose}>
+                  ▶ BẮT ĐẦU VẬN HÀNH!
+                </button>
+              )}
+              <button type="button" className="btn small neon-btn" onClick={handleNextStep}>
+                {nextBtnLabel}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+
+        <div className="eng-tutorial-avatar-wrap" title="Kỹ sư trưởng hướng dẫn">
+          <div className="eng-tutorial-circle">
+            <EngineerCircleAvatar />
+          </div>
+          <span className="eng-avatar-tag">CHIEF ENG.</span>
+        </div>
+      </aside>
     </div>
   );
 }
