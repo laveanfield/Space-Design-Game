@@ -22,6 +22,8 @@ export async function apiFetch(path, options = {}) {
       const errJson = await res.json();
       if (errJson?.detail) {
         detail = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail);
+      } else if (errJson?.error) {
+        detail = `${errJson.error.code || 'ERROR'}: ${errJson.error.message || JSON.stringify(errJson.error)}`;
       }
     } catch {
       // ignore non-JSON error bodies

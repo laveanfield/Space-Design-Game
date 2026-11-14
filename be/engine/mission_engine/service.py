@@ -12,6 +12,9 @@ from .flight import fly as _fly
 from .session.ops import OpsSession
 from .campaign import simulate_lifetime as _lifetime
 from .campaign.accommodation import matrix as _accommodation_matrix
+from .integrations import mission_comms
+from .rules import metrics
+from .campaign.lifetime import _fire_targets
 
 
 class Engine:
@@ -58,7 +61,14 @@ class Engine:
             if ins.get("science_category") == "Earth observation":       # thiet bi chup anh mat dat -> tu dong chup dam chay
                 imaging = {"sensor": ins.get("kind", "imager_rgb"), "name": ins.get("name", iid), "id": iid}
                 break
-        return _lifetime(report, mission.life_years, design.get("seed", 0) if seed is None else seed, imaging)
+        communications = self.communications(design, mission_id)
+        return _lifetime(report, mission.life_years, design.get("seed", 0) if seed is None else seed, imaging, communications)
+
+    def communications(self, design, mission_id=None):
+        mission = self._m(design, mission_id)
+        it = metrics.resolve(design, self.catalog)
+        m = metrics.compute(design, it, mission, mission.ruleset)
+        return mission_comms.simulate(design, it, m, mission.ruleset, _fire_targets())
 
     def accommodation(self):
         """Bang ten lua x (bus, ang-ten) -> lap duoc khong + ly do (campaign/accommodation.py)."""

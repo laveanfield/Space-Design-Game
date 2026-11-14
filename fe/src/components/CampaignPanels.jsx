@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { playSoundAsset } from '../api/client';
 import OrbitOps3DCanvas from './OrbitOps3DCanvas';
 import EvidenceGallery from './EvidenceGallery';
+import MissionComms from './MissionComms';
+import { nextMissionTime } from './missionPlayback';
 
 /**
  * CampaignPanels -- cac bang cua vong choi "che tao -> phong -> 12 moc tren quy dao -> rut kinh nghiem".
@@ -120,6 +122,7 @@ const EVENT_SOUND = { SOLAR_STORM: '08-11-2026-seu_crackle.wav', SEU_RESET: '08-
  */
 export function LifePhase({ life, design, catalog, audioOn, onDone }) {
   const [shown, setShown] = useState(0); // so moc da hien
+  const [missionTime, setMissionTime] = useState(0);
   const [speed, setSpeed] = useState(1);
   const [paused, setPaused] = useState(false);
   const audioRef = useRef(audioOn);
@@ -129,10 +132,25 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
   const cur = shown > 0 ? life.steps[shown - 1] : null;
   const dead = Boolean(cur && !cur.alive);
 
-  useEffect(() => { setShown(0); }, [life]);
+  useEffect(() => { setShown(0); setMissionTime(0); setPaused(false); }, [life]);
 
   useEffect(() => {
-    if (finished || paused) return undefined;
+    if (!life.communications || finished || paused) return undefined;
+    const report = life.communications;
+    const end = report.duration_s * total / life.steps_total;
+    const id = setTimeout(() => {
+      const next = nextMissionTime(report, missionTime, end);
+      setMissionTime(next);
+      setShown(Math.min(total, Math.floor(next / report.duration_s * life.steps_total + 1e-9)));
+      const events = report.events.filter((e) => e.t_s > missionTime && e.t_s <= next);
+      if (events.some((e) => e.code === 'DOWNLINK')) playSoundAsset(audioRef.current, '06-11-2026-chime.wav', .3);
+      else if (events.some((e) => e.code === 'CAPTURE')) playSoundAsset(audioRef.current, '08-11-2026-shutter.wav', .3);
+    }, 350 / speed);
+    return () => clearTimeout(id);
+  }, [life, total, missionTime, finished, paused, speed]);
+
+  useEffect(() => {
+    if (life.communications || finished || paused) return undefined;
     const id = setTimeout(() => {
       const step = life.steps[shown];
       const crit = step.events.find((e) => e.level === 'crit');
@@ -160,7 +178,8 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
           <span>ORBIT SURVEILLANCE // {total === life.steps_total && !dead ? `${life.steps_total} MỐC` : 'VÒNG ĐỜI'}</span>
           <span className={`badge ${dead ? 'err' : 'info'}`}>{cur ? `THÁNG ${cur.month}` : 'TÁCH VỆ TINH'}</span>
         </h2>
-        <OrbitOps3DCanvas snapshot={snapshot} design={design} catalog={catalog} />
+        <p className="small muted">Vận hành tự động sau tách vệ tinh. Quan sát quyết định thiết kế → pin, tín hiệu, bộ nhớ → ảnh thực nhận. Thời gian chờ được tua nhanh; 7 ngày đại diện được ghép với 12 mốc lão hóa, không phải lịch liên lạc cả năm.</p>
+        {life.communications ? <MissionComms design={design} catalog={catalog} data={{ ...life.communications, evidence: life.evidence }} live maxFraction={Math.min(missionTime / life.communications.duration_s, (life.outcome.alive ? total : total - 1) / life.steps_total)} /> : <OrbitOps3DCanvas snapshot={snapshot} design={design} catalog={catalog} />}
         <div className="life-timeline">
           {Array.from({ length: life.steps_total }, (_, i) => {
             const s = life.steps[i];
@@ -184,7 +203,7 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
         <h2 className="panel-title"><span>TELEMETRY TỪ QUỸ ĐẠO</span><span className="small muted">{cur ? `mốc ${cur.k}/${life.steps_total}` : '...'}</span></h2>
         <div className="telemetry-grid">
           <div className="kpi-box">
-            <div className="kpi-label">PIN (SOC)</div>
+            <div className="kpi-label">PIN Ở MỐC LÃO HÓA</div>
             <div className="kpi-val">{(soc * 100).toFixed(0)}%</div>
             <div className="gauge-bar"><div className={`gauge-fill ${soc < 0.3 ? 'err' : ''}`} style={{ width: `${soc * 100}%` }} /></div>
             <div className="small muted">dư điện {cur ? num(cur.margin_w) : '-'} W</div>
@@ -210,7 +229,7 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
         </div>
         {life.imaging && (
           <div style={{ marginTop: 10 }}>
-            <EvidenceGallery evidence={life.evidence || []} need={life.evidence_need} step={cur ? cur.k : 0} sensorName={life.imaging.name} />
+            <EvidenceGallery evidence={life.evidence || []} need={life.evidence_need} step={cur ? cur.k : 0} time={life.communications ? missionTime : undefined} sensorName={life.imaging.name} />
           </div>
         )}
         <div className="small muted" style={{ margin: '10px 0 4px 0' }}>NHẬT KÝ QUỸ ĐẠO</div>

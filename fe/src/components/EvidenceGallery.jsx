@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { evidenceAtTime } from './missionPlayback';
 
 /**
  * EvidenceGallery -- anh dam chay rung ve tinh TU DONG chup (du lieu tu /campaign/lifetime).
@@ -95,9 +96,9 @@ function Photo({ shot, shown }) {
 }
 
 /** step: moc dang hien (1..12). Chi hien anh da chup toi moc nay; anh "ve" khi delivered_k <= step. */
-export default function EvidenceGallery({ evidence, need, step, sensorName }) {
-  const taken = evidence.filter((s) => s.k <= step);
-  const usable = taken.filter((s) => s.delivered_k != null && s.delivered_k <= step && s.blur < BLUR_USABLE).length;
+export default function EvidenceGallery({ evidence, need, step, time, sensorName }) {
+  const taken = time == null ? evidence.filter((s) => s.k <= step).map((s) => ({ ...s, received: s.delivered_k != null && s.delivered_k <= step })) : evidenceAtTime(evidence, time);
+  const usable = taken.filter((s) => s.received && s.blur < BLUR_USABLE).length;
   return (
     <div className="evidence">
       <div className="row-between small" style={{ marginBottom: 6 }}>
@@ -108,7 +109,7 @@ export default function EvidenceGallery({ evidence, need, step, sensorName }) {
       <div className="evidence-grid">
         {taken.length === 0 && <div className="small muted">Chưa phát hiện đám cháy nào trên quỹ đạo bay qua.</div>}
         {taken.map((s) => (
-          <Photo key={s.n} shot={{ ...s, sensorName }} shown={s.delivered_k != null && s.delivered_k <= step} />
+          <Photo key={s.n} shot={{ ...s, sensorName }} shown={s.received} />
         ))}
       </div>
     </div>

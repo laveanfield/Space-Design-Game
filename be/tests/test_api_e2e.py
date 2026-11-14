@@ -19,6 +19,7 @@ class TestApiEndToEnd(unittest.TestCase):
         r = self.client.get("/health")
         self.assertEqual(r.status_code, 200)
         self.assertIn("catalog_hash", r.json())
+        self.assertEqual(r.json()["integrations"]["cubesat_link"]["release"], "0.2.0")
 
         c = self.client.get("/catalog")
         self.assertEqual(c.status_code, 200)
@@ -35,6 +36,47 @@ class TestApiEndToEnd(unittest.TestCase):
         w = self.client.get("/")
         self.assertEqual(w.status_code, 200)
         self.assertIn("SPACE MISSION DESIGN TERMINAL", w.text)
+
+    def test_radio_link_solver_and_strict_errors(self):
+        request = {
+            "schema_version": "1.0",
+            "operation": "evaluate_link",
+            "earth": {"model": "sphere", "radius_m": 6371000},
+            "station": {"lat_deg": 0, "lon_deg": 0, "altitude_m": 0},
+            "state": {
+                "position_m": [6871000, 0, 0],
+                "frame": "ECEF",
+                "epoch_utc": "2026-11-14T00:00:00Z",
+            },
+            "frequency_hz": 2400000000,
+            "vacuum": True,
+        }
+        response = self.client.post("/radio-link/solve", json=request)
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["release"], "0.2.0")
+        self.assertAlmostEqual(payload["result"]["geometry"]["slant_range_m"], 500000.0)
+        self.assertAlmostEqual(
+            payload["result"]["losses_db"]["free_space"]["value"],
+            154.03140814283586,
+        )
+
+        duplicate = self.client.post(
+            "/radio-link/solve",
+            content=b'{"schema_version":"1.0","schema_version":"1.0"}',
+            headers={"content-type": "application/json"},
+        )
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertEqual(duplicate.json()["error"]["code"], "INVALID_JSON")
+
+        schema = self.client.get("/radio-link/schema/request")
+        self.assertEqual(schema.status_code, 200)
+        self.assertEqual(schema.json()["$schema"], "https://json-schema.org/draft/2020-12/schema")
+
+        info = self.client.get("/radio-link")
+        self.assertEqual(info.status_code, 200)
+        self.assertIn("contact_windows", info.json()["operations"])
 
     def test_full_game_loop_sc01(self):
         m = self.client.get("/missions/MP-SC01-FIRST-EYES").json()

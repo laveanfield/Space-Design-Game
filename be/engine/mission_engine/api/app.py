@@ -3,15 +3,17 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from ..errors import EngineError
+from ..integrations import radio_link
 from ..kernels import ascent, attitude, cost, decay, dv_budget, geometry, insertion, link, orbit, power, radiation, relative
 from ..service import Engine
+from ..campaign.lifetime import _fire_targets
 
 
 class DesignRequest(BaseModel):
@@ -71,7 +73,7 @@ def create_app(root: str = ".") -> FastAPI:
 
     @app.get("/health")
     def health():
-        return eng.health()
+        return {**eng.health(), "integrations": {"cubesat_link": radio_link.info()}}
 
     @app.get("/catalog")
     def catalog():
@@ -98,6 +100,7 @@ def create_app(root: str = ".") -> FastAPI:
                 "starter": m.starter,
                 "scoring": m.weights,
                 "life_years": m.life_years,
+                "communications_targets": _fire_targets(),
                 "hash": m.hash,
             }
         except Exception as exc:
@@ -128,6 +131,13 @@ def create_app(root: str = ".") -> FastAPI:
     def campaign_lifetime(req: DesignRequest):
         try:
             return eng.lifetime(req.design, mission_id=req.mission_id, seed=req.seed)
+        except Exception as exc:
+            _handle_err(exc)
+
+    @app.post("/campaign/communications")
+    def campaign_communications(req: DesignRequest):
+        try:
+            return eng.communications(req.design, mission_id=req.mission_id)
         except Exception as exc:
             _handle_err(exc)
 
@@ -183,6 +193,22 @@ def create_app(root: str = ".") -> FastAPI:
                 "Hieu suat ha du lieu (downlink_efficiency) mac dinh 0.85 (calibrated).",
             ],
         }
+
+    @app.post("/radio-link/solve")
+    async def solve_radio_link(request: Request):
+        """Evaluate a cubesat-link schema 1.0 request without weakening its JSON validation."""
+        status_code, payload = radio_link.solve_json_body(await request.body())
+        return JSONResponse(status_code=status_code, content=payload)
+
+    @app.get("/radio-link")
+    def radio_link_info():
+        return radio_link.info()
+
+    @app.get("/radio-link/schema/{name}")
+    def radio_link_schema(name: str):
+        if name not in ("request", "response"):
+            raise HTTPException(status_code=404, detail={"code": "SCHEMA_NOT_FOUND", "message": name})
+        return radio_link.get_schema(name)
 
     fe_dist = root_path.parent / "fe" / "dist"
     web_dir = fe_dist if fe_dist.exists() else (root_path / "web")

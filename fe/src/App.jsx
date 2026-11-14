@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiFetch, beep, playSoundAsset } from './api/client';
 import Hangar3DCanvas from './components/Hangar3DCanvas';
 import OrbitOps3DCanvas from './components/OrbitOps3DCanvas';
+import RadioLinkLab from './components/RadioLinkLab';
+import MissionComms from './components/MissionComms';
 import Launch3DCanvas from './components/Launch3DCanvas';
 import TrajectoryScope from './components/TrajectoryScope';
 import { BossPanel, DatasheetTotals, Dossier, LifePhase, Logbook, tx } from './components/CampaignPanels';
@@ -407,6 +409,7 @@ export default function App() {
   const onLaunchEnd = useCallback(
     (result) => {
       setLaunchResult(result);
+      if (result.success) startLife();
       if (!result.success) {
         const repAfter = Math.max(0, reputation - 1);
         setAttempts((n) => n + 1);
@@ -590,9 +593,9 @@ export default function App() {
         </div>
 
         <nav className="stepper">
-          {PHASES.map((p) => {
+          {[...PHASES, ...(DEV ? [{ id: 'raytrace', label: 'DEV.RF_LAB' }] : [])].map((p) => {
             const disabled =
-              (phase === 'launch' && !launchResult) || // dang bay: khong bo di giua chung duoc
+              busy || (phase === 'launch' && !launchResult) || // dang bay: khong bo di giua chung duoc
               (p.id === 'design' && !design) ||
               (p.id === 'launch' && !flightData) ||
               (p.id === 'life' && !lifeData) ||
@@ -637,6 +640,8 @@ export default function App() {
             </button>
           </div>
         )}
+
+        {phase === 'raytrace' && <RadioLinkLab catalog={catalog} design={design} />}
 
         {/* PHASE 1: BRIEF */}
         {phase === 'brief' && (
@@ -916,6 +921,7 @@ export default function App() {
               </h2>
 
               <Hangar3DCanvas design={design} catalog={catalog} theme={theme} />
+              <MissionComms design={design} catalog={catalog} mission={missionDetail} onChange={updateDesign} setupOnly />
               <TrajectoryScope flight={preview} runs={previewRuns} />
 
               <div className="row-between" style={{ marginTop: 12 }}>
@@ -1019,7 +1025,7 @@ export default function App() {
               <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {launchResult?.success && (
                   <button className="btn primary" disabled={busy} onClick={startLife}>
-                    THEO DÕI 12 MỐC TRÊN QUỸ ĐẠO →
+                    {busy ? 'ĐANG KHỞI ĐỘNG VẬN HÀNH TỰ ĐỘNG…' : 'THỬ LẠI KẾT NỐI QUỸ ĐẠO →'}
                   </button>
                 )}
                 {launchResult && !launchResult.success && reputation > 0 && (
@@ -1084,6 +1090,7 @@ export default function App() {
               </div>
 
               <Dossier dossier={outcome.dossier} />
+              {lifeData?.communications && <div className="comms-verdict"><strong>CHỤP & TRUYỀN TRONG CỬA SỔ 7 NGÀY ĐẠI DIỆN</strong><p className="small">{lifeData.communications.windows.length} lượt nhìn thấy trạm · {lifeData.communications.summary.delivered} ảnh rõ đã truyền · {lifeData.communications.summary.pending} ảnh còn chờ. Kết quả nhiệm vụ phía trên còn tính tuổi thọ và lỗi của vệ tinh.</p>{lifeData.communications.diagnostics.map((d) => <p className="small" key={d}>→ {d}</p>)}<button className="btn" onClick={() => setPhase('design')}>THỬ LẠI THIẾT LẬP LIÊN LẠC</button></div>}
 
               <div className="constraint-list" style={{ marginTop: 10 }}>
                 {(outcome.review || []).map((r) => (
