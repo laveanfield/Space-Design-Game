@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { decodeF32, decodeU8, playSoundAsset } from '../api/client';
+import { useGame } from '../core/GameContext';
+import { tr, tx } from '../core/i18n';
 import { buildRocket, buildSatellite, loadInstruments, loadRocket, loadSatellite, loadSite } from '../three/modelLoader';
 import { buildLaunchComplex, buildServiceTower } from '../three/environments';
 import { Puffs, drivePlume, emitLaunchSmoke, padFires, plumeGroup } from '../three/launchFx';
@@ -83,6 +85,7 @@ function makeParticles(count, { color, size, additive, opacity = 1 }) {
 }
 
 export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd }) {
+  const { lang } = useGame();
   const containerRef = useRef(null);
   const hudRef = useRef({});
   const ctlRef = useRef({ warp: 12, playing: true });
@@ -541,20 +544,26 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
         <div className="hud-cell"><span className="hud-label">STAGE</span><span className="hud-val" ref={setHud('stage')}>S1</span></div>
       </div>
       {banner && (
-        <div className={`launch-banner ${banner.kind}`}>{banner.kind === 'fail' ? '⚠ ' : ''}{banner.title?.vi || banner.title?.en}</div>
+        <div className={`launch-banner ${banner.kind}`}>{banner.kind === 'fail' ? '⚠ ' : ''}{tx(banner.title, lang)}</div>
       )}
       <div className="viewport-tools">
-        <button className="btn small" onClick={() => setPlaying((p) => !p)}>{playing ? 'TẠM DỪNG' : 'TIẾP TỤC'}</button>
+        <button className="btn small" onClick={() => setPlaying((p) => !p)}>
+          {playing ? tr(lang, 'TẠM DỪNG', 'PAUSE') : tr(lang, 'TIẾP TỤC', 'RESUME')}
+        </button>
         {[4, 12, 30].map((w) => (
           <button key={w} className={`btn small ${warp === w ? 'primary' : ''}`} onClick={() => setWarp(w)}>{w}x</button>
         ))}
         {!banner && (
-          <button className="btn small danger" onClick={() => ctlRef.current.abort?.()} title="Hủy phóng: mất 1 vạch uy tín">
-            ✕ HỦY PHÓNG
+          <button
+            className="btn small danger"
+            onClick={() => ctlRef.current.abort?.()}
+            title={tr(lang, 'Hủy phóng: mất 1 vạch uy tín', 'Abort launch: deducts 1 authority pip')}
+          >
+            ✕ {tr(lang, 'HỦY PHÓNG', 'ABORT LAUNCH')}
           </button>
         )}
       </div>
-      <div className="viewport-hint">Kéo để xoay camera • Cuộn để phóng to</div>
+      <div className="viewport-hint">{tr(lang, 'Kéo để xoay camera • Cuộn để phóng to', 'Drag to rotate camera • Scroll to zoom')}</div>
     </div>
   );
 }

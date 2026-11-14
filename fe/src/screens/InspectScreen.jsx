@@ -3,14 +3,8 @@ import * as THREE from 'three';
 import { playSoundAsset } from '../api/client';
 import { CHECKLIST_TEMPLATES } from '../core/gameMachine';
 import { useGame } from '../core/GameContext';
+import { tr, tx } from '../core/i18n';
 import { buildRocket, buildSatellite, loadInstruments, loadRocket, loadSatellite } from '../three/modelLoader';
-
-/**
- * InspectScreen (Phase 03.INSPECT) -- Phong kiem dinh truoc phong:
- * - Dong ho dem nguoc (45s hoac bi tru neu tre deadline).
- * - Random 3 loi an tren model 3D that (Ten lua + Ve tinh) voi do an tinh te.
- * - Den soi SpotLight theo con tro chuot + 4 thanh dao dong ky rung khi quet gan vi tri loi.
- */
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const smoothstep = (a, b, x) => {
@@ -18,16 +12,61 @@ const smoothstep = (a, b, x) => {
   return t * t * (3 - 2 * t);
 };
 
+const CHECKLIST_TRANSLATIONS = {
+  THRUSTER_COUPLING: {
+    label: { vi: 'KHỚP ĐỘNG CƠ ĐẨY', en: 'THRUSTER COUPLING' },
+    symptom: {
+      vi: 'Khớp cổ góp loa phụt lệch trục ~4° — nguy cơ mất ổn định khi đốt tầng 1.',
+      en: 'Gimbal thruster coupling misaligned ~4° — risk of flight instability during Stage 1 burn.',
+    },
+  },
+  FUEL_LINES: {
+    label: { vi: 'ĐƯỜNG DẪN NHIÊN LIỆU', en: 'FUEL LINES' },
+    symptom: {
+      vi: 'Rò rỉ vi mô ống dẫn chất lỏng lạnh dọc thân tên lửa.',
+      en: 'Micro-leak on cryogenic feed line along rocket core.',
+    },
+  },
+  PAYLOAD_INTERFACE: {
+    label: { vi: 'KHỚP NỐI TẢI TRỌNG', en: 'PAYLOAD INTERFACE' },
+    symptom: {
+      vi: 'Chốt ngàm adapter khoang tải và vỏ bảo vệ kẹt bản lề tách.',
+      en: 'Payload adapter latch and fairing separation hinge jammed.',
+    },
+  },
+  AVIONICS_BANK: {
+    label: { vi: 'KHOANG ĐIỆN TỬ HÀNG KHÔNG', en: 'AVIONICS BANK' },
+    symptom: {
+      vi: 'Tia tĩnh điện và nhiễu bus nguồn phát ra từ khoang xử lý trung tâm.',
+      en: 'Static discharge and power bus noise detected from avionics bay.',
+    },
+  },
+  SOLAR_APERTURE: {
+    label: { vi: 'KHỚP CÁNH PIN MẶT TRỜI', en: 'SOLAR ARRAY JOINT' },
+    symptom: {
+      vi: 'Bản lề cánh pin mặt trời kẹt chốt bung sau tách tầng.',
+      en: 'Solar array hinge jammed, blocking post-separation deployment.',
+    },
+  },
+  SATELLITE_ALIGN: {
+    label: { vi: 'CÂN CHỈNH VỆ TINH', en: 'SATELLITE ALIGNMENT' },
+    symptom: {
+      vi: 'Ống kính cảm biến định hướng và anten chính lệch góc tham chiếu.',
+      en: 'Star tracker boresight and main antenna off reference angle.',
+    },
+  },
+};
+
 export default function InspectScreen() {
-  const { design, inspectSession, startLaunchFromInspect, audioOn, busy, setPhase } = useGame();
+  const { design, inspectSession, startLaunchFromInspect, audioOn, busy, setPhase, lang } = useGame();
   const defects = useMemo(() => inspectSession?.defects || [], [inspectSession]);
   const [timeLeft, setTimeLeft] = useState(inspectSession?.timeLimit ?? 45);
   const [detectedIds, setDetectedIds] = useState([]);
   const [fixedIds, setFixedIds] = useState([]);
   const [yawTarget, setYawTarget] = useState(0);
-  const [inspectMode, setInspectMode] = useState('stack'); // 'stack' | 'payload'
+  const [inspectMode, setInspectMode] = useState('stack');
   const [meters, setMeters] = useState({ pressureDiff: 6, busRipple: 8, emiNoise: 5, structVib: 7 });
-  const [scanHint, setScanHint] = useState('RÊ ĐÈN SOI X-RAY DỌC THÂN TÀU ĐỂ TÌM 3 LỖI ẨN');
+  const [scanState, setScanState] = useState({ type: 'search', faultId: null, remaining: 3 });
 
   const mountRef = useRef(null);
   const pointerRef = useRef({ mx: 0.5, my: 0.5, inside: false, yaw: 0 });
@@ -41,15 +80,14 @@ export default function InspectScreen() {
   modeRef.current = inspectMode;
   const submittedRef = useRef(false);
 
-  // Reset per inspection session
   useEffect(() => {
     submittedRef.current = false;
     setTimeLeft(inspectSession?.timeLimit ?? 45);
     setDetectedIds([]);
     setFixedIds([]);
+    setScanState({ type: 'search', faultId: null, remaining: inspectSession?.defects?.length || 3 });
   }, [inspectSession]);
 
-  // Countdown timer
   useEffect(() => {
     if (!inspectSession) return undefined;
     const id = setInterval(() => {
@@ -79,7 +117,6 @@ export default function InspectScreen() {
     setDetectedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
   };
 
-  // Three.js Dark Diagnostic Chamber + X-Ray Spotlight
   useEffect(() => {
     const el = mountRef.current;
     if (!el || !design) return undefined;
@@ -98,7 +135,6 @@ export default function InspectScreen() {
     el.innerHTML = '';
     el.appendChild(renderer.domElement);
 
-    // Low ambient + tracking SpotLight
     scene.add(new THREE.AmbientLight(0x1f352e, 0.42));
     const rim = new THREE.DirectionalLight(0x38e594, 0.35);
     rim.position.set(-4, 3, -3);
@@ -110,7 +146,6 @@ export default function InspectScreen() {
     scene.add(spot, spotTarget);
     spot.target = spotTarget;
 
-    // Subtle test stand ring
     const stand = new THREE.Mesh(
       new THREE.CylinderGeometry(0.65, 0.72, 0.06, 28),
       new THREE.MeshStandardMaterial({ color: 0x16241f, metalness: 0.6, roughness: 0.4 })
@@ -127,7 +162,6 @@ export default function InspectScreen() {
         const markerGroup = new THREE.Group();
         markerGroup.position.set(df.pos[0], df.pos[1], df.pos[2]);
 
-        // Subtle anomaly mesh ("an an 1 xiu": chi ro khi soi den vao gan)
         const matCore = new THREE.MeshBasicMaterial({
           color: df.meter === 'pressureDiff' ? 0xb8eeff : df.meter === 'structVib' ? 0xff9248 : 0x5bc0eb,
           transparent: true,
@@ -166,7 +200,7 @@ export default function InspectScreen() {
             if (o.isMesh && o.material) {
               o.material = o.material.clone();
               o.material.transparent = true;
-              o.material.opacity = 0.28; // X-Ray fairing shell
+              o.material.opacity = 0.28;
             }
           });
         });
@@ -287,7 +321,6 @@ export default function InspectScreen() {
           nearestFault = v.def;
         }
 
-        // Subtle shimmer when beam passes close
         const focus = smoothstep(0.28, 0.06, dist);
         const pulse = 0.55 + 0.45 * Math.sin(now * 0.018);
         v.matCore.opacity = 0.04 + focus * 0.85 * pulse;
@@ -308,15 +341,15 @@ export default function InspectScreen() {
         playSoundAsset(audioRef.current, '08-11-2026-static_noise.wav', 0.14);
       }
 
-      // Throttled UI meter readout
       if (Math.floor(now / 120) !== Math.floor((now - 16) / 120)) {
         setMeters(nextMeters);
+        const rem = Math.max(0, defects.length - fixedRef.current.length);
         if (nearestFault && nearestDist < 0.14) {
-          setScanHint(`PHÁT HIỆN DỊ THƯỜNG [${nearestFault.label}] — CLICK LÊN ĐIỂM ĐỎ/VÀNG ĐỂ SỬA`);
+          setScanState({ type: 'fault', faultId: nearestFault.id, remaining: rem });
         } else if (nearestFault && nearestDist < 0.28) {
-          setScanHint(`TÍN HIỆU DAO ĐỘNG KÝ ĐANG RUNG GẦN VỊ TRÍ NÀY... QUÉT CHẬM LẠI`);
+          setScanState({ type: 'near', faultId: null, remaining: rem });
         } else {
-          setScanHint(`RÊ ĐÈN SOI X-RAY DỌC THÂN TÀU ĐỂ TÌM ${3 - fixedRef.current.length} LỖI CÒN LẠI`);
+          setScanState({ type: 'search', faultId: null, remaining: rem });
         }
       }
 
@@ -346,11 +379,36 @@ export default function InspectScreen() {
 
   const allFixed = fixedIds.length >= defects.length;
 
+  let hintBanner = '';
+  if (scanState.type === 'fault') {
+    const trItem = CHECKLIST_TRANSLATIONS[scanState.faultId];
+    const itemLabel = trItem ? tx(trItem.label, lang) : scanState.faultId;
+    hintBanner = tr(
+      lang,
+      `PHÁT HIỆN DỊ THƯỜNG: ${itemLabel} — NHẤP VÀO ĐIỂM ĐÁNH DẤU ĐỂ SỬA`,
+      `ANOMALY DETECTED: ${itemLabel} — CLICK HIGHLIGHT TO PATCH`
+    );
+  } else if (scanState.type === 'near') {
+    hintBanner = tr(
+      lang,
+      'DAO ĐỘNG KÝ BÁO ĐỘNG GẦN VỊ TRÍ NÀY... QUÉT CHẬM LẠI',
+      'OSCILLOSCOPE SPIKING NEAR THIS POSITION... SCAN SLOWER'
+    );
+  } else {
+    hintBanner = tr(
+      lang,
+      `RÊ ĐÈN QUÉT DỌC THÂN TÀU ĐỂ TÌM ${scanState.remaining} LỖI CÒN LẠI`,
+      `SWEEP SCANNER ALONG HULL TO FIND ${scanState.remaining} REMAINING ANOMALIES`
+    );
+  }
+
   return (
     <div className="phase-stage">
       <div className="phase-header-plaques row-between-wide">
-        <div className="rivet-plaque title">PHASE 2: PRE-FLIGHT INSPECTION</div>
-        <div className={`inspect-timer ${timeLeft <= 10 ? 'crit' : ''}`} data-tutorial="inspect-timer">
+        <div className="rivet-plaque title">
+          {tr(lang, 'GIAI ĐOẠN 2: KIỂM ĐỊNH TRƯỚC PHÓNG', 'PHASE 2: PRE-FLIGHT INSPECTION')}
+        </div>
+        <div className={`inspect-timer inspect-timer-pill ${timeLeft <= 10 ? 'crit' : ''}`} data-tutorial="inspect-timer">
           <strong>00:{String(timeLeft).padStart(2, '0')} ⏳</strong>
         </div>
       </div>
@@ -361,7 +419,7 @@ export default function InspectScreen() {
           <div className="clipboard-clip" aria-hidden="true" />
           <div className="clipboard-sheet">
             <h2 className="clipboard-title">
-              <span>INSPECTION CHECKLIST</span>
+              <span>{tr(lang, 'DANH MỤC KIỂM TRA', 'INSPECTION CHECKLIST')}</span>
               <span className={`badge ${allFixed ? 'ok' : 'warn'}`}>
                 {fixedIds.length}/{defects.length}
               </span>
@@ -369,7 +427,11 @@ export default function InspectScreen() {
 
             {inspectSession.delayMonths > 0 && (
               <div className="small err-ink" style={{ marginBottom: 8 }}>
-                ! TRỄ HẠN {inspectSession.delayMonths} THÁNG (-{inspectSession.delayMonths * 5}s SO TẠO CHUẨN 45s)
+                {tr(
+                  lang,
+                  `TRỄ HẠN ${inspectSession.delayMonths} THÁNG (-${inspectSession.delayMonths * 5}s SO VỚI CHUẨN 45s)`,
+                  `DELAYED BY ${inspectSession.delayMonths} MONTHS (-${inspectSession.delayMonths * 5}s PENALTY FROM 45s BASE)`
+                )}
               </div>
             )}
 
@@ -378,6 +440,9 @@ export default function InspectScreen() {
                 const isDefect = defects.some((d) => d.id === item.id);
                 const isDetected = detectedIds.includes(item.id);
                 const isFixed = fixedIds.includes(item.id);
+                const itemTrans = CHECKLIST_TRANSLATIONS[item.id];
+                const itemLabel = itemTrans ? tx(itemTrans.label, lang) : item.label;
+                const itemSymptom = itemTrans ? tx(itemTrans.symptom, lang) : tx(item.symptom, lang);
 
                 return (
                   <div
@@ -386,15 +451,15 @@ export default function InspectScreen() {
                   >
                     <div className="row-between">
                       <span>
-                        {item.label} [{isFixed ? 'x' : isDetected ? '!' : ' '}]
+                        {itemLabel} [{isFixed ? 'x' : isDetected ? '!' : ' '}]
                       </span>
                       {isDefect && isDetected && !isFixed && (
                         <button className="btn small warn" onClick={() => markFixed(item.id)}>
-                          PATCH
+                          {tr(lang, 'SỬA CHỮA', 'PATCH')}
                         </button>
                       )}
                     </div>
-                    {isDetected && <div className="small muted-ink">{item.symptom}</div>}
+                    {isDetected && <div className="small muted-ink">{itemSymptom}</div>}
                   </div>
                 );
               })}
@@ -402,16 +467,16 @@ export default function InspectScreen() {
 
             <div className="row-wrap" style={{ marginTop: 12 }}>
               <button className="btn" onClick={() => setPhase('design')}>
-                ← BACK TO BUILD
+                {tr(lang, '← QUAY LẠI LẮP RÁP', '← BACK TO BUILD')}
               </button>
             </div>
           </div>
         </section>
 
-        {/* Right: Dark 3D X-Ray Bay + Oscilloscope Meters */}
+        {/* Right: Dark 3D Diagnostic Bay + Oscilloscope Meters */}
         <section className="panel lantern-panel">
           <h2 className="panel-title">
-            <span>PRE-FLIGHT DIAGNOSTIC BAY [X-RAY LANTERN]</span>
+            <span>{tr(lang, 'KHOANG CHẨN ĐOÁN TIỀN PHÓNG', 'PRE-FLIGHT DIAGNOSTIC BAY')}</span>
             <span className="small muted">
               {design.launch?.vehicle} + {design.bus}
             </span>
@@ -419,39 +484,39 @@ export default function InspectScreen() {
 
           <div className="inspect-stage" data-tutorial="inspect-stage">
             <div ref={mountRef} className="inspect-canvas-wrap" />
-            <div className="inspect-scan-banner small">{scanHint}</div>
+            <div className="inspect-scan-banner small">{hintBanner}</div>
             <div className="viewport-tools">
               <button className="btn small" onClick={() => setYawTarget((y) => y - Math.PI / 3)}>
-                ⟲ ROTATE -60°
+                {tr(lang, '⟲ XOAY -60°', '⟲ ROTATE -60°')}
               </button>
               <button className="btn small" onClick={() => setYawTarget((y) => y + Math.PI / 3)}>
-                ⟳ ROTATE +60°
+                {tr(lang, '⟳ XOAY +60°', '⟳ ROTATE +60°')}
               </button>
               <button
                 className={`btn small ${inspectMode === 'stack' ? 'primary' : ''}`}
                 onClick={() => setInspectMode('stack')}
               >
-                FULL STACK
+                {tr(lang, 'TOÀN BỘ TÀU', 'FULL STACK')}
               </button>
               <button
                 className={`btn small ${inspectMode === 'payload' ? 'primary' : ''}`}
                 onClick={() => setInspectMode('payload')}
               >
-                PAYLOAD FOCUS
+                {tr(lang, 'TẬP TRUNG TẢI', 'PAYLOAD FOCUS')}
               </button>
             </div>
           </div>
 
           <div className="osc-meters">
             {[
-              ['PRESSURE_DIFF', meters.pressureDiff],
-              ['BUS_RIPPLE', meters.busRipple],
-              ['EMI_NOISE', meters.emiNoise],
-              ['STRUCT_VIB', meters.structVib],
-            ].map(([name, val]) => (
-              <div key={name} className="kpi-box dial-meter">
+              ['PRESSURE_DIFF', tr(lang, 'CHÊNH LỆCH ÁP SUẤT', 'PRESSURE DIFF'), meters.pressureDiff],
+              ['BUS_RIPPLE', tr(lang, 'DAO ĐỘNG NGUỒN', 'BUS RIPPLE'), meters.busRipple],
+              ['EMI_NOISE', tr(lang, 'NHIỄU ĐIỆN TỪ', 'EMI NOISE'), meters.emiNoise],
+              ['STRUCT_VIB', tr(lang, 'RUNG ĐỘNG KẾT CẤU', 'STRUCTURAL VIBRATION'), meters.structVib],
+            ].map(([id, label, val]) => (
+              <div key={id} className="kpi-box dial-meter">
                 <div className="row-between">
-                  <span className="kpi-label">{name}</span>
+                  <span className="kpi-label">{label}</span>
                   <span className={`small ${val > 45 ? 'err-text' : 'ok-text'}`}>{val}%</span>
                 </div>
                 <div className="gauge-bar">
@@ -461,19 +526,21 @@ export default function InspectScreen() {
             ))}
           </div>
 
-          <div className="row-between" style={{ marginTop: 12 }}>
-            <span className="small muted">
-              {allFixed
-                ? 'ĐÃ XỬ LÝ TOÀN BỘ LỖI LẮP RÁP — SẴN SÀNG PHÓNG'
-                : 'CẢNH BÁO: PHÓNG KHI CÒN LỖI LẮP RÁP CÓ THỂ GÂY NỔ TÊN LỬA HOẶC HỎNG SỚM'}
-            </span>
+          <div className="row-between inspect-action-bar" style={{ marginTop: 12 }}>
+            <div className="inspect-status-slot">
+              <span className={`small ${allFixed ? 'ok-text' : 'muted'}`}>
+                {allFixed
+                  ? tr(lang, 'ĐÃ XỬ LÝ TOÀN BỘ LỖI LẮP RÁP — SẴN SÀNG PHÓNG', 'ALL ASSEMBLY DEFECTS PATCHED — READY FOR LAUNCH')
+                  : tr(lang, 'CẢNH BÁO: PHÓNG KHI CÒN LỖI CÓ THỂ GÂY NỔ HOẶC HỎNG SỚM', 'WARNING: LAUNCHING WITH DEFECTS MAY CAUSE VEHICLE EXPLOSION OR EARLY FAILURE')}
+              </span>
+            </div>
             <button
               className="btn primary hazard hazard-cta"
               data-tutorial="inspect-finish"
               disabled={busy}
               onClick={finishNow}
             >
-              [ FINISH INSPECTION ]
+              {tr(lang, 'HOÀN THÀNH KIỂM ĐỊNH', 'FINISH INSPECTION')}
             </button>
           </div>
         </section>

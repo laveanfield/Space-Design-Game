@@ -1,7 +1,9 @@
 import React from 'react';
+import { useGame } from '../core/GameContext';
+import { tr } from '../core/i18n';
 import { getHumanityImpact } from '../story/humanityImpact';
 
-function MissionImpactArt({ missionKey, success }) {
+function MissionImpactArt({ missionKey, success, lang = 'vi' }) {
   if (missionKey === 'space_weather') {
     const stroke = success ? '#59d38c' : '#ff6b57';
     const glow = success ? '#89e8ae' : '#ff9a3c';
@@ -19,7 +21,7 @@ function MissionImpactArt({ missionKey, success }) {
         />
         {!success && (
           <text x="140" y="15" fontSize="9" fontWeight="800" fill="#ff6b57" textAnchor="middle">
-            NO GPS
+            {tr(lang, 'MẤT GPS', 'NO GPS')}
           </text>
         )}
         {/* Power grid pylons */}
@@ -42,7 +44,9 @@ function MissionImpactArt({ missionKey, success }) {
           <path d="M95 56 L101 66 L97 66 L104 76" fill="none" stroke="#ffc04d" strokeWidth="2" />
         )}
         <text x="90" y="109" fontSize="8" fontWeight="700" fill="#b7c0c8" textAnchor="middle">
-          {success ? '14 NATIONAL GRIDS PROTECTED' : 'G5 BLACKOUT // VAN ALLEN BREACH'}
+          {success
+            ? tr(lang, 'BẢO VỆ 14 LƯỚI ĐIỆN QUỐC GIA', '14 NATIONAL GRIDS PROTECTED')
+            : tr(lang, 'SẬP LƯỚI ĐIỆN VÌ BÃO TỪ', 'BLACKOUT // GEOMAGNETIC STORM')}
         </text>
       </svg>
     );
@@ -71,7 +75,7 @@ function MissionImpactArt({ missionKey, success }) {
             <circle cx="30" cy="48" r="7" fill="none" stroke="#59d38c" strokeWidth="2" />
             <rect x="82" y="14" width="12" height="7" fill="#ffc04d" />
             <text x="118" y="23" fontSize="8" fontWeight="800" fill="#59d38c">
-              27 LEAKS SEALED
+              {tr(lang, '27 ĐIỂM RÒ ĐÃ KHÓA', '27 LEAKS SEALED')}
             </text>
           </g>
         )}
@@ -82,13 +86,15 @@ function MissionImpactArt({ missionKey, success }) {
           <path d="M98 85 L106 91 L101 95 M132 82 L139 89 L135 94" stroke="#2c1d11" strokeWidth="1.5" fill="none" />
         )}
         <text x="90" y="109" fontSize="8" fontWeight="700" fill="#b7c0c8" textAnchor="middle">
-          {success ? 'CH4 SUPER-EMITTERS STOPPED' : 'METHANE PLUME // CROP DROUGHT'}
+          {success
+            ? tr(lang, 'CHẶN ĐỨNG SIÊU NGUỒN PHÁT THẢI', 'CH4 SUPER-EMITTERS STOPPED')
+            : tr(lang, 'RÒ RỈ METHANE GÂY HẠN MẶN', 'METHANE PLUME // DROUGHT')}
         </text>
       </svg>
     );
   }
 
-  // Default / missionKey === 'wildfire' (MP-SC01-FIRST-EYES)
+  // Default / wildfire (MP-SC01-FIRST-EYES)
   const treeColor = success ? '#3d8254' : '#302119';
   const accent = success ? '#59d38c' : '#ff6b57';
   return (
@@ -120,21 +126,35 @@ function MissionImpactArt({ missionKey, success }) {
         </g>
       )}
       <text x="90" y="109" fontSize="8" fontWeight="700" fill="#b7c0c8" textAnchor="middle">
-        {success ? '142,000 HA PROTECTED // EARLY LOCK' : '142,000 HA LOST // NO DOWNLINK'}
+        {success
+          ? tr(lang, 'BẢO VỆ 142.000 HA RỪNG NGUYÊN SINH', '142,000 HA PROTECTED')
+          : tr(lang, 'MẤT TRẮNG 142.000 HA RỪNG', '142,000 HA LOST // NO DOWNLINK')}
       </text>
     </svg>
   );
 }
 
-export default function HumanityImpactCard({ missionId, success, failureId, outcome, compact = false }) {
-  const story = getHumanityImpact(missionId, { success, failureId, outcome });
+export default function HumanityImpactCard({
+  missionId,
+  success,
+  failureId,
+  outcome,
+  compact = false,
+  lang: propLang,
+}) {
+  const { lang: gameLang } = useGame();
+  const lang = propLang || gameLang || 'vi';
+
+  const story = getHumanityImpact(missionId, { success, failureId, outcome, lang });
   const toneClass = story.success ? 'ok' : 'fail';
 
   return (
     <section className={`humanity-impact-card ${toneClass} ${compact ? 'compact' : ''}`}>
       <div className="impact-header">
         <div className="impact-header-left">
-          <span className="impact-kicker">EARTH IMPACT REPORT // BÁO CÁO HẬU QUẢ NHÂN LOẠI</span>
+          <span className="impact-kicker">
+            {tr(lang, 'BÁO CÁO TÁC ĐỘNG NHÂN LOẠI', 'EARTH IMPACT REPORT')}
+          </span>
           <span className="impact-story-tag">{story.levelTag}</span>
         </div>
         <span className={`badge ${story.success ? 'ok' : 'err'}`}>{story.badge}</span>
@@ -144,14 +164,15 @@ export default function HumanityImpactCard({ missionId, success, failureId, outc
 
       {story.causeBridge && (
         <div className="impact-cause-bridge">
-          <strong>NGUYÊN NHÂN KỸ THUẬT → TÁC ĐỘNG MẶT ĐẤT:</strong> {story.causeBridge}
+          <strong>{tr(lang, 'NGUYÊN NHÂN KỸ THUẬT → TÁC ĐỘNG MẶT ĐẤT:', 'TECHNICAL CAUSE → GROUND IMPACT:')}</strong>{' '}
+          {story.causeBridge}
         </div>
       )}
 
       <div className={`impact-body-grid ${compact ? 'compact' : ''}`}>
         {!compact && (
           <div className="impact-art-wrap">
-            <MissionImpactArt missionKey={story.missionKey} success={story.success} />
+            <MissionImpactArt missionKey={story.missionKey} success={story.success} lang={lang} />
           </div>
         )}
         <div className="impact-narrative">

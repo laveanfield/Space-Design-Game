@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { decodeF32 } from '../api/client';
+import { useGame } from '../core/GameContext';
+import { tr } from '../core/i18n';
 
 /**
  * TrajectoryScope -- Oscilloscope CRT ve TU DONG quy dao phong du kien moi khi doi linh kien.
@@ -58,6 +60,7 @@ function pathOf(flight) {
 }
 
 export default function TrajectoryScope({ flight, runs = 0, updating = false }) {
+  const { lang } = useGame();
   const canvasRef = useRef(null);
   const data = useMemo(() => (flight?.series ? pathOf(flight) : null), [flight]);
   const failure = flight?.failure || null;
@@ -114,7 +117,7 @@ export default function TrajectoryScope({ flight, runs = 0, updating = false }) 
       g.fillText('KARMAN 100 km', pad.l + 4, Y(100) - 3);
 
       if (!data) {
-        g.fillText('AWAITING ASCENT TELEMETRY...', pad.l + 8, H / 2);
+        g.fillText(tr(lang, 'ĐANG CHỜ DỮ LIỆU ĐO XA PHÓNG...', 'AWAITING ASCENT TELEMETRY...'), pad.l + 8, H / 2);
         return;
       }
 
@@ -174,21 +177,21 @@ export default function TrajectoryScope({ flight, runs = 0, updating = false }) 
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [data, failure, reaches]);
+  }, [data, failure, reaches, lang]);
 
   const meta = flight?.meta;
   return (
     <div className="scope-box">
       <div className="row-between small muted" style={{ marginBottom: 4 }}>
-        <span>LIVE ASCENT TRAJECTORY SCOPE [AUTO-CALC]</span>
+        <span>{tr(lang, 'QUỸ ĐẠO PHÓNG TRỰC TIẾP', 'LIVE ASCENT TRAJECTORY SCOPE')}</span>
         <span className={failure ? 'err-text' : reaches ? 'ok-text' : ''}>
           {updating
-            ? 'SYNCING...'
+            ? tr(lang, 'ĐANG ĐỒNG BỘ...', 'SYNCING...')
             : failure
-              ? `WARN: ${failure.kind.toUpperCase()}`
+              ? `${tr(lang, 'CẢNH BÁO', 'WARN')}: ${failure.kind.toUpperCase()}`
               : reaches
-                ? `ORBIT INSERTION OK (#${runs})`
-                : 'STANDBY'}
+                ? `${tr(lang, 'VÀO QUỸ ĐẠO THÀNH CÔNG', 'ORBIT INSERTION OK')} • #${runs}`
+                : tr(lang, 'CHỜ LỆNH', 'STANDBY')}
         </span>
       </div>
       <canvas ref={canvasRef} className="scope-canvas" />

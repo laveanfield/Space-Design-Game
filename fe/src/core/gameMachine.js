@@ -5,7 +5,14 @@
 export const REP_MAX = 3;
 export const INSPECT_BASE_SEC = 45;
 
+export const MISSION_ORDER = [
+  'MP-SC01-FIRST-EYES',
+  'MP-SC03-SPACE-WEATHER',
+  'MP-SC04-GHG',
+];
+
 export const PHASES = [
+  { id: 'home', label: '00.HOME' },
   { id: 'brief', label: '01.BRIEF' },
   { id: 'design', label: '02.BUILD' },
   { id: 'inspect', label: '03.INSPECT' },
@@ -34,7 +41,10 @@ export const CHECKLIST_TEMPLATES = [
     group: 'rocket',
     basePos: [0.06, -0.78, 0.14],
     meter: 'structVib',
-    symptom: 'Khớp cổ góp loa phụt lệch trục ~4° — nguy cơ mất ổn định khi đốt tầng 1.',
+    symptom: {
+      vi: 'Khớp cổ góp loa phụt lệch trục ~4° — nguy cơ mất ổn định khi đốt tầng 1.',
+      en: 'Gimbal thruster coupling misaligned ~4° — risk of instability during Stage 1 burn.',
+    },
   },
   {
     id: 'FUEL_LINES',
@@ -42,7 +52,10 @@ export const CHECKLIST_TEMPLATES = [
     group: 'rocket',
     basePos: [-0.12, -0.24, 0.18],
     meter: 'pressureDiff',
-    symptom: 'Rò rỉ vi mô ống dẫn chất lỏng lạnh dọc thân tên lửa.',
+    symptom: {
+      vi: 'Rò rỉ vi mô ống dẫn chất lỏng lạnh dọc thân tên lửa.',
+      en: 'Micro-leak on cryogenic feed line along rocket core.',
+    },
   },
   {
     id: 'PAYLOAD_INTERFACE',
@@ -50,7 +63,10 @@ export const CHECKLIST_TEMPLATES = [
     group: 'rocket',
     basePos: [0.1, 0.42, 0.14],
     meter: 'structVib',
-    symptom: 'Chốt ngàm adapter khoang tải & fairing kẹt bản lề tách.',
+    symptom: {
+      vi: 'Chốt ngàm adapter khoang tải & fairing kẹt bản lề tách.',
+      en: 'Payload adapter latch and fairing separation hinge jammed.',
+    },
   },
   {
     id: 'AVIONICS_BANK',
@@ -58,7 +74,10 @@ export const CHECKLIST_TEMPLATES = [
     group: 'sat',
     basePos: [-0.1, 0.6, 0.12],
     meter: 'emiNoise',
-    symptom: 'Tia tĩnh điện & nhiễu bus nguồn phát ra từ khoang OBC/ADCS.',
+    symptom: {
+      vi: 'Tia tĩnh điện & nhiễu bus nguồn phát ra từ khoang OBC/ADCS.',
+      en: 'Static discharge and power bus noise detected from avionics bay.',
+    },
   },
   {
     id: 'SOLAR_APERTURE',
@@ -66,7 +85,10 @@ export const CHECKLIST_TEMPLATES = [
     group: 'sat',
     basePos: [0.18, 0.72, 0.06],
     meter: 'busRipple',
-    symptom: 'Bản lề SADA cánh pin mặt trời kẹt chốt bung sau tách tầng.',
+    symptom: {
+      vi: 'Bản lề SADA cánh pin mặt trời kẹt chốt bung sau tách tầng.',
+      en: 'Solar array hinge jammed, blocking post-separation deployment.',
+    },
   },
   {
     id: 'SATELLITE_ALIGN',
@@ -74,7 +96,10 @@ export const CHECKLIST_TEMPLATES = [
     group: 'sat',
     basePos: [-0.04, 0.84, -0.14],
     meter: 'emiNoise',
-    symptom: 'Ống kính Star Tracker / chảo anten chính lệch góc tham chiếu.',
+    symptom: {
+      vi: 'Ống kính Star Tracker / chảo anten chính lệch góc tham chiếu.',
+      en: 'Star tracker boresight and main antenna off reference angle.',
+    },
   },
 ];
 
