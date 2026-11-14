@@ -52,20 +52,7 @@ body,
   line-height: 1.45;
 }
 
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0px,
-    transparent 2px,
-    var(--scanline) 3px,
-    var(--scanline) 4px
-  );
-  z-index: 999;
-}
+/* Bo lop "vach soc" (scanline) phu toan man hinh: hinh 3D va chu phai lien mach, khong bi gach ngang */
 
 .app-shell {
   display: flex;
@@ -325,6 +312,9 @@ body::after {
   color: var(--accent);
   pointer-events: none;
   text-shadow: 0 1px 4px #000;
+  background: rgba(4, 12, 9, 0.72);
+  padding: 4px 8px;
+  border-radius: 3px;
 }
 
 .viewport-hint {
@@ -809,4 +799,265 @@ dialog.modal::backdrop {
   .launch-hud {
     grid-template-columns: repeat(2, minmax(84px, auto));
   }
+}
+
+/* ============================================================
+   Hoi thoai vai dien (Ky su truong <-> Sep ke toan), anh bang chung, luat lap tai (them 14-11-2026)
+   ============================================================ */
+.story-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(2, 6, 8, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  cursor: pointer;
+}
+
+.story-frame {
+  position: relative;
+  width: min(1100px, 100%);
+  aspect-ratio: 16 / 9;
+  max-height: 92vh;
+  border: 2px solid #3d8fbf;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px #0b2230, 0 20px 60px rgba(0, 0, 0, 0.6);
+  background: #1b232a;
+}
+
+.story-top {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  background: rgba(8, 18, 26, 0.92);
+  color: #cfe6f5;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #2f6f96;
+}
+
+.story-top .money {
+  color: #6be08a;
+}
+
+.story-top .deadline {
+  color: #f2a54b;
+}
+
+.story-bg,
+.story-bg-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.story-pad {
+  position: absolute;
+  left: 33%;
+  top: 22%;
+  width: 34%;
+  height: 52%;
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.story-pad svg {
+  width: 100%;
+  height: 100%;
+}
+
+.story-char {
+  position: absolute;
+  bottom: 24%;
+  width: 26%;
+  z-index: 2;
+  border: 2px solid rgba(80, 170, 220, 0.55);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(20, 40, 52, 0.25), rgba(10, 22, 30, 0.75));
+  box-shadow: 0 0 18px rgba(60, 160, 220, 0.25);
+  filter: brightness(0.62) saturate(0.7);
+  transition: filter 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+
+.story-char.left {
+  left: 4%;
+}
+
+.story-char.right {
+  right: 4%;
+}
+
+.story-char.speaking {
+  filter: none;
+  transform: translateY(-6px);
+  box-shadow: 0 0 26px rgba(90, 190, 255, 0.55);
+}
+
+.story-char .portrait {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.story-name {
+  background: rgba(8, 18, 26, 0.92);
+  color: #cfe6f5;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 6px 4px;
+  border-top: 1px solid #2f6f96;
+}
+
+.story-box {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 3%;
+  z-index: 4;
+  min-height: 22%;
+  padding: 12px 18px 46px 18px;
+  background: rgba(8, 20, 30, 0.93);
+  border: 2px solid #3d8fbf;
+  border-radius: 6px;
+  color: #eef6fb;
+}
+
+.story-speaker {
+  color: #f2b44b;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.story-text {
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.story-caret {
+  animation: halt-blink 1s steps(2, start) infinite;
+  color: #6fc3f0;
+}
+
+.story-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .story-text {
+    font-size: 14px;
+  }
+  .story-char {
+    width: 30%;
+    bottom: 30%;
+  }
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.evidence-card {
+  border: 1px solid var(--border);
+  background: #05090b;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.evidence-card canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.evidence-card.blurred {
+  border-color: var(--warn);
+}
+
+.evidence-pending {
+  aspect-ratio: 200 / 140;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 11px;
+  color: var(--warn);
+  background: repeating-linear-gradient(45deg, #0b1013 0 10px, #0f171b 10px 20px);
+}
+
+.evidence-cap {
+  padding: 4px 6px;
+  background: var(--bg-card);
+}
+
+.ok-text {
+  color: var(--ok);
+}
+
+.nofit {
+  color: var(--err);
+  margin-top: 3px;
+}
+
+.nofit-banner {
+  margin-top: 8px;
+  padding: 6px 9px;
+  border: 1px solid var(--err);
+  color: var(--err);
+}
+
+.btn.small.danger {
+  background: rgba(60, 8, 12, 0.7);
+}
+
+.option-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Hinh be phong (skill /anatomy) trong cua xuong va the LAUNCH COMPLEX */
+.story-pad {
+  left: 31.7%;
+  top: 25%;
+  width: 36.6%;
+  height: 50%;
+}
+
+.anatomy-pad {
+  background: transparent;
+}
+
+.anatomy-pad .iso-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.pad-card {
+  padding: 8px;
+  background: #131313;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.pad-card .anatomy-pad .iso-svg {
+  max-height: 300px;
 }

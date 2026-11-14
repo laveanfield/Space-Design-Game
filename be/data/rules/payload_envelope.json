@@ -1,0 +1,342 @@
+{
+ "note": "Sinh boi be/tools/14-11-2026-bake_models3d.py: hop bao ve tinh GAP (f=0) kem adapter/dispenser, lay tu model 3D 14-11-2026. Khoa = BUS__COMM. Dung sua tay.",
+ "unit": "m",
+ "payloads": {
+  "BUS-3U__COM-UHF": {
+   "width_m": 0.15,
+   "depth_m": 0.15,
+   "height_m": 0.37,
+   "diag_m": 0.2121
+  },
+  "BUS-3U__COM-S-CUBE": {
+   "width_m": 0.15,
+   "depth_m": 0.15,
+   "height_m": 0.37,
+   "diag_m": 0.2121
+  },
+  "BUS-3U__COM-X-SMALL": {
+   "width_m": 0.15,
+   "depth_m": 0.1678,
+   "height_m": 0.37,
+   "diag_m": 0.225
+  },
+  "BUS-3U__COM-KA-LEO": {
+   "width_m": 0.442,
+   "depth_m": 0.3239,
+   "height_m": 0.6244,
+   "diag_m": 0.548
+  },
+  "BUS-3U__COM-OPT-LEO": {
+   "width_m": 0.15,
+   "depth_m": 0.5,
+   "height_m": 0.37,
+   "diag_m": 0.522
+  },
+  "BUS-3U__COM-X-MGA": {
+   "width_m": 0.442,
+   "depth_m": 0.3239,
+   "height_m": 0.7044,
+   "diag_m": 0.548
+  },
+  "BUS-3U__COM-X-HGA": {
+   "width_m": 0.442,
+   "depth_m": 0.3239,
+   "height_m": 0.7255,
+   "diag_m": 0.548
+  },
+  "BUS-3U__COM-KA-GEO": {
+   "width_m": 0.75,
+   "depth_m": 0.3239,
+   "height_m": 0.6446,
+   "diag_m": 0.817
+  },
+  "BUS-6U__COM-UHF": {
+   "width_m": 0.19,
+   "depth_m": 0.25,
+   "height_m": 0.376,
+   "diag_m": 0.314
+  },
+  "BUS-6U__COM-S-CUBE": {
+   "width_m": 0.19,
+   "depth_m": 0.25,
+   "height_m": 0.376,
+   "diag_m": 0.314
+  },
+  "BUS-6U__COM-X-SMALL": {
+   "width_m": 0.19,
+   "depth_m": 0.2677,
+   "height_m": 0.376,
+   "diag_m": 0.3283
+  },
+  "BUS-6U__COM-KA-LEO": {
+   "width_m": 0.442,
+   "depth_m": 0.4239,
+   "height_m": 0.6304,
+   "diag_m": 0.6124
+  },
+  "BUS-6U__COM-OPT-LEO": {
+   "width_m": 0.19,
+   "depth_m": 0.6,
+   "height_m": 0.376,
+   "diag_m": 0.6294
+  },
+  "BUS-6U__COM-X-MGA": {
+   "width_m": 0.442,
+   "depth_m": 0.4239,
+   "height_m": 0.7104,
+   "diag_m": 0.6124
+  },
+  "BUS-6U__COM-X-HGA": {
+   "width_m": 0.442,
+   "depth_m": 0.4239,
+   "height_m": 0.7315,
+   "diag_m": 0.6124
+  },
+  "BUS-6U__COM-KA-GEO": {
+   "width_m": 0.75,
+   "depth_m": 0.4239,
+   "height_m": 0.6506,
+   "diag_m": 0.8615
+  },
+  "BUS-12U__COM-UHF": {
+   "width_m": 0.2855,
+   "depth_m": 0.2763,
+   "height_m": 0.392,
+   "diag_m": 0.3973
+  },
+  "BUS-12U__COM-S-CUBE": {
+   "width_m": 0.2855,
+   "depth_m": 0.2763,
+   "height_m": 0.392,
+   "diag_m": 0.3973
+  },
+  "BUS-12U__COM-X-SMALL": {
+   "width_m": 0.2855,
+   "depth_m": 0.348,
+   "height_m": 0.392,
+   "diag_m": 0.4502
+  },
+  "BUS-12U__COM-KA-LEO": {
+   "width_m": 0.4758,
+   "depth_m": 0.4654,
+   "height_m": 0.6546,
+   "diag_m": 0.6656
+  },
+  "BUS-12U__COM-OPT-LEO": {
+   "width_m": 0.2855,
+   "depth_m": 0.6263,
+   "height_m": 0.392,
+   "diag_m": 0.6883
+  },
+  "BUS-12U__COM-X-MGA": {
+   "width_m": 0.4758,
+   "depth_m": 0.4654,
+   "height_m": 0.7346,
+   "diag_m": 0.6656
+  },
+  "BUS-12U__COM-X-HGA": {
+   "width_m": 0.4758,
+   "depth_m": 0.4654,
+   "height_m": 0.7534,
+   "diag_m": 0.6656
+  },
+  "BUS-12U__COM-KA-GEO": {
+   "width_m": 0.75,
+   "depth_m": 0.4654,
+   "height_m": 0.6701,
+   "diag_m": 0.8827
+  },
+  "BUS-ESPA__COM-UHF": {
+   "width_m": 1.24,
+   "depth_m": 1.24,
+   "height_m": 1.1343,
+   "diag_m": 1.7536
+  },
+  "BUS-ESPA__COM-S-CUBE": {
+   "width_m": 1.24,
+   "depth_m": 1.24,
+   "height_m": 1.1343,
+   "diag_m": 1.7536
+  },
+  "BUS-ESPA__COM-X-SMALL": {
+   "width_m": 1.24,
+   "depth_m": 1.24,
+   "height_m": 1.1343,
+   "diag_m": 1.7536
+  },
+  "BUS-ESPA__COM-KA-LEO": {
+   "width_m": 1.24,
+   "depth_m": 1.24,
+   "height_m": 1.1343,
+   "diag_m": 1.7536
+  },
+  "BUS-ESPA__COM-OPT-LEO": {
+   "width_m": 1.24,
+   "depth_m": 1.295,
+   "height_m": 1.1343,
+   "diag_m": 1.7929
+  },
+  "BUS-ESPA__COM-X-MGA": {
+   "width_m": 1.24,
+   "depth_m": 1.24,
+   "height_m": 1.1343,
+   "diag_m": 1.7536
+  },
+  "BUS-ESPA__COM-X-HGA": {
+   "width_m": 1.24,
+   "depth_m": 1.4757,
+   "height_m": 1.3913,
+   "diag_m": 1.9275
+  },
+  "BUS-ESPA__COM-KA-GEO": {
+   "width_m": 1.24,
+   "depth_m": 1.4757,
+   "height_m": 1.2548,
+   "diag_m": 1.9275
+  },
+  "BUS-SMALL500__COM-UHF": {
+   "width_m": 1.1092,
+   "depth_m": 1.65,
+   "height_m": 1.76,
+   "diag_m": 1.9882
+  },
+  "BUS-SMALL500__COM-S-CUBE": {
+   "width_m": 1.1092,
+   "depth_m": 1.65,
+   "height_m": 1.76,
+   "diag_m": 1.9882
+  },
+  "BUS-SMALL500__COM-X-SMALL": {
+   "width_m": 1.1092,
+   "depth_m": 1.65,
+   "height_m": 1.76,
+   "diag_m": 1.9882
+  },
+  "BUS-SMALL500__COM-KA-LEO": {
+   "width_m": 1.1092,
+   "depth_m": 1.65,
+   "height_m": 1.76,
+   "diag_m": 1.9882
+  },
+  "BUS-SMALL500__COM-OPT-LEO": {
+   "width_m": 1.1092,
+   "depth_m": 1.65,
+   "height_m": 1.76,
+   "diag_m": 1.9882
+  },
+  "BUS-SMALL500__COM-X-MGA": {
+   "width_m": 1.1092,
+   "depth_m": 1.65,
+   "height_m": 1.76,
+   "diag_m": 1.9882
+  },
+  "BUS-SMALL500__COM-X-HGA": {
+   "width_m": 1.5,
+   "depth_m": 1.875,
+   "height_m": 1.76,
+   "diag_m": 2.4012
+  },
+  "BUS-SMALL500__COM-KA-GEO": {
+   "width_m": 1.95,
+   "depth_m": 2.0775,
+   "height_m": 1.95,
+   "diag_m": 2.8493
+  },
+  "BUS-LARGE-LEO__COM-UHF": {
+   "width_m": 2.1408,
+   "depth_m": 3.64,
+   "height_m": 4.0,
+   "diag_m": 4.2229
+  },
+  "BUS-LARGE-LEO__COM-S-CUBE": {
+   "width_m": 2.1408,
+   "depth_m": 3.64,
+   "height_m": 4.0,
+   "diag_m": 4.2229
+  },
+  "BUS-LARGE-LEO__COM-X-SMALL": {
+   "width_m": 2.1408,
+   "depth_m": 3.64,
+   "height_m": 4.0,
+   "diag_m": 4.2229
+  },
+  "BUS-LARGE-LEO__COM-KA-LEO": {
+   "width_m": 2.1408,
+   "depth_m": 3.64,
+   "height_m": 4.0,
+   "diag_m": 4.2229
+  },
+  "BUS-LARGE-LEO__COM-OPT-LEO": {
+   "width_m": 2.1408,
+   "depth_m": 3.64,
+   "height_m": 4.0,
+   "diag_m": 4.2229
+  },
+  "BUS-LARGE-LEO__COM-X-MGA": {
+   "width_m": 2.1408,
+   "depth_m": 3.64,
+   "height_m": 4.0,
+   "diag_m": 4.2229
+  },
+  "BUS-LARGE-LEO__COM-X-HGA": {
+   "width_m": 2.1408,
+   "depth_m": 3.64,
+   "height_m": 4.0,
+   "diag_m": 4.2229
+  },
+  "BUS-LARGE-LEO__COM-KA-GEO": {
+   "width_m": 2.2,
+   "depth_m": 3.64,
+   "height_m": 4.014,
+   "diag_m": 4.2532
+  },
+  "BUS-GEO__COM-UHF": {
+   "width_m": 2.6233,
+   "depth_m": 2.22,
+   "height_m": 4.09,
+   "diag_m": 3.4366
+  },
+  "BUS-GEO__COM-S-CUBE": {
+   "width_m": 2.6233,
+   "depth_m": 2.22,
+   "height_m": 4.09,
+   "diag_m": 3.4366
+  },
+  "BUS-GEO__COM-X-SMALL": {
+   "width_m": 2.6233,
+   "depth_m": 2.294,
+   "height_m": 4.09,
+   "diag_m": 3.4848
+  },
+  "BUS-GEO__COM-KA-LEO": {
+   "width_m": 2.6233,
+   "depth_m": 2.405,
+   "height_m": 4.09,
+   "diag_m": 3.5589
+  },
+  "BUS-GEO__COM-OPT-LEO": {
+   "width_m": 2.6233,
+   "depth_m": 2.555,
+   "height_m": 4.09,
+   "diag_m": 3.6619
+  },
+  "BUS-GEO__COM-X-MGA": {
+   "width_m": 2.6233,
+   "depth_m": 2.45,
+   "height_m": 4.09,
+   "diag_m": 3.5894
+  },
+  "BUS-GEO__COM-X-HGA": {
+   "width_m": 2.6233,
+   "depth_m": 2.855,
+   "height_m": 4.09,
+   "diag_m": 3.8772
+  },
+  "BUS-GEO__COM-KA-GEO": {
+   "width_m": 2.6233,
+   "depth_m": 3.17,
+   "height_m": 4.094,
+   "diag_m": 4.1147
+  }
+ }
+}

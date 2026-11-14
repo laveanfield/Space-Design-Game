@@ -117,6 +117,13 @@ def create_app(root: str = ".") -> FastAPI:
         except Exception as exc:
             _handle_err(exc)
 
+    @app.get("/campaign/accommodation")
+    def campaign_accommodation():
+        try:
+            return eng.accommodation()
+        except Exception as exc:
+            _handle_err(exc)
+
     @app.post("/campaign/lifetime")
     def campaign_lifetime(req: DesignRequest):
         try:

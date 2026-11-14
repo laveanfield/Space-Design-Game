@@ -103,6 +103,18 @@ def r5(v):
 
 
 # ---------------------------------------------------------------- ve tinh
+def stowed_envelope(L, model):
+    """Hop bao cua ve tinh o trang thai GAP (f = 0) kem adapter/dispenser: dung de kiem tra co lot fairing khong.
+    Tra {width_m, depth_m, height_m, diag_m}; diag = duong cheo mat cat ngang = duong kinh toi thieu de lot fairing tron."""
+    SC = L["model_sat_common"]
+    W, T = SC.flatten(model, 0.0)
+    pts = [np.concatenate(m.P) for m in (W, T, model["adapter"].w) if m.n]
+    P = np.concatenate(pts)
+    lo, hi = P.min(0), P.max(0)
+    w, d, h = (hi - lo).tolist()
+    return dict(width_m=round(w, 4), depth_m=round(d, 4), height_m=round(h, 4), diag_m=round(float(np.hypot(w, d)), 4))
+
+
 def bake_satellite(L, bus_id, comm_id):
     """Ve tinh = than (trang + tam pin) + adapter + cac bo phan co khop (canh pin, roi, can chao)."""
     if bus_id in ("BUS-3U", "BUS-6U"):
@@ -129,7 +141,8 @@ def bake_satellite(L, bus_id, comm_id):
                 meshes.append(W.mesh(p["name"] + "_" + key, a, role="part", part=i, solar=solar))
     stem = "sat_%s__%s" % (bus_id, comm_id)
     size = W.save(os.path.join(OUT_DIR, stem + ".bin"))
-    info = dict(kind="sat", id=stem, bus=bus_id, comm=comm_id, dims=r5(model["dims"]), bin=stem + ".bin", meshes=meshes, parts=parts)
+    info = dict(kind="sat", id=stem, bus=bus_id, comm=comm_id, dims=r5(model["dims"]), bin=stem + ".bin", meshes=meshes, parts=parts,
+                envelope=stowed_envelope(L, model))
     with open(os.path.join(OUT_DIR, stem + ".json"), "w", encoding="utf-8") as fh:
         json.dump(info, fh, separators=(",", ":"))
     return stem, size, sum(m["nv"] for m in meshes)
@@ -200,6 +213,22 @@ def main():
     with open(os.path.join(OUT_DIR, "index.json"), "w", encoding="utf-8") as fh:
         json.dump(index, fh, indent=1)
     print("da ghi %s  (tong .bin %.2f MB)" % (OUT_DIR, total / 1e6))
+
+    # Kich thuoc gap that cua tung to hop (bus, ang-ten) -> backend dung de kiem tra "co lot fairing khong".
+    # Ang-ten cung tinh: mot chao 2,2 m gap tren CubeSat se lam ca khoi khong con nho nua.
+    env = {}
+    for key, stem in index["sats"].items():
+        with open(os.path.join(OUT_DIR, stem + ".json"), encoding="utf-8") as fh:
+            env[key] = json.load(fh)["envelope"]
+    env_path = os.path.normpath(os.path.join(HERE, "..", "data", "rules", "payload_envelope.json"))
+    os.makedirs(os.path.dirname(env_path), exist_ok=True)
+    with open(env_path, "w", encoding="utf-8") as fh:
+        json.dump(dict(note="Sinh boi be/tools/14-11-2026-bake_models3d.py: hop bao ve tinh GAP (f=0) kem adapter/dispenser, lay tu model 3D 14-11-2026. Khoa = BUS__COMM. Dung sua tay.",
+                       unit="m", payloads=env), fh, indent=1)
+    for key in ("BUS-3U__COM-UHF", "BUS-6U__COM-S-CUBE", "BUS-3U__COM-KA-GEO", "BUS-ESPA__COM-X-SMALL", "BUS-SMALL500__COM-X-SMALL", "BUS-LARGE-LEO__COM-KA-LEO", "BUS-GEO__COM-KA-GEO"):
+        e = env.get(key)
+        if e:
+            print("  %-26s gap: %.2f x %.2f x %.2f m (cheo %.2f m)" % (key, e["width_m"], e["depth_m"], e["height_m"], e["diag_m"]))
 
 
 if __name__ == "__main__":

@@ -5,6 +5,9 @@ import OrbitOps3DCanvas from './components/OrbitOps3DCanvas';
 import Launch3DCanvas from './components/Launch3DCanvas';
 import TrajectoryScope from './components/TrajectoryScope';
 import { BossPanel, DatasheetTotals, Dossier, LifePhase, Logbook, tx } from './components/CampaignPanels';
+import StoryScene from './story/StoryScene';
+import { SCENES } from './story/14-11-2026-script';
+import { LaunchPadLive } from './anatomy/LaunchPadFigure';
 
 // Vong choi chinh: che tao -> phong 3D -> 12 moc tren quy dao -> tong ket.
 // (Man "ops" va "debrief" cu van con, mo bang nut "VAN HANH TAY" o man tong ket.)
@@ -114,6 +117,12 @@ export default function App() {
   const [attempts, setAttempts] = useState(0);
   const [logbook, setLogbook] = useState(readLogbook);
 
+  // Luat lap tai (ten lua nao cho duoc ve tinh nao) + canh hoi thoai dang mo
+  const [accomm, setAccomm] = useState(null);
+  const [story, setStory] = useState(null); // { lines, ctx, then }
+  const [seenIntro, setSeenIntro] = useState({});
+  const [seenPrelaunch, setSeenPrelaunch] = useState({});
+
   // Ops 3D simulation state
   const [opsId, setOpsId] = useState(null);
   const [opsSnap, setOpsSnap] = useState(null);
@@ -191,9 +200,14 @@ export default function App() {
     let cancelled = false;
     (async () => {
       try {
-        const [catRes, misRes] = await Promise.all([apiFetch('/catalog'), apiFetch('/missions')]);
+        const [catRes, misRes, accRes] = await Promise.all([
+          apiFetch('/catalog'),
+          apiFetch('/missions'),
+          apiFetch('/campaign/accommodation').catch(() => null),
+        ]);
         if (cancelled) return;
         setCatalog(catRes);
+        setAccomm(accRes);
         setMissions(misRes);
         if (misRes.length > 0) {
           await loadMission(misRes[0].id);
@@ -310,9 +324,62 @@ export default function App() {
     }
   };
 
+  const scenario = missionDetail?.scenario || {};
+
+  // Thong tin cho thanh tren cua canh hoi thoai + bien thay vao cau thoai
+  const storyHeader = {
+    level: `LEVEL ${missionDetail?.meta?.difficulty ?? 1}`,
+    title: (missionDetail?.meta?.title?.vi || '').toUpperCase(),
+    budget: scenario.budget_musd,
+    deadline: scenario.deadline_months,
+  };
+  const playScene = (key, extra = {}, then = null) => {
+    const ctx = {
+      mission: selectedMissionId,
+      budget: scenario.budget_musd,
+      deadline: scenario.deadline_months,
+      rep: reputation,
+      cost: Number(evalReport?.metrics?.['cost.total_musd'] || 0).toFixed(1),
+      ...extra,
+    };
+    const lines = SCENES[key]?.(ctx);
+    if (!lines?.length) return then?.();
+    setStory({ lines, ctx, then });
+    return null;
+  };
+  const closeStory = () => {
+    const then = story?.then;
+    setStory(null);
+    then?.();
+  };
+
+  // Ten lua hien tai co lap duoc ve tinh nay khong (luat lap tai: lot fairing + cung nhom kich co)
+  const fitOf = (vehicleId) => accomm?.[`${design?.bus}__${design?.comm}`]?.[vehicleId] || null;
+  const currentFit = design ? fitOf(design.launch?.vehicle) : null;
+
+  // Vao xuong: lan dau moi nhiem vu thi Sep giao viec (canh hoi thoai)
+  const enterBuild = () => {
+    setPhase('design');
+    if (!seenIntro[selectedMissionId]) {
+      setSeenIntro((s) => ({ ...s, [selectedMissionId]: true }));
+      playScene('intro', { mood: { boss: 'smug', eng: 'worried' } });
+    }
+  };
+
+  // Lan phong dau moi nhiem vu: Sep giuc truoc khi phong
+  const requestLaunch = () => {
+    if (!seenPrelaunch[selectedMissionId]) {
+      setSeenPrelaunch((s) => ({ ...s, [selectedMissionId]: true }));
+      playScene('prelaunch', { mood: { boss: 'happy', eng: 'calm' } }, startLaunch);
+    } else {
+      startLaunch();
+    }
+  };
+
   // "Launch anything": khong chan phong vi thiet ke sai. Hau qua se tu noi.
+  // (Chi chan khi ve tinh KHONG LAP VAO duoc ten lua: do la su that tich hop, khong phai loi khuyen.)
   const startLaunch = async () => {
-    if (!design) return;
+    if (!design || (currentFit && !currentFit.ok)) return;
     setBusy(true);
     setErrorMsg('');
     try {
@@ -341,13 +408,17 @@ export default function App() {
     (result) => {
       setLaunchResult(result);
       if (!result.success) {
+        const repAfter = Math.max(0, reputation - 1);
         setAttempts((n) => n + 1);
-        setReputation((r) => Math.max(0, r - 1));
+        setReputation(repAfter);
         addLog(false, tx(result.failure?.title) || 'Mất tên lửa', tx(result.failure?.cause));
+        const key = result.aborted === 'scrub' ? 'abort_scrub' : result.aborted === 'fts' ? 'abort_fts' : 'launch_fail';
+        const after = repAfter <= 0 ? () => playScene('fired', { rep: 0, mood: { boss: 'angry', eng: 'worried' } }) : null;
+        setTimeout(() => playScene(key, { rep: repAfter, failure: tx(result.failure?.title).toLowerCase(), mood: { boss: 'angry', eng: 'worried' } }, after), 900);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [design, selectedMissionId]
+    [design, selectedMissionId, reputation, evalReport, missionDetail]
   );
 
   const startLife = async () => {
@@ -390,6 +461,17 @@ export default function App() {
     setOutcome({ ...o, headline, repLoss: loss, repAfter, dossier: lifeData.dossier, score: lifeData.score });
     setPhase('review');
     playSoundAsset(audioOn, o.success ? '06-11-2026-chime.wav' : '08-11-2026-power_down.wav', 0.35);
+    const after = repAfter <= 0 ? () => playScene('fired', { rep: 0, mood: { boss: 'angry', eng: 'worried' } }) : null;
+    playScene(
+      o.success ? 'review_ok' : 'review_fail',
+      {
+        rep: repAfter,
+        evidence: o.evidence_usable,
+        failure: tx(lifeData.dossier?.title).toLowerCase(),
+        mood: o.success ? { boss: 'happy', eng: 'happy' } : { boss: 'angry', eng: 'worried' },
+      },
+      after
+    );
   };
 
   const startOps = async () => {
@@ -467,7 +549,6 @@ export default function App() {
     }
   };
 
-  const scenario = missionDetail?.scenario || {};
   const tables = catalog?.tables || {};
 
   const slotEntries = useMemo(() => {
@@ -642,7 +723,7 @@ export default function App() {
                         applyPreset(
                           typeof missionDetail.starter === 'string' ? missionDetail.starter : 'starter'
                         );
-                        setPhase('design');
+                        enterBuild();
                       }}
                     >
                       VÀO XƯỞNG CHẾ TẠO →
@@ -714,15 +795,18 @@ export default function App() {
                       : design[activeSlot] === item.id;
 
                   const allowedOrbits = scenario.allowed_orbit_ids || [];
+                  // Ten lua khong lap duoc ve tinh hien tai (lot fairing / giao dien lap) -> khoa, ghi ro ly do vat ly
+                  const fit = isLaunch ? fitOf(item.id) : null;
+                  const noFit = Boolean(fit && !fit.ok);
                   const disallowed =
-                    activeSlot === 'orbit' &&
-                    allowedOrbits.length > 0 &&
-                    !allowedOrbits.includes(item.id);
+                    (activeSlot === 'orbit' && allowedOrbits.length > 0 && !allowedOrbits.includes(item.id)) || noFit;
 
                   return (
                     <button
                       key={item.id}
                       className={`option-item ${selected ? 'selected' : ''} ${disallowed ? 'disallowed' : ''}`}
+                      disabled={noFit && !selected}
+                      title={noFit ? tx(fit.reason) : undefined}
                       onClick={() => {
                         updateDesign((d) => {
                           if (isInstr) {
@@ -771,7 +855,9 @@ export default function App() {
                         {item.rad_tolerance_krad != null ? ` • ${item.rad_tolerance_krad} krad` : ''}
                         {item.leo_capacity_kg != null ? ` • LEO ${item.leo_capacity_kg} kg` : ''}
                         {item.lead_time_months != null ? ` • đặt ${item.lead_time_months} tháng` : ''}
+                        {isLaunch && item.fairing_diameter_m != null ? ` • fairing Ø${item.fairing_diameter_m} m` : ''}
                       </div>
+                      {noFit && <div className="small nofit">✕ KHÔNG LẮP ĐƯỢC: {tx(fit.reason)}</div>}
                     </button>
                   );
                 })}
@@ -836,10 +922,20 @@ export default function App() {
                 <button className="btn" disabled={busy} onClick={runPreview}>
                   ◉ MÔ PHỎNG QUỸ ĐẠO PHÓNG
                 </button>
-                <button className="btn primary hazard" disabled={busy || reputation <= 0} onClick={startLaunch}>
+                <button
+                  className="btn primary hazard"
+                  disabled={busy || reputation <= 0 || Boolean(currentFit && !currentFit.ok)}
+                  onClick={requestLaunch}
+                >
                   GO FOR LAUNCH →
                 </button>
               </div>
+              {currentFit && !currentFit.ok && (
+                <div className="nofit-banner small">
+                  ⚠ TÍCH HỢP THẤT BẠI: vệ tinh không lắp được vào {design.launch?.vehicle}. {tx(currentFit.reason)} Chọn lại
+                  tên lửa ở mục LAUNCH.
+                </div>
+              )}
             </section>
 
             {/* Right: luat cua Sep + so lieu tho + so tay. KHONG co bang dat/truot, khong co goi y sua. */}
@@ -884,7 +980,9 @@ export default function App() {
             </section>
 
             <section className="panel">
-              <h2 className="panel-title">
+              <LaunchPadLive key={launchSeq} fired={launchFired} />
+
+              <h2 className="panel-title" style={{ marginTop: 10 }}>
                 <span>ASCENT SEQUENCER</span>
                 <span className="small muted">{flightData.meta?.physics}</span>
               </h2>
@@ -1365,6 +1463,10 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {story && (
+        <StoryScene lines={story.lines} ctx={story.ctx} header={storyHeader} audioOn={audioOn} onClose={closeStory} />
+      )}
 
       <dialog ref={dialogRef} className="modal">
         <div className="row-between" style={{ marginBottom: 10 }}>

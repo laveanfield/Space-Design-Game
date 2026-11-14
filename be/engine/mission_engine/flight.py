@@ -1,6 +1,7 @@
 """fly(): thiet ke -> FlightBundle (schema flight/1). Ascent la K-ASC (backend cam duoc); precompute roi replay."""
 from . import __version__
-from .errors import NoGoCapacity
+from .errors import NoGoCapacity, PayloadDoesNotFit
+from .campaign import accommodation
 from .kernels import ascent, orbit as korbit
 from .rules import metrics
 from .contract.pack import encode_f32, encode_u8
@@ -11,6 +12,9 @@ def fly(design, mission, catalog, seed=0, ballast_kg=0.0):
     rs = mission.ruleset
     it = metrics.resolve(design, catalog)
     m = metrics.compute(design, it, mission, rs)
+    fit = accommodation.check(it["bus"], design.get("comm"), it["lv"])
+    if not fit["ok"]:                                       # khong lap vao ten lua duoc thi khong co chuyen bay nao
+        raise PayloadDoesNotFit(fit["reason"]["vi"], lv=it["lv"]["id"], bus=it["bus"]["id"], fit=fit)
     if not it["lv"].get("stages"):
         raise NoGoCapacity(f"{it['lv']['id']} thieu du lieu tang (stages): bo sung o data/overrides/launch_vehicles.yaml", lv=it["lv"]["id"])
     orb = it["orbit"]

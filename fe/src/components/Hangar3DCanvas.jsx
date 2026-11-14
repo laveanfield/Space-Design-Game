@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { buildRocket, buildSatellite, loadRocket, loadSatellite } from '../three/modelLoader';
+import { buildHangarEnv } from '../three/environments';
 
 const BUS_DIMS = {
   'BUS-3U': [0.1, 0.1, 0.34],
@@ -269,19 +270,7 @@ function buildSatelliteGroup(design, catalog, report) {
     root.add(tank, nozzle);
   }
 
-  // Diagnostic Status Ring around Hangar Base
-  // Vong de trung tinh: KHONG doi mau theo dat/khong dat (man che tao khong phan xet thiet ke)
-  const ringColor = 0x48c9ff;
-  const ringMat = new THREE.MeshBasicMaterial({
-    color: ringColor,
-    transparent: true,
-    opacity: 0.45,
-  });
-  const statusRing = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.015, 8, 64), ringMat);
-  statusRing.rotation.x = Math.PI / 2;
-  statusRing.position.y = -1.1;
-  root.add(statusRing);
-
+  // (Vong trang thai duoi de da bo: xuong lap rap co ban xoay that, va man che tao khong phan xet thiet ke.)
   return root;
 }
 
@@ -297,7 +286,7 @@ function disposeGroup(group) {
 function fitOf(object) {
   const box = new THREE.Box3().setFromObject(object);
   const size = box.getSize(new THREE.Vector3());
-  return { max: Math.max(size.x, size.y, size.z) || 1, center: box.getCenter(new THREE.Vector3()) };
+  return { max: Math.max(size.x, size.y, size.z) || 1, size, center: box.getCenter(new THREE.Vector3()) };
 }
 
 /**
@@ -311,7 +300,7 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const stageRef = useRef({ holder: null, rig: null, fallback: null, f: 0, fTarget: 0, pop: 1, fitStowed: 1, fitOpen: 1 });
-  const rotRef = useRef({ yaw: 0.55, pitch: 0.35, zoom: 4.1, dragging: false, lx: 0, ly: 0 });
+  const rotRef = useRef({ yaw: 0.55, pitch: 0.28, zoom: 5.2, dragging: false, lx: 0, ly: 0 });
   const [view, setView] = useState('sat');
   const [deployed, setDeployed] = useState(false);
   const [source, setSource] = useState('');
@@ -338,21 +327,17 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
     el.innerHTML = '';
     el.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xd9f5ea, 0.72));
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
-    keyLight.position.set(4, 6, 5);
-    const rimLight = new THREE.DirectionalLight(0x8fd8ff, 0.7);
-    rimLight.position.set(-4, -2, -4);
+    // Anh sang xuong: den tran trang + hat dien xanh nhe; nen xam-xanh dam nhu trong nha xuong
+    scene.background = new THREE.Color(theme === 'light' ? 0xdfe6ea : 0x1a2229);
+    scene.fog = new THREE.Fog(scene.background, 9, 22);
+    scene.add(new THREE.HemisphereLight(0xf2f7ff, 0x5a6066, 0.9));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
+    keyLight.position.set(4, 7, 5);
+    const rimLight = new THREE.DirectionalLight(0x8fd8ff, 0.55);
+    rimLight.position.set(-4, 3, -5);
     scene.add(keyLight, rimLight);
-
-    const gridColor = theme === 'light' ? 0x4b7565 : 0x1e4a38;
-    const grid = new THREE.GridHelper(6, 16, gridColor, gridColor);
-    grid.position.y = -1.12;
-    scene.add(grid);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.015, 8, 64), new THREE.MeshBasicMaterial({ color: 0x48c9ff, transparent: true, opacity: 0.45 }));
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = -1.1;
-    scene.add(ring);
+    const env = buildHangarEnv();
+    scene.add(env);
 
     const holder = new THREE.Group();
     scene.add(holder);
@@ -367,20 +352,24 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
     });
     resizeObserver.observe(el);
 
+    // Xoay camera: bat con tro (pointer capture) de keo ra ngoai canvas khong bi tuot; goc ngang khong cho chui
+    // xuong duoi san (pitch >= -0.05) hay nhin thang tu dinh; khoang cach toi thieu lon hon model -> model khong "mat".
     const rot = rotRef.current;
-    const onDown = (e) => { rot.dragging = true; rot.lx = e.clientX; rot.ly = e.clientY; };
+    const dom = renderer.domElement;
+    dom.style.touchAction = 'none';
+    const onDown = (e) => { rot.dragging = true; rot.lx = e.clientX; rot.ly = e.clientY; dom.setPointerCapture?.(e.pointerId); };
     const onMove = (e) => {
       if (!rot.dragging) return;
-      rot.yaw += (e.clientX - rot.lx) * 0.01;
-      rot.pitch = Math.max(-1.2, Math.min(1.2, rot.pitch + (e.clientY - rot.ly) * 0.01));
+      rot.yaw -= (e.clientX - rot.lx) * 0.008;
+      rot.pitch = Math.max(-0.05, Math.min(1.05, rot.pitch + (e.clientY - rot.ly) * 0.006));
       rot.lx = e.clientX; rot.ly = e.clientY;
     };
-    const onUp = () => { rot.dragging = false; };
-    const onWheel = (e) => { e.preventDefault(); rot.zoom = Math.max(2.3, Math.min(7.5, rot.zoom + e.deltaY * 0.002)); };
-    const dom = renderer.domElement;
+    const onUp = (e) => { rot.dragging = false; dom.releasePointerCapture?.(e.pointerId); };
+    const onWheel = (e) => { e.preventDefault(); rot.zoom = Math.max(3.4, Math.min(8.5, rot.zoom + e.deltaY * 0.003)); };
     dom.addEventListener('pointerdown', onDown);
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
+    dom.addEventListener('pointermove', onMove);
+    dom.addEventListener('pointerup', onUp);
+    dom.addEventListener('pointercancel', onUp);
     dom.addEventListener('wheel', onWheel, { passive: false });
 
     // Khong ve khi canvas khong nam trong man hinh hoac tab bi an -> may nhe hon
@@ -409,8 +398,10 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
         const target = st.fallback || st.rig.root;
         target.scale.setScalar(fit * st.pop);
       }
-      camera.position.set(rot.zoom * Math.cos(rot.pitch) * Math.sin(rot.yaw), rot.zoom * Math.sin(rot.pitch) + 0.15, rot.zoom * Math.cos(rot.pitch) * Math.cos(rot.yaw));
-      camera.lookAt(0, -0.1, 0);
+      // camera luon nhin vao TAM model (tam o do cao 0.1 tren ban xoay)
+      const ty = 0.15;
+      camera.position.set(rot.zoom * Math.cos(rot.pitch) * Math.sin(rot.yaw), ty + rot.zoom * Math.sin(rot.pitch), rot.zoom * Math.cos(rot.pitch) * Math.cos(rot.yaw));
+      camera.lookAt(0, ty, 0);
       renderer.render(scene, camera);
     };
     rafId = requestAnimationFrame(animate);
@@ -420,9 +411,11 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
       resizeObserver.disconnect();
       io.disconnect();
       dom.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
+      dom.removeEventListener('pointermove', onMove);
+      dom.removeEventListener('pointerup', onUp);
+      dom.removeEventListener('pointercancel', onUp);
       dom.removeEventListener('wheel', onWheel);
+      env.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
       if (stageRef.current.fallback) disposeGroup(stageRef.current.fallback);
       stageRef.current = { holder: null, rig: null, fallback: null, f: 0, fTarget: 0, pop: 1, fitStowed: 1, fitOpen: 1 };
       renderer.dispose();
@@ -443,6 +436,7 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
       const obj = fallback || rig.root;
       obj.scale.setScalar(1);
       obj.position.set(0, 0, 0);
+      let halfH = 1.15; // nua chieu cao model sau khi chuan hoa, de dat day model len mat ban xoay
       if (rig?.setDeploy) {
         rig.setDeploy(1);
         const open = fitOf(obj);
@@ -451,18 +445,21 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
         st.fitStowed = 2.3 / stowed.max;
         st.fitOpen = 2.9 / open.max;
         obj.position.copy(stowed.center).multiplyScalar(-1);
+        halfH = (stowed.size.y * st.fitStowed) / 2;
         rig.setDeploy(st.f);
       } else if (rig) {
         const fit = fitOf(obj);
         st.fitStowed = st.fitOpen = 2.6 / fit.max;
         obj.position.copy(fit.center).multiplyScalar(-1);
+        halfH = (fit.size.y * st.fitStowed) / 2;
       } else {
         st.fitStowed = st.fitOpen = 1;
+        halfH = 0.95;
       }
-      // dat model vao mot nhom trung gian de phong to quanh tam cua no
+      // dat model vao mot nhom trung gian de phong to quanh tam cua no; day model dung tren mat ban xoay (y = -0.92)
       const pivot = new THREE.Group();
       pivot.add(obj);
-      pivot.position.y = -0.05;
+      pivot.position.y = -0.92 + halfH + 0.02;
       st.holder.add(pivot);
       if (rig) { st.rig = { ...rig, root: pivot }; }
       else { st.fallback = pivot; }

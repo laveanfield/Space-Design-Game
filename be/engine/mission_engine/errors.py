@@ -15,6 +15,7 @@ class EngineError(Exception):
 class CatalogIdMissing(EngineError): code = "CATALOG_ID_MISSING"
 class OrbitNotAllowed(EngineError): code = "ORBIT_NOT_ALLOWED"
 class NoGoCapacity(EngineError): code = "NO_GO_CAPACITY"
+class PayloadDoesNotFit(EngineError): code = "PAYLOAD_DOES_NOT_FIT"
 class PackInvalid(EngineError): code = "PACK_INVALID"
 class SchemaMismatch(EngineError): code = "SCHEMA_MISMATCH"
 class PermissionDenied(EngineError): code = "PERMISSION_DENIED"

@@ -11,6 +11,7 @@ from .rules.advisor import advise as _advise
 from .flight import fly as _fly
 from .session.ops import OpsSession
 from .campaign import simulate_lifetime as _lifetime
+from .campaign.accommodation import matrix as _accommodation_matrix
 
 
 class Engine:
@@ -51,7 +52,17 @@ class Engine:
         """Vong doi 12 moc tren quy dao: hau qua cua thiet ke (xem campaign/lifetime.py)."""
         mission = self._m(design, mission_id)
         report = _evaluate(design, mission, self.catalog, False)
-        return _lifetime(report, mission.life_years, design.get("seed", 0) if seed is None else seed)
+        imaging = None
+        for iid in design.get("instruments", []):
+            ins = self.catalog.get("instruments", iid)
+            if ins.get("science_category") == "Earth observation":       # thiet bi chup anh mat dat -> tu dong chup dam chay
+                imaging = {"sensor": ins.get("kind", "imager_rgb"), "name": ins.get("name", iid), "id": iid}
+                break
+        return _lifetime(report, mission.life_years, design.get("seed", 0) if seed is None else seed, imaging)
+
+    def accommodation(self):
+        """Bang ten lua x (bus, ang-ten) -> lap duoc khong + ly do (campaign/accommodation.py)."""
+        return _accommodation_matrix(self.catalog.to_dict()["tables"])
 
     def ops_open(self, design, mission_id=None, seed=None):
         return OpsSession(design, self._m(design, mission_id), self.catalog, design.get("seed", 0) if seed is None else seed)

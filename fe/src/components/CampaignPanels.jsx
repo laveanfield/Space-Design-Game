@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { playSoundAsset } from '../api/client';
 import OrbitOps3DCanvas from './OrbitOps3DCanvas';
+import EvidenceGallery from './EvidenceGallery';
 
 /**
  * CampaignPanels -- cac bang cua vong choi "che tao -> phong -> 12 moc tren quy dao -> rut kinh nghiem".
@@ -138,6 +139,8 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
       const warn = step.events.find((e) => e.level === 'warn');
       if (crit) { playSoundAsset(audioRef.current, '08-11-2026-alarm.wav', 0.35); playSoundAsset(audioRef.current, '08-11-2026-link_lost.wav', 0.3); }
       else if (warn) playSoundAsset(audioRef.current, EVENT_SOUND[warn.code] || '06-11-2026-blip.wav', 0.28);
+      else if (step.events.some((e) => e.code === 'EVIDENCE_OK')) playSoundAsset(audioRef.current, '06-11-2026-chime.wav', 0.35);
+      else if (step.events.some((e) => e.code === 'FIRE_CAPTURED')) playSoundAsset(audioRef.current, '08-11-2026-shutter.wav', 0.35);
       else playSoundAsset(audioRef.current, '08-11-2026-link_regained.wav', 0.12);
       setShown((s) => s + 1);
     }, shown === 0 ? 900 : 1700 / speed);
@@ -205,6 +208,11 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
             <div className="small muted">mất {cur ? num(cur.lost_gb, 2) : '0'} GB</div>
           </div>
         </div>
+        {life.imaging && (
+          <div style={{ marginTop: 10 }}>
+            <EvidenceGallery evidence={life.evidence || []} need={life.evidence_need} step={cur ? cur.k : 0} sensorName={life.imaging.name} />
+          </div>
+        )}
         <div className="small muted" style={{ margin: '10px 0 4px 0' }}>NHẬT KÝ QUỸ ĐẠO</div>
         <div className="constraint-list" style={{ maxHeight: 220 }}>
           {feed.map((e, i) => (

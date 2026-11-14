@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { decodeF32, decodeU8, playSoundAsset } from '../api/client';
 import { buildRocket, buildSatellite, loadRocket, loadSatellite } from '../three/modelLoader';
+import { buildLaunchComplex, buildServiceTower } from '../three/environments';
 
 /**
  * Launch3DCanvas -- canh phong 3D: ten lua THAT bay theo du lieu /fly cua backend.
@@ -121,18 +122,16 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
     sun.position.set(-30, 60, 40);
     scene.add(sun);
 
-    // ---------- mat dat + be phong (don gian), se tut xuong khi ten lua len cao
+    // ---------- khu phong ven bien (nha lap rap lon, duong xe xich, be, cot thu loi, thap nuoc), se tut xuong khi ten lua len cao
     const ground = new THREE.Group();
-    const land = new THREE.Mesh(new THREE.CircleGeometry(2500, 48), new THREE.MeshLambertMaterial({ color: 0x4d6b4a }));
-    land.rotation.x = -Math.PI / 2;
-    const apron = new THREE.Mesh(new THREE.CircleGeometry(60, 32), new THREE.MeshLambertMaterial({ color: 0x8a8d90 }));
-    apron.rotation.x = -Math.PI / 2; apron.position.y = 0.05;
+    const complex = buildLaunchComplex();
+    ground.add(complex);
     const padSlab = new THREE.Mesh(new THREE.BoxGeometry(22, 2, 22), new THREE.MeshLambertMaterial({ color: 0xa5a8aa }));
     padSlab.position.y = -1;
-    // thap dich vu: khung thep manh (luoi day) de khong che ten lua
-    const tower = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1, 2, 10, 2), new THREE.MeshBasicMaterial({ color: 0xb8402e, wireframe: true }));
-    ground.add(land, apron, padSlab, tower);
+    ground.add(padSlab);
+    let tower = null; // thap dich vu dung khi biet chieu cao ten lua
     scene.add(ground);
+    scene.fog = new THREE.Fog(SKY_DAY.clone(), 1500, 6000);
 
     // ---------- Trai Dat cong + sao (hien dan khi len cao)
     const earthMat = new THREE.MeshLambertMaterial({ color: 0x2b5f8f });
@@ -197,8 +196,8 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
         addPlume(body, [0, 0, 0, 0.8], 'kerolox', 's0');
       }
       stack.add(rig.root);
-      const tw = Math.max(1.6, R * 1.6);
-      tower.scale.set(tw, H * 0.95, tw); tower.position.set(-(R + tw * 0.5 + 1.5), H * 0.475, 0);
+      tower = buildServiceTower(H, R);
+      ground.add(tower.group);
       padSlab.scale.set(Math.max(1, R * 0.9), 1, Math.max(1, R * 0.9));
       if (rig.extras.length) {
         // phan phu cua model (vi du be TEL cua Electron) thuoc ve BE PHONG: o lai mat dat, khong bay theo ten lua
@@ -228,7 +227,8 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
     })();
 
     // ---------- camera: keo de xoay, cuon de phong to
-    const cam = { yaw: 0.75, pitch: 0.1, dist: 55, dragging: false, lx: 0, ly: 0, shake: 0, focus: new THREE.Vector3(0, 9, 0) };
+    // goc may ban dau: dung phia bien (+x) nhin vao ten lua, nha lap rap lon nam phia sau
+    const cam = { yaw: 1.32, pitch: 0.12, dist: 55, dragging: false, lx: 0, ly: 0, shake: 0, focus: new THREE.Vector3(0, 9, 0) };
     const dom = renderer.domElement;
     const onDown = (e) => { cam.dragging = true; cam.lx = e.clientX; cam.ly = e.clientY; };
     const onMove = (e) => { if (!cam.dragging) return; cam.yaw -= (e.clientX - cam.lx) * 0.008; cam.pitch = Math.max(-0.4, Math.min(1.3, cam.pitch + (e.clientY - cam.ly) * 0.006)); cam.lx = e.clientX; cam.ly = e.clientY; };
@@ -278,10 +278,33 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
       sound('06-11-2026-sonic_boom.wav', 0.6); sound('08-11-2026-alarm.wav', 0.3);
     };
 
-    const finish = (success) => {
+    const finish = (success, aborted = null) => {
       if (F.ended) return;
       F.ended = true;
-      cbRef.current.onEnd?.({ success, failure });
+      cbRef.current.onEnd?.({ success, failure: aborted ? abortFailure(aborted) : failure, aborted });
+    };
+
+    // Nut HUY PHONG: truoc T-0 la hoan phong (scrub); dang bay la kich hoat he thong tu huy an toan (FTS) -> no.
+    const abortFailure = (kind) => kind === 'scrub'
+      ? { kind: 'scrub', explode: false, title: { vi: 'HOÃN PHÓNG THEO LỆNH KỸ SƯ TRƯỞNG', en: 'LAUNCH SCRUBBED BY CHIEF ENGINEER' },
+        cause: { vi: 'Bạn dừng đếm ngược trước khi đánh lửa. Tên lửa an toàn, nhưng chi phí chuẩn bị chuyến bay coi như mất và Sếp không vui.', en: 'You stopped the countdown before ignition. The vehicle is safe but the campaign cost is lost.' }, numbers: [] }
+      : { kind: 'fts', explode: true, title: { vi: 'KÍCH HOẠT TỰ HỦY AN TOÀN (FTS)', en: 'FLIGHT TERMINATION SYSTEM ACTIVATED' },
+        cause: { vi: 'Bạn ra lệnh hủy chuyến bay khi tên lửa đang bay: hệ thống tự hủy phá tên lửa trên không để bảo vệ khu dân cư. Mất cả tên lửa lẫn vệ tinh.', en: 'You terminated the flight in the air: the range safety system destroyed vehicle and payload.' }, numbers: [] };
+    ctlRef.current.abort = () => {
+      if (F.ended || F.phase === 'boom') return;
+      if (F.phase === 'countdown') {
+        F.phase = 'boom'; F.after = 0; fire('SCRUB');
+        plumes.forEach((p) => (p.g.visible = false));
+        sound('08-11-2026-power_down.wav', 0.35);
+        setBanner({ kind: 'fail', title: abortFailure('scrub').title });
+        finish(false, 'scrub');
+      } else if (F.phase === 'deploy') {
+        // da tach ve tinh thanh cong: khong con gi de huy
+      } else {
+        explode(); F.phase = 'boom'; F.after = 0; fire('FTS');
+        setBanner({ kind: 'fail', title: abortFailure('fts').title });
+        setTimeout(() => !disposed && finish(false, 'fts'), 2600);
+      }
     };
 
     // ---------- vong lap
@@ -310,7 +333,9 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
         const c = Math.ceil(-F.t);
         if (c !== F.lastCount && c >= 1 && c <= 3) { F.lastCount = c; sound('06-11-2026-beep.wav', 0.25); }
         if (F.t > -1.2 && fire('IGNITION')) sound('06-11-2026-ignition.wav', 0.4);
-        if (F.t >= 0) { F.phase = 'ascent'; fire('LIFTOFF'); sound('06-11-2026-engine_roar.wav', 0.4); }
+        // can noi (umbilical) quay ra xa trong 2 giay cuoi dem nguoc
+        if (tower) tower.arms.forEach((a, i) => { a.rotation.y = -1.25 * smooth(-2.2 + i * 0.4, -0.3, F.t); });
+        if (F.t >= 0) { F.phase = 'ascent'; fire('LIFTOFF'); sound('06-11-2026-clamp_release.wav', 0.4); sound('06-11-2026-engine_roar.wav', 0.4); }
       } else if (F.phase === 'ascent' || F.phase === 'coast') {
         F.t += dt;
         const s = sample(S, Math.min(F.t, S.tEnd));
@@ -383,6 +408,8 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
       earth.rotation.z += (F.vel * Math.sin(F.pitch) * dt) / (EARTH_R * 160);
       const sky = F.altKm < 40 ? SKY_DAY.clone().lerp(SKY_HIGH, F.altKm / 40) : SKY_HIGH.clone().lerp(SKY_SPACE, clamp01((F.altKm - 40) / 60));
       scene.background.copy(sky);
+      scene.fog.color.copy(sky);
+      scene.fog.far = 6000 + altM * 4; // len cao thi thay xa hon
       starMat.opacity = clamp01((F.altKm - 35) / 60);
 
       // ---------- lua dong co: chi tang dang chay; loe rong va dai hon khi len cao
@@ -480,7 +507,8 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
       cancelAnimationFrame(rafId);
       io.disconnect(); ro.disconnect();
       dom.removeEventListener('pointerdown', onDown); window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); dom.removeEventListener('wheel', onWheel);
-      [land, apron, padSlab, tower, earth].forEach((m) => { m.geometry.dispose(); m.material.dispose(); });
+      ground.traverse((o) => o.geometry?.dispose());
+      [padSlab, earth].forEach((m) => { m.geometry.dispose(); m.material.dispose(); });
       earthMat.map?.dispose();
       starGeo.dispose(); starMat.dispose();
       renderer.dispose();
@@ -506,6 +534,11 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
         {[4, 12, 30].map((w) => (
           <button key={w} className={`btn small ${warp === w ? 'primary' : ''}`} onClick={() => setWarp(w)}>{w}x</button>
         ))}
+        {!banner && (
+          <button className="btn small danger" onClick={() => ctlRef.current.abort?.()} title="Hủy phóng: mất 1 vạch uy tín">
+            ✕ HỦY PHÓNG
+          </button>
+        )}
       </div>
       <div className="viewport-hint">Kéo để xoay camera • Cuộn để phóng to</div>
     </div>

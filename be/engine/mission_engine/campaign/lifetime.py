@@ -8,8 +8,16 @@ Moi so lieu vat ly lay tu bao cao evaluate() (metrics + constraints) cua engine 
 Cac he so "bao mon bien du tru" duoi day la THAM SO GAMEPLAY (estimate), ghi ro de de chinh:
 """
 import random
+from pathlib import Path
 
-STEPS = 12                 # 12 moc thoi gian trai deu tren tuoi tho yeu cau cua de (1 nam -> moi moc = 1 thang)
+import yaml
+
+FIRE_TARGETS = Path(__file__).resolve().parents[3] / "data" / "geo" / "targets" / "wildfire.yaml"
+EVIDENCE_NEED = 3          # so anh dam chay DUNG DUOC (ve toi mat dat, khong nhoe) can de nhiem vu duoc cong nhan
+FIRE_CHANCE = 0.65         # [estimate] xac suat moi moc co mot dam chay lon trong vung ve tinh di qua
+SEU_MISS = 0.4             # [estimate] khi may tinh dang reset vi SEU: xac suat bo lo lan chup
+BLUR_USABLE = 0.35         # anh nhoe hon muc nay thi khong dung lam bang chung duoc
+STEPS = 12                # 12 moc thoi gian trai deu tren tuoi tho yeu cau cua de (1 nam -> moi moc = 1 thang)
 PANEL_FADE = 0.05          # [estimate] tam pin suy giam 5 % cong suat sau ca vong doi
 LOAD_CREEP = 0.10          # [estimate] tai tieu thu + pin chai lam bien du tru dien hep them 10 % tai
 STORM_DOSE = (0.10, 0.25)  # [estimate] mot tran bao Mat Troi cong them 10-25 % lieu ca vong doi
@@ -106,13 +114,30 @@ def _dossier(cid, con, extra=None):
             "lesson": lesson, "numbers": numbers + (extra or [])}
 
 
-def simulate_lifetime(report, life_years, seed=0):
-    """Chay 12 moc tren quy dao tu bao cao evaluate(). Tat dinh theo seed (bao Mat Troi)."""
+def _fire_targets():
+    try:
+        with open(FIRE_TARGETS, encoding="utf-8") as fh:
+            return yaml.safe_load(fh)["items"]
+    except OSError:
+        return [{"id": "FIRE-X", "name": "Forest", "lat_deg": 0.0, "lon_deg": 0.0, "biome": "rừng"}]
+
+
+def simulate_lifetime(report, life_years, seed=0, imaging=None):
+    """Chay 12 moc tren quy dao tu bao cao evaluate(). Tat dinh theo seed (bao Mat Troi, dam chay).
+
+    imaging: None neu ve tinh khong co thiet bi chup anh mat dat; nguoc lai {"sensor": kind, "name": ten thiet bi}.
+    Voi ve tinh chup anh, nhiem vu chinh la TU DONG chup dam chay rung va gui ve lam bang chung:
+    du EVIDENCE_NEED anh dung duoc la nhiem vu duoc cong nhan, ke ca neu sau do ve tinh hong.
+    """
     m = report["metrics"]
     cons = {c["id"]: c for c in report["constraints"]}
     rng = random.Random(int(seed) * 7919 + 13)
     storm_step = rng.randint(3, 10)
     storm_dose = m["radiation.dose_krad"] * rng.uniform(*STORM_DOSE)
+    fire_rng = random.Random(int(seed) * 104729 + 7)
+    fires = _fire_targets()
+    evidence, credit, passed_at = [], 0.0, None
+    link_ratio = min(1.0, m["data.downlink_gb_per_day"] / max(m["data.generated_gb_per_day"], 1e-9))
 
     gen, load, margin0 = m["power.gen_avg_w"], max(m["power.load_w"], 1e-6), m["power.margin_w"]
     tol, dose_total = m["radiation.tolerance_krad"], m["radiation.dose_krad"]
@@ -167,11 +192,34 @@ def simulate_lifetime(report, life_years, seed=0):
                 ev.append({"code": "BUFFER_FULL", "level": "warn", "text": _t("Bộ nhớ đầy: dữ liệu mới ghi đè dữ liệu chưa kịp gửi về.", "Memory full: new data overwrites data not yet sent.")})
             if blur > 0:
                 ev.append({"code": "BLUR", "level": "warn", "text": _t("Đội mặt đất báo dữ liệu nhận về bị nhòe.", "Ground team reports the received data is smeared.")})
+            # --- dam chay rung: ve tinh tu dong chup khi bay qua (chi ve tinh co thiet bi chup anh)
+            if imaging and fire_rng.random() < FIRE_CHANCE:
+                tgt = fire_rng.choice(fires)
+                missed = seu and fire_rng.random() < SEU_MISS
+                if missed:
+                    ev.append({"code": "FIRE_MISSED", "level": "warn", "text": _t(f"Cháy rừng tại {tgt['name']} nhưng máy tính đang khởi động lại: bỏ lỡ lần chụp.", f"Wildfire at {tgt['name']} but the computer was rebooting: pass missed.")})
+                else:
+                    shot = {"n": len(evidence) + 1, "k": k, "month": round(k * life_years, 1), "target": tgt["name"], "target_id": tgt["id"],
+                            "lat": tgt["lat_deg"], "lon": tgt["lon_deg"], "biome": tgt.get("biome", ""), "sensor": imaging["sensor"],
+                            "blur": round(blur, 2), "seu": bool(seu), "delivered_k": None, "seed": fire_rng.randint(0, 10 ** 6)}
+                    evidence.append(shot)
+                    ev.append({"code": "FIRE_CAPTURED", "level": "info", "text": _t(f"Phát hiện cháy rừng tại {tgt['name']}: đã tự động chụp ảnh #{shot['n']}.", f"Wildfire detected at {tgt['name']}: image #{shot['n']} captured automatically.")})
+            # --- anh trong bo nho duoc gui dan ve theo nang luc duong truyen
+            credit += link_ratio
+            for shot in evidence:
+                if shot["delivered_k"] is None and credit >= 1.0 - 1e-9:
+                    shot["delivered_k"] = k
+                    credit -= 1.0
+            usable_now = [s for s in evidence if s["delivered_k"] is not None and s["blur"] < BLUR_USABLE]
+            if imaging and passed_at is None and len(usable_now) >= EVIDENCE_NEED:
+                passed_at = k
+                ev.append({"code": "EVIDENCE_OK", "level": "info", "text": _t(f"Đã có đủ {EVIDENCE_NEED} ảnh bằng chứng cháy rừng rõ nét về tới mặt đất.", f"{EVIDENCE_NEED} clear wildfire evidence images have reached the ground.")})
             if not ev:
                 ev.append({"code": "NOMINAL", "level": "info", "text": _t("Mọi hệ thống hoạt động, dữ liệu về đều.", "All systems nominal, data flowing.")})
         steps.append({"k": k, "month": round(k * life_years, 1), "alive": killer is None, "soc": round(soc, 3),
                       "dose_krad": round(dose, 3), "tolerance_krad": tol, "alt_km": round(alt, 1), "margin_w": round(margin, 2),
-                      "delivered_gb": round(delivered, 3), "lost_gb": round(lost, 3), "events": ev})
+                      "delivered_gb": round(delivered, 3), "lost_gb": round(lost, 3), "events": ev,
+                      "evidence": len(evidence), "evidence_usable": sum(1 for s in evidence if s["delivered_k"] is not None and s["blur"] < BLUR_USABLE)})
         if killer:
             alive = False
             break
@@ -181,22 +229,40 @@ def simulate_lifetime(report, life_years, seed=0):
     review = [{"id": cid, "pass": bool(cons[cid]["pass"]), "title": _DOSSIER[cid][0]} for cid in _REVIEW + _BOSS if cid in cons]
     failed_review = [r["id"] for r in review if not r["pass"] and r["id"] in _REVIEW]
     boss_fail = [r["id"] for r in review if not r["pass"] and r["id"] in _BOSS]
-    if killer:
-        extra = [{"label": "storm_dose_krad", "value": round(storm_dose, 3)}] if killer == "radiation" else []
-        dossier = _dossier(killer, cons.get(killer), extra)
-    elif failed_review:
-        dossier = _dossier(failed_review[0], cons.get(failed_review[0]))
-    elif boss_fail:
-        dossier = _dossier(boss_fail[0], cons.get(boss_fail[0]))
+    usable_evidence = [s for s in evidence if s["delivered_k"] is not None and s["blur"] < BLUR_USABLE]
+    if imaging:
+        # Nhiem vu chup anh: du bang chung la DAT, ke ca khi ve tinh hong sau do
+        success = len(usable_evidence) >= EVIDENCE_NEED
+        if success:
+            dossier = _dossier(killer, cons.get(killer)) if killer else (_dossier(boss_fail[0], cons.get(boss_fail[0])) if boss_fail else None)
+        elif killer:
+            dossier = _dossier(killer, cons.get(killer), [{"label": "storm_dose_krad", "value": round(storm_dose, 3)}] if killer == "radiation" else [])
+        else:
+            # song du vong doi ma van thieu bang chung: anh nhoe (chi huong) hoac khong gui ve kip (duong truyen)
+            blurred = sum(1 for s in evidence if s["blur"] >= BLUR_USABLE)
+            stuck = sum(1 for s in evidence if s["delivered_k"] is None)
+            cid = "pointing" if blurred >= stuck and blurred > 0 else "data" if stuck > 0 else (failed_review[0] if failed_review else "science")
+            dossier = _dossier(cid, cons.get(cid), [{"label": "evidence_usable", "value": len(usable_evidence)},
+                                                     {"label": "evidence_blurred", "value": blurred}, {"label": "evidence_not_downlinked", "value": stuck}])
     else:
-        dossier = None
-    success = alive and not failed_review
+        success = alive and not failed_review
+        if killer:
+            extra = [{"label": "storm_dose_krad", "value": round(storm_dose, 3)}] if killer == "radiation" else []
+            dossier = _dossier(killer, cons.get(killer), extra)
+        elif failed_review:
+            dossier = _dossier(failed_review[0], cons.get(failed_review[0]))
+        elif boss_fail:
+            dossier = _dossier(boss_fail[0], cons.get(boss_fail[0]))
+        else:
+            dossier = None
     return {
-        "schema_version": "lifetime/1", "steps_total": STEPS, "life_years": life_years, "steps": steps,
+        "schema_version": "lifetime/2", "steps_total": STEPS, "life_years": life_years, "steps": steps,
+        "imaging": imaging, "evidence": evidence, "evidence_need": EVIDENCE_NEED if imaging else 0,
         "outcome": {"alive": alive, "survived_steps": len(steps) if alive else len(steps) - 1, "killer": killer,
                     "success": success, "boss_fail": boss_fail, "review_fail": failed_review, "review": review,
                     "generated_gb": round(generated, 3), "delivered_gb": round(delivered, 3), "usable_gb": round(usable, 3),
-                    "usable_frac": round(usable / generated, 3) if generated > 0 else 0.0},
+                    "usable_frac": round(usable / generated, 3) if generated > 0 else 0.0,
+                    "evidence_usable": len(usable_evidence), "evidence_total": len(evidence), "passed_at": passed_at},
         "dossier": dossier,
         "score": report.get("score"),
     }

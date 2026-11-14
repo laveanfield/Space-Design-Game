@@ -3,11 +3,11 @@ id: MP-SC01-FIRST-EYES
 extends: { table: scenarios, id: SC-01 }      # ke thua ngan sach, diem toi thieu, tuoi tho, han, quy dao cho phep
 meta:
   title: { vi: "Đôi mắt đầu tiên nhìn Trái Đất", en: "First Eyes on Earth" }
-  brief: { vi: "Đưa một CubeSat lên quỹ đạo thấp để chụp ảnh Trái Đất trong ngân sách nhỏ.", en: "Put a CubeSat in low orbit to photograph Earth on a small budget." }
+  brief: { vi: "Mùa cháy rừng đang tới. Đưa một CubeSat lên quỹ đạo thấp, để nó tự chụp ảnh các đám cháy và gửi về làm bằng chứng cho cơ quan cứu hộ, trong ngân sách nhỏ.", en: "Wildfire season is coming. Put a CubeSat in low orbit that photographs wildfires on its own and sends the images down as evidence for responders, on a small budget." }
   learning_goals: [ "power budget", "data downlink" ]
   difficulty: 1
 objective:
-  statement: { vi: "Chụp ảnh và hạ được dữ liệu về trạm mặt đất.", en: "Capture images and downlink them to a ground station." }
+  statement: { vi: "Vệ tinh tự động chụp ảnh đám cháy rừng; có đủ 3 ảnh rõ nét về tới trạm mặt đất là nhiệm vụ được công nhận.", en: "The satellite photographs wildfires automatically; 3 clear images delivered to the ground station complete the mission." }
 design_space:
   allow: { instruments: { tier: [ basic ] } }
 constraints:
