@@ -20,6 +20,7 @@ export default function BriefScreen() {
     applyPreset,
     enterBuild,
     setPhase,
+    startTutorialSandbox,
   } = useGame();
 
   return (
@@ -110,6 +111,22 @@ export default function BriefScreen() {
                 }}
               >
                 [ VÀO XƯỞNG CHẾ TẠO → ]
+              </button>
+              <button
+                className="btn warn"
+                disabled={busy}
+                onClick={() => startTutorialSandbox(true)}
+                title="Chơi lại màn Sandbox kèm Kỹ sư trưởng hướng dẫn từng bước"
+              >
+                🎓 CHƠI SANDBOX (CÓ HƯỚNG DẪN)
+              </button>
+              <button
+                className="btn neon-btn"
+                disabled={busy}
+                onClick={() => startTutorialSandbox(false)}
+                title="Vào thẳng Sandbox mở khóa sẵn toàn bộ thiết bị, không bật hộp thoại hướng dẫn"
+              >
+                🛠️ CHƠI SANDBOX TỰ DO (TẮT HƯỚNG DẪN)
               </button>
               {DEV && missionDetail.presets?.some((p) => p.id === 'good') && (
                 <button

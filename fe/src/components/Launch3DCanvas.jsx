@@ -85,7 +85,7 @@ function makeParticles(count, { color, size, additive, opacity = 1 }) {
   };
 }
 
-export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, onEnd }) {
+export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, onEnd, tutorialPaused = false, onResumeFromTutorial }) {
   const containerRef = useRef(null);
   const hudRef = useRef({});
   const ctlRef = useRef({ warp: 12, playing: true });
@@ -95,8 +95,9 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
   const [playing, setPlaying] = useState(true);
   const [banner, setBanner] = useState(null);
   const [flash, setFlash] = useState(false);
+  const effectivePlaying = playing && !tutorialPaused;
   ctlRef.current.warp = warp;
-  ctlRef.current.playing = playing;
+  ctlRef.current.playing = effectivePlaying;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -637,11 +638,28 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
         <div className="hud-cell"><span className="hud-label">VEL</span><span className="hud-val" ref={setHud('vel')}>0 km/s</span><div className="hud-bar"><div ref={setHud('velBar')} /></div></div>
         <div className="hud-cell"><span className="hud-label">STAGE</span><span className="hud-val" ref={setHud('stage')}>S1</span></div>
       </div>
+      {tutorialPaused && !banner && (
+        <div className="launch-banner ok">
+          ⏸ ĐANG TẠM DỪNG ĐỂ ĐỌC HƯỚNG DẪN — XEM XONG BẤM [BẮT ĐẦU PHÓNG ▶]
+        </div>
+      )}
       {banner && (
         <div className={`launch-banner ${banner.kind}`}>{banner.kind === 'fail' ? '⚠ ' : ''}{banner.title?.vi || banner.title?.en}</div>
       )}
       <div className="viewport-tools">
-        <button className="btn small" onClick={() => setPlaying((p) => !p)}>{playing ? 'TẠM DỪNG' : 'TIẾP TỤC'}</button>
+        <button
+          className={`btn small ${tutorialPaused ? 'neon-btn' : ''}`}
+          onClick={() => {
+            if (tutorialPaused) {
+              setPlaying(true);
+              onResumeFromTutorial?.();
+            } else {
+              setPlaying((p) => !p);
+            }
+          }}
+        >
+          {effectivePlaying ? 'TẠM DỪNG' : '▶ BẮT ĐẦU / TIẾP TỤC'}
+        </button>
         {[4, 12, 30].map((w) => (
           <button key={w} className={`btn small ${warp === w ? 'primary' : ''}`} onClick={() => setWarp(w)}>{w}x</button>
         ))}

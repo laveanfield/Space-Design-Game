@@ -46,6 +46,8 @@ function TerminalShell() {
     effectiveDeadline,
     story,
     closeStory,
+    tutorialMode,
+    completeTutorialToBrief,
     tutorialOpen,
     tutorialStep,
     setTutorialStep,
@@ -98,8 +100,21 @@ function TerminalShell() {
         </nav>
 
         <div className="top-actions">
-          <button className="btn warn" onClick={openTutorial} title="Mở hướng dẫn khoanh vùng cho pha hiện tại">
-            ? HƯỚNG DẪN
+          {tutorialMode && (
+            <button
+              className="btn neon-btn"
+              onClick={completeTutorialToBrief}
+              title="Hoàn thành hoặc bỏ qua màn hướng dẫn để vào chọn Mission"
+            >
+              ★ VÀO CHỌN MISSION [01]
+            </button>
+          )}
+          <button
+            className="btn warn"
+            onClick={() => (tutorialOpen ? closeTutorial() : openTutorial())}
+            title="Bật/tắt Kỹ sư trưởng hướng dẫn góc phải"
+          >
+            {tutorialOpen ? 'ẨN KỸ SƯ' : '? HƯỚNG DẪN'}
           </button>
           <button className="btn" onClick={() => setAudioOn((v) => !v)}>
             AUDIO: {audioOn ? 'ON' : 'OFF'}
