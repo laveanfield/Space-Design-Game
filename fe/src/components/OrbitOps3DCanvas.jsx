@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { createEarth } from '../three/earthFx';
 
 function linkStateColor(state) {
   switch (state) {
@@ -74,41 +75,12 @@ export default function OrbitOps3DCanvas({ snapshot, design, catalog }) {
     const starMat = new THREE.PointsMaterial({ color: 0xa4d9c4, size: 0.14 });
     scene.add(new THREE.Points(starGeo, starMat));
 
-    // Earth Sphere + Texture Loader
-    const earthGeo = new THREE.SphereGeometry(2.0, 40, 32);
-    const earthMat = new THREE.MeshStandardMaterial({
-      color: 0x1b4e8c,
-      roughness: 0.8,
-      metalness: 0.08,
-    });
-    const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+    // Trai Dat THAT (shader dung chung voi canh phong): ban ngay sac net + may, ban dem co anh den thanh pho, vien khi quyen
+    const earthFx = createEarth({ radius: 2.0, widthSegments: 160, heightSegments: 112, renderer });
+    const earthMesh = earthFx.mesh;
     scene.add(earthMesh);
-
-    const texLoader = new THREE.TextureLoader();
-    texLoader.load(
-      '/earth_bluemarble.jpg',
-      (tex) => {
-        earthMat.color.setHex(0xffffff);
-        earthMat.map = tex;
-        earthMat.needsUpdate = true;
-      },
-      undefined,
-      () => {
-        // fallback stays solid ocean blue if texture unavailable
-      }
-    );
-
-    // Subtle atmosphere grid shell
-    const atmoMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(2.04, 24, 16),
-      new THREE.MeshBasicMaterial({
-        color: 0x48c9ff,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.09,
-      })
-    );
-    scene.add(atmoMesh);
+    const SUN_DIR = sunLight.position.clone().normalize(); // cung huong voi den Mat Troi cua ve tinh
+    earthFx.update({ sun: SUN_DIR, atmosphere: 1 });
 
     // Ground Station Marker on Earth Surface
     const stationMarker = new THREE.Mesh(
@@ -221,6 +193,8 @@ export default function OrbitOps3DCanvas({ snapshot, design, catalog }) {
       }
 
       earthMesh.rotation.y += 0.0012;
+      // may troi cham hon mat dat mot chut -> thay may truot nhe tren be mat
+      earthFx.update({ sun: SUN_DIR, time: performance.now() / 1000, cloudShift: -(performance.now() / 1000) * 0.0005 });
 
       const phaseAngle = simT * 0.015;
       satPivot.position.set(
@@ -274,6 +248,7 @@ export default function OrbitOps3DCanvas({ snapshot, design, catalog }) {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       dom.removeEventListener('wheel', onWheel);
+      earthFx.dispose();
       renderer.dispose();
     };
   }, [orbitRadius, incDeg]);
@@ -289,7 +264,7 @@ export default function OrbitOps3DCanvas({ snapshot, design, catalog }) {
         <br />
         LINK: {linkState} ({station}) {snapshot?.power?.eclipse ? '• ECLIPSE' : '• SUNLIT'}
       </div>
-      <div className="viewport-hint">Drag to rotate • Scroll to zoom</div>
+      <div className="viewport-hint">Drag to rotate • Scroll to zoom • ánh đèn & mây: minh họa</div>
     </div>
   );
 }

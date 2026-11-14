@@ -73,6 +73,26 @@ def test_ghg_mission_photographs_methane_not_wildfire(client):
     assert all(s["theme"] == "methane" and s["target_id"].startswith("CH4-") for s in life["evidence"])
 
 
+def test_space_weather_mission_records_storm_frames_not_wildfire(client):
+    # nhiem vu bao Mat Troi: thiet bi "Space physics" ghi khung quan trac bao; may anh RGB khong tao bang chung nao
+    m3 = "MP-SC03-SPACE-WEATHER"
+    base = preset(client, m3, "good")
+    life = client.post("/campaign/lifetime", json={"design": base, "mission_id": m3}).json()
+    assert life["imaging"]["theme"] == "space_weather" and life["evidence_need"] == 3
+    assert life["evidence"], "ve tinh tot phai ghi duoc it nhat mot khung"
+    assert all(s["theme"] == "space_weather" and s["target_id"].startswith("SW-") for s in life["evidence"])
+    # may do hat INS-08 chi ghi ban do hat (khong ghi tu pho cua tu ke INS-07)
+    assert all(s["target_id"].startswith(("SW-BELT", "SW-SAA", "SW-AURORA")) for s in life["evidence"])
+    assert life["outcome"]["success"]
+    # phai SONG SOT: chip chet vi buc xa thi khong thang, du da kip ghi du khung truoc luc chet
+    for seed in range(1, 25):
+        d = {**base, "obc": "OBC-SPACE", "seed": seed}
+        r = client.post("/campaign/lifetime", json={"design": d, "mission_id": m3}).json()
+        assert not (r["outcome"]["killer"] and r["outcome"]["success"]), seed
+    cam = client.post("/campaign/lifetime", json={"design": {**base, "instruments": ["INS-01"]}, "mission_id": m3}).json()
+    assert cam["imaging"] is None and cam["evidence"] == []
+
+
 @pytest.mark.parametrize("pid,cause", [("fail_data", "data"), ("fail_pointing", "pointing"), ("fail_power", "power")])
 def test_bad_designs_fail_for_the_right_reason(client, pid, cause):
     life = client.post("/campaign/lifetime", json={"design": preset(client, M1, pid), "mission_id": M1}).json()

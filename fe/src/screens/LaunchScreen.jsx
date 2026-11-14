@@ -1,5 +1,6 @@
 import React from 'react';
 import { LaunchPadLive } from '../anatomy/LaunchPadFigure';
+import AccidentNewspaper, { buildAccidentInfo } from '../components/AccidentNewspaper';
 import { Dossier } from '../components/CampaignPanels';
 import HumanityImpactCard from '../components/HumanityImpactCard';
 import Launch3DCanvas from '../components/Launch3DCanvas';
@@ -17,6 +18,8 @@ export default function LaunchScreen() {
     reputation,
     busy,
     selectedMissionId,
+    catalog,
+    evalReport,
     onLaunchEvent,
     onLaunchEnd,
     startLife,
@@ -26,9 +29,25 @@ export default function LaunchScreen() {
 
   if (!flightData) return null;
 
+  // vi tri bai phong + do nghieng quy dao -> Trai Dat o canh phong quay dung duoi ve tinh
+  const site = catalog?.tables?.launch_sites?.[design?.launch?.site];
+  const orbit = catalog?.tables?.orbits?.[design?.orbit];
+  const geo = { latDeg: site?.lat_deg, lonDeg: site?.lon_deg, incDeg: orbit?.inclination_deg };
+
+  // To bao tai nan (du lieu su co that cua chuyen bay) lap day o trong duoi khung 3D khi phong that bai
+  const accident =
+    launchResult && !launchResult.success
+      ? buildAccidentInfo({
+          failure: launchResult.failure,
+          flight: flightData,
+          catalog,
+          cost: Number(evalReport?.metrics?.['cost.total_musd'] || 0),
+        })
+      : null;
+
   return (
     <div className="launch-grid">
-      <section className="panel" data-tutorial="launch-canvas">
+      <section className="panel launch-left" data-tutorial="launch-canvas">
         <h2 className="panel-title">
           <span>
             LAUNCH 3D // {flightData.meta?.vehicle} @ {flightData.meta?.site}
@@ -40,10 +59,13 @@ export default function LaunchScreen() {
           key={launchSeq}
           flight={flightData}
           design={design}
+          geo={geo}
           audioOn={audioOn}
           onEvent={onLaunchEvent}
           onEnd={onLaunchEnd}
         />
+
+        {accident && <AccidentNewspaper info={accident} variant="extended" />}
       </section>
 
       <section className="panel" data-tutorial="launch-sequencer">

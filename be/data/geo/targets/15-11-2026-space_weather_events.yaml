@@ -1,0 +1,15 @@
+# Cac "khung quan trac bao Mat Troi" ve tinh co the ghi lai cho nhiem vu MP-SC03-SPACE-WEATHER.
+# Day la CAC LOAI HIEN TUONG co that cua vat ly khong gian (vanh dai buc xa Van Allen, di thuong Nam Dai Tay Duong,
+# cuc quang, bao tu), nhung hinh anh trong game la MINH HOA do thuat toan ve (be/tools/15-11-2026-render_space_weather.py),
+# KHONG phai du lieu do that. Vi tri cac dinh vanh dai (L) la gia tri dien hinh de minh hoa.
+# instruments: thiet bi nao ghi duoc loai khung nay (may do tu INS-07 -> tu pho; may do hat INS-08 -> ban do hat).
+set: space_weather
+items:
+  - { id: SW-MAG-SSC,   name: "Từ kế: khởi phát bão từ (SSC)",              kind: magnetogram, instruments: [INS-07] }
+  - { id: SW-MAG-MAIN,  name: "Từ kế: pha chính bão từ",                    kind: magnetogram, instruments: [INS-07] }
+  - { id: SW-MAG-REC,   name: "Từ kế: pha hồi phục",                        kind: magnetogram, instruments: [INS-07] }
+  - { id: SW-BELT-OUT,  name: "Vành đai bức xạ ngoài co lại khi bão",       kind: belt_map,    instruments: [INS-08] }
+  - { id: SW-BELT-SLOT, name: "Khe giữa hai vành đai bị lấp đầy hạt",       kind: belt_map,    instruments: [INS-08] }
+  - { id: SW-SAA,       name: "Dị thường Nam Đại Tây Dương (SAA)",          kind: saa_map,     instruments: [INS-08] }
+  - { id: SW-AURORA-N,  name: "Vành cực quang Bắc nở rộng",                 kind: aurora_map,  instruments: [INS-08] }
+  - { id: SW-AURORA-S,  name: "Vành cực quang Nam nở rộng",                 kind: aurora_map,  instruments: [INS-08] }

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { buildRocket, buildSatellite, loadInstruments, loadRocket, loadSatellite } from '../three/modelLoader';
+import { addAdapterBelow } from '../three/payloadAdapter';
 import { buildHangarEnv, buildIntegrationHall } from '../three/environments';
 
 const BUS_DIMS = {
@@ -550,7 +551,12 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
           loadSatellite(busId, commId),
           loadInstruments(design?.instruments),
         ]);
-        if (model) return place(buildSatellite(model, { withAdapter: true, design, insModels }), null, 'MODEL THAT');
+        if (model) {
+          // ve tinh dung tren DOAN CHOP NOI (payload adapter) nhu luc gan len tang tren cua ten lua
+          const satRig = buildSatellite(model, { withAdapter: false, design, insModels });
+          addAdapterBelow(satRig);
+          return place(satRig, null, 'MODEL THAT');
+        }
       }
       return place(null, buildSatelliteGroup(design, catalog, null), 'MODEL DU PHONG');
     })();

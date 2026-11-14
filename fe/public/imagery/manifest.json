@@ -586,6 +586,150 @@
    "target": "CH4-DELHI",
    "kind": "landfill",
    "band": "spectral"
+  },
+  {
+   "file": "sw_SW-MAG-SSC_0.jpg",
+   "theme": "space_weather",
+   "target": "SW-MAG-SSC",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-MAG-SSC_1.jpg",
+   "theme": "space_weather",
+   "target": "SW-MAG-SSC",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-MAG-SSC_2.jpg",
+   "theme": "space_weather",
+   "target": "SW-MAG-SSC",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-MAG-MAIN_0.jpg",
+   "theme": "space_weather",
+   "target": "SW-MAG-MAIN",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-MAG-MAIN_1.jpg",
+   "theme": "space_weather",
+   "target": "SW-MAG-MAIN",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-MAG-MAIN_2.jpg",
+   "theme": "space_weather",
+   "target": "SW-MAG-MAIN",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-MAG-REC_0.jpg",
+   "theme": "space_weather",
+   "target": "SW-MAG-REC",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-MAG-REC_1.jpg",
+   "theme": "space_weather",
+   "target": "SW-MAG-REC",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-MAG-REC_2.jpg",
+   "theme": "space_weather",
+   "target": "SW-MAG-REC",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-BELT-OUT_0.jpg",
+   "theme": "space_weather",
+   "target": "SW-BELT-OUT",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-BELT-OUT_1.jpg",
+   "theme": "space_weather",
+   "target": "SW-BELT-OUT",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-BELT-OUT_2.jpg",
+   "theme": "space_weather",
+   "target": "SW-BELT-OUT",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-BELT-SLOT_0.jpg",
+   "theme": "space_weather",
+   "target": "SW-BELT-SLOT",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-BELT-SLOT_1.jpg",
+   "theme": "space_weather",
+   "target": "SW-BELT-SLOT",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-BELT-SLOT_2.jpg",
+   "theme": "space_weather",
+   "target": "SW-BELT-SLOT",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-SAA_0.jpg",
+   "theme": "space_weather",
+   "target": "SW-SAA",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-SAA_1.jpg",
+   "theme": "space_weather",
+   "target": "SW-SAA",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-SAA_2.jpg",
+   "theme": "space_weather",
+   "target": "SW-SAA",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-AURORA-N_0.jpg",
+   "theme": "space_weather",
+   "target": "SW-AURORA-N",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-AURORA-N_1.jpg",
+   "theme": "space_weather",
+   "target": "SW-AURORA-N",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-AURORA-N_2.jpg",
+   "theme": "space_weather",
+   "target": "SW-AURORA-N",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-AURORA-S_0.jpg",
+   "theme": "space_weather",
+   "target": "SW-AURORA-S",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-AURORA-S_1.jpg",
+   "theme": "space_weather",
+   "target": "SW-AURORA-S",
+   "band": "data-frame"
+  },
+  {
+   "file": "sw_SW-AURORA-S_2.jpg",
+   "theme": "space_weather",
+   "target": "SW-AURORA-S",
+   "band": "data-frame"
   }
  ]
 }

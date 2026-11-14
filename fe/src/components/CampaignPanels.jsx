@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { playSoundAsset } from '../api/client';
 import OrbitOps3DCanvas from './OrbitOps3DCanvas';
 import EvidenceGallery from './EvidenceGallery';
+import OrbitEventLog from './OrbitEventLog';
 import HumanityImpactCard from './HumanityImpactCard';
 
 /**
@@ -257,10 +258,12 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
   const soc = cur ? cur.soc : 1;
   const doseFrac = cur ? Math.min(1, cur.dose_krad / Math.max(1e-6, cur.tolerance_krad)) : 0;
   const alt0 = life.steps[0]?.alt_km || 1;
+  // nhat ky su kien THEO THU TU THOI GIAN (cu o tren, moi o duoi) cho man hinh may tinh cu
   const feed = life.steps
     .slice(0, shown)
-    .flatMap((s) => s.events.map((e) => ({ ...e, month: s.month, k: s.k })))
-    .reverse();
+    .flatMap((s) => s.events.map((e) => ({ level: e.level, code: e.code, text: tx(e.text), month: s.month, k: s.k })));
+  const linkLabel = dead ? 'MẤT LIÊN LẠC' : snapshot.link.state === 'MARGINAL' ? 'TÍN HIỆU YẾU' : 'LIÊN LẠC TỐT';
+  const logStatus = cur ? `${linkLabel} · MỐC ${cur.k}/${life.steps_total} · PIN ${(soc * 100).toFixed(0)}%` : 'ĐANG TÁCH VỆ TINH…';
 
   return (
     <div className="phase-stage">
@@ -383,17 +386,10 @@ export function LifePhase({ life, design, catalog, audioOn, onDone }) {
             />
           </div>
         )}
-        <div className="small muted" style={{ margin: '10px 0 4px 0' }}>
+        <div className="small muted" style={{ margin: '12px 0 6px 0' }}>
           ORBIT EVENT LOG
         </div>
-        <div className="constraint-list" style={{ maxHeight: 220 }}>
-          {feed.map((e, i) => (
-            <div key={i} className={`constraint-row small ${e.level === 'crit' ? 'fail' : e.level === 'warn' ? 'warnrow' : 'pass'}`}>
-              <span className="muted">[M{e.month}]</span> {tx(e.text)}
-            </div>
-          ))}
-          {feed.length === 0 && <div className="small muted">AWAITING FIRST TELEMETRY PACKET...</div>}
-        </div>
+        <OrbitEventLog lines={feed} status={logStatus} dead={dead} total={life.steps_total} />
       </section>
       </div>
     </div>

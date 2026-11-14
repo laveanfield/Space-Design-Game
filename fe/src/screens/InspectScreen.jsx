@@ -4,6 +4,7 @@ import { playSoundAsset } from '../api/client';
 import { CHECKLIST_TEMPLATES } from '../core/gameMachine';
 import { useGame } from '../core/GameContext';
 import { buildRocket, buildSatellite, loadInstruments, loadRocket, loadSatellite } from '../three/modelLoader';
+import { addAdapterBelow, mountSatelliteOnAdapter } from '../three/payloadAdapter';
 
 /**
  * InspectScreen (Phase 03.INSPECT) -- Phong kiem dinh truoc phong:
@@ -176,12 +177,15 @@ export default function InspectScreen() {
           const inRig = buildSatellite(satModel, { withAdapter: false, design, insModels });
           if (inRig.setDeploy) inRig.setDeploy(0);
           inRig.inner.rotation.set(0, 0, 0); // cung he truc z-huong-len voi than ten lua
-          const lo = rig.payload.userData.lo;
-          const carrier = new THREE.Group();
-          carrier.position.set(0, 0, (lo ? lo[2] : 0) + 0.05);
-          carrier.add(inRig.inner);
-          rig.payload.clear();
-          rig.payload.add(carrier);
+          // ve tinh dung tren DOAN CHOP NOI o dinh tang tren cung (nhin xuyen qua fairing X-Ray)
+          if (!mountSatelliteOnAdapter(rig, inRig)) {
+            const lo = rig.payload.userData.lo;
+            const carrier = new THREE.Group();
+            carrier.position.set(0, 0, (lo ? lo[2] : 0) + 0.05);
+            carrier.add(inRig.inner);
+            rig.payload.clear();
+            rig.payload.add(carrier);
+          }
         }
         const box = new THREE.Box3().setFromObject(rig.root);
         const size = box.getSize(new THREE.Vector3());
@@ -194,7 +198,8 @@ export default function InspectScreen() {
       }
 
       if (satModel) {
-        const srig = buildSatellite(satModel, { withAdapter: true, design, insModels });
+        const srig = buildSatellite(satModel, { withAdapter: false, design, insModels });
+        addAdapterBelow(srig); // PAYLOAD FOCUS: ve tinh dung tren doan chop noi, nhu tren ten lua
         srig.setDeploy(0.25);
         const box = new THREE.Box3().setFromObject(srig.root);
         const size = box.getSize(new THREE.Vector3());

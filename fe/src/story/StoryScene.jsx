@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { playSoundAsset } from '../api/client';
+import AccidentNewspaper from '../components/AccidentNewspaper';
+import HumanityImpactCard from '../components/HumanityImpactCard';
 import { BossPortrait, EngineerPortrait } from './Portraits';
 import { CAST, fill } from './14-11-2026-script';
-import { getHumanityImpact } from './humanityImpact';
 
 /**
  * StoryScene -- Cua so Terminal Comm-Link tuong tac:
@@ -126,16 +127,14 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
   const speaking = line.who;
   const mood = ctx?.mood || {};
   const history = activeScript.slice(0, i);
-  const impact = ctx?.showImpact
-    ? getHumanityImpact(ctx?.mission, {
-        success: Boolean(ctx?.success),
-        failureId: ctx?.failureId || '',
-      })
-    : null;
+  // Phan duoi khung chat: 2 to bao (tai nan ten lua + hau qua nhan loai) thay cho khung "THONG DIEP HAU QUA" cu.
+  // Chi man phong that bai moi co ctx.accident; man tong ket (review_*) chi hien to bao hau qua.
+  const showNews = Boolean(ctx?.showImpact);
+  const accident = ctx?.accident || null;
 
   return (
     <div className="term-comm-overlay" role="dialog" aria-modal="true" onClick={waitingChoice ? undefined : next}>
-      <div className="term-comm-window" onClick={(e) => e.stopPropagation()}>
+      <div className={`term-comm-window ${showNews ? 'has-news' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="term-comm-header">
           <span className="term-comm-title">
             <span className="brand-dot" />
@@ -203,22 +202,21 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
           </div>
         )}
 
-        {impact && (
-          <div className={`story-impact-dispatch ${impact.success ? 'ok' : 'fail'}`}>
-            <div className="story-impact-head">
-              <strong>THÔNG ĐIỆP HẬU QUẢ NHÂN LOẠI // {impact.levelTag}</strong>
-              <span className={`badge ${impact.success ? 'ok' : 'err'}`}>{impact.badge}</span>
+        {showNews && (
+          <div className={`story-news ${accident ? '' : 'single'}`}>
+            {accident && (
+              <div className="story-news-item">
+                <AccidentNewspaper info={accident} variant="compact" />
+              </div>
+            )}
+            <div className="story-news-item">
+              <HumanityImpactCard
+                missionId={ctx?.mission}
+                success={Boolean(ctx?.success)}
+                failureId={ctx?.failureId || ''}
+                compact
+              />
             </div>
-            <div className="story-impact-title">{impact.headline}</div>
-            <div className="story-impact-metrics">
-              {impact.metrics.map((m) => (
-                <div key={m.label} className="story-impact-metric">
-                  <strong>{m.value}</strong>
-                  <span>{m.label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="story-impact-moral">{impact.moral}</div>
           </div>
         )}
 

@@ -422,7 +422,7 @@ body,
 
 .ops-grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: minmax(0, 1fr) 440px;
   gap: 12px;
 }
 
@@ -2888,4 +2888,846 @@ dialog.modal::backdrop {
     border-left: none;
     padding-left: 0;
   }
+}
+
+/* ======================================================================
+   ORBIT EVENT LOG = MAY TINH CU (khung CRT). Khong ve soc ngang (scanline).
+   Vo nhua be + bezel den + man hinh lan quang (xanh = thong tin, ho phach = canh bao, do = nguy cap).
+   ====================================================================== */
+.crt {
+  --phos-info: #7dffb0;
+  --phos-warn: #ffc53d;
+  --phos-crit: #ff5d4a;
+  --case-1: #d9d1be;
+  --case-2: #bcb39f;
+  --case-edge: #8d8470;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.45));
+}
+
+.crt-case {
+  position: relative;
+  background: linear-gradient(180deg, var(--case-1) 0%, var(--case-2) 100%);
+  border: 1px solid var(--case-edge);
+  border-radius: 14px 14px 10px 10px;
+  padding: 8px 10px 10px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+}
+
+/* vit goc vo may */
+.crt-case::before,
+.crt-case::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f4efe4, #8c8473 70%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
+}
+
+.crt-case::before {
+  left: 8px;
+}
+
+.crt-case::after {
+  right: 8px;
+}
+
+.crt-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 18px 7px 18px;
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: #4a4435;
+  text-transform: uppercase;
+}
+
+.crt-plate {
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: #3a3629;
+  color: #e9e2cf;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.crt-model {
+  opacity: 0.7;
+}
+
+.crt-leds {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.crt-led {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2b2a26;
+  box-shadow: inset 0 0 2px #000, 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.crt-led.green.on {
+  background: #58ff8f;
+  box-shadow: 0 0 8px #58ff8f, inset 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+.crt-led.amber.on {
+  background: #ffbf3a;
+  box-shadow: 0 0 8px #ffbf3a;
+}
+
+.crt-led.red.on {
+  background: #ff4a3a;
+  box-shadow: 0 0 9px #ff4a3a;
+}
+
+.crt-led.blink {
+  animation: crt-blink 0.9s steps(2, start) infinite;
+}
+
+@keyframes crt-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.crt-bezel {
+  padding: 10px;
+  border-radius: 12px;
+  background: #1a1814;
+  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.crt-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: clamp(340px, 46vh, 520px);
+  overflow: hidden;
+  border-radius: 22px / 18px;
+  background: radial-gradient(ellipse at 50% 38%, #0c2618 0%, #06140d 62%, #030a06 100%);
+  box-shadow: inset 0 0 42px rgba(0, 0, 0, 0.85), inset 0 0 90px rgba(24, 120, 60, 0.14), 0 0 0 2px #0a0a09;
+  animation: crt-on 0.7s ease-out both;
+}
+
+/* phan chieu mat kinh + toi goc (KHONG phai soc ngang) */
+.crt-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0) 30%),
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+.crt-screen.lv-warn {
+  box-shadow: inset 0 0 42px rgba(0, 0, 0, 0.85), inset 0 0 90px rgba(190, 130, 20, 0.16), 0 0 0 2px #0a0a09;
+}
+
+.crt-screen.lv-crit,
+.crt-dead .crt-screen {
+  background: radial-gradient(ellipse at 50% 38%, #2a0d0a 0%, #160806 62%, #0a0403 100%);
+  box-shadow: inset 0 0 42px rgba(0, 0, 0, 0.85), inset 0 0 90px rgba(200, 40, 30, 0.2), 0 0 0 2px #0a0a09;
+}
+
+@keyframes crt-on {
+  0% {
+    transform: scaleY(0.04);
+    filter: brightness(3);
+  }
+  60% {
+    transform: scaleY(1);
+    filter: brightness(1.6);
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+
+.crt-status {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 22px 7px 22px;
+  border-bottom: 1px dashed rgba(125, 255, 176, 0.35);
+  color: #9dffc6;
+  font-family: 'VT323', 'Fira Code', monospace;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 6px rgba(125, 255, 176, 0.6);
+}
+
+.crt-lines {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 22px 16px 22px;
+  font-family: 'VT323', 'Fira Code', monospace;
+  font-size: 21px;
+  line-height: 1.2;
+  scrollbar-width: thin;
+  scrollbar-color: #2fae68 transparent;
+}
+
+.crt-line {
+  margin: 0 0 9px 0;
+  color: var(--phos-info);
+  text-shadow: 0 0 6px currentColor;
+  word-break: break-word;
+}
+
+.crt-line.warn {
+  color: var(--phos-warn);
+}
+
+.crt-line.crit {
+  color: var(--phos-crit);
+}
+
+.crt-ts {
+  margin-right: 8px;
+  opacity: 0.65;
+}
+
+.crt-tag {
+  margin-right: 8px;
+}
+
+/* dong moi "chay vao" tu trai sang phai nhu dang go */
+.crt-line.fresh {
+  animation: crt-type 0.9s steps(32, end) both;
+}
+
+@keyframes crt-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.crt-line.crit.fresh .crt-tag {
+  animation: crt-blink 0.7s steps(2, start) infinite;
+}
+
+.crt-prompt {
+  color: var(--phos-info);
+  font-size: 21px;
+  text-shadow: 0 0 6px currentColor;
+}
+
+.crt-cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 0.9em;
+  margin-left: 5px;
+  background: var(--phos-info);
+  vertical-align: -0.1em;
+  box-shadow: 0 0 8px var(--phos-info);
+  animation: crt-blink 1s steps(2, start) infinite;
+}
+
+.crt-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px 2px 16px;
+}
+
+.crt-knob {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f0eadb, #8d856f 70%);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4), inset 0 -2px 2px rgba(0, 0, 0, 0.2);
+}
+
+.crt-knob::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 2px;
+  height: 7px;
+  margin-left: -1px;
+  background: #3a3629;
+  transform: rotate(28deg);
+  transform-origin: 50% 7px;
+}
+
+.crt-knob.small {
+  width: 15px;
+  height: 15px;
+}
+
+.crt-knob.small::after {
+  top: 2px;
+  height: 5px;
+  transform-origin: 50% 5.5px;
+}
+
+/* loa: cac vach DOC (khong phai scanline) */
+.crt-grille {
+  flex: 1;
+  height: 11px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0 2px, transparent 2px 6px);
+  opacity: 0.5;
+}
+
+.crt-keys i {
+  display: inline-block;
+  width: 22px;
+  height: 11px;
+  margin-left: 5px;
+  border-radius: 2px;
+  background: linear-gradient(#f1ecde, #b9b19b);
+  box-shadow: 0 2px 0 #7d765f, 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+/* ======================================================================
+   TO BAO TAI NAN = "The Spaceport Courier" (ten hu cau) -- trang nhat bao in cho su co phong ten lua.
+   - extended: lap day o trong duoi khung 3D o man LAUNCH (3 cot: chu | anh lon | so lieu)
+   - compact : ban gon, dat canh to bao hau qua trong cua so hoi thoai
+   ====================================================================== */
+.acc-paper {
+  --paper: #f2ede1;
+  --ink: #131313;
+  --ink-soft: #3b3832;
+  --rule: #1a1a1a;
+  --hot: #b3121b;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 10px 16px 6px 16px;
+  border-radius: 2px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 60px rgba(120, 100, 60, 0.12);
+  font-family: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  text-align: left;
+  container-name: acc;
+  container-type: inline-size;
+}
+
+.acc-paper.extended {
+  flex: 1 1 0;
+  min-height: 440px;
+  container-type: size;
+}
+
+.acc-masthead {
+  text-align: center;
+  border-bottom: 3px double var(--rule);
+  padding-bottom: 4px;
+}
+
+.acc-ears {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 3px;
+  margin-bottom: 2px;
+}
+
+.acc-name {
+  margin: 0;
+  font-family: 'UnifrakturMaguntia', 'Old English Text MT', 'Noto Serif', serif;
+  font-weight: 400;
+  font-size: clamp(24px, 4.2cqw, 44px);
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.acc-dateline {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-top: 1px solid var(--rule);
+  padding-top: 3px;
+  color: var(--ink-soft);
+}
+
+.acc-headline {
+  margin: 5px 0 2px 0;
+  font-family: 'Playfair Display', 'Noto Serif', Georgia, serif;
+  font-weight: 900;
+  font-size: clamp(19px, 3.9cqw, 44px);
+  line-height: 1.04;
+  letter-spacing: -0.005em;
+  text-align: center;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+.acc-deck {
+  margin: 0 0 4px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule);
+  font-style: italic;
+  text-align: center;
+  font-size: clamp(11px, 1.5cqw, 14px);
+  line-height: 1.35;
+  color: var(--ink-soft);
+  text-wrap: balance;
+}
+
+.acc-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  gap: 14px;
+  padding-top: 6px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.75fr) minmax(0, 0.9fr);
+  grid-template-areas: 'a photo c';
+}
+
+.acc-paper.extended .acc-body {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.acc-col {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acc-col-a {
+  grid-area: a;
+  padding-right: 12px;
+  border-right: 1px solid rgba(0, 0, 0, 0.28);
+}
+
+.acc-col-c {
+  grid-area: c;
+  padding-left: 12px;
+  border-left: 1px solid rgba(0, 0, 0, 0.28);
+}
+
+.acc-photo {
+  grid-area: photo;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.acc-photo-frame {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 1px solid var(--rule);
+  background: #06070c;
+  overflow: hidden;
+}
+
+.acc-photo-frame svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.acc-photo figcaption {
+  flex: none;
+  padding-top: 3px;
+  font-size: 10.5px;
+  line-height: 1.3;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.acc-text p {
+  margin: 0 0 7px 0;
+  font-size: clamp(10px, 1.17cqw, 13px);
+  line-height: 1.4;
+  text-align: justify;
+  hyphens: auto;
+}
+
+.acc-place {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-size: 0.92em;
+}
+
+.acc-box {
+  min-width: 0;
+}
+
+.acc-box-title {
+  font-family: 'Fira Code', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--rule);
+  padding-bottom: 2px;
+  margin-bottom: 4px;
+}
+
+.acc-fact {
+  padding: 3px 0 4px 0;
+  border-bottom: 1px dotted rgba(0, 0, 0, 0.35);
+}
+
+.acc-facts .acc-fact:nth-child(n + 4) {
+  display: none;
+}
+
+@container acc (min-height: 640px) {
+  .acc-facts .acc-fact:nth-child(n + 4) {
+    display: block;
+  }
+}
+
+.acc-fact-v {
+  font-family: 'Playfair Display', 'Noto Serif', serif;
+  font-weight: 900;
+  font-size: clamp(15px, 2cqw, 21px);
+  line-height: 1.05;
+  color: var(--hot);
+}
+
+.acc-fact-l {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin-top: 1px;
+}
+
+.acc-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.acc-timeline li {
+  display: flex;
+  gap: 7px;
+  padding: 2px 0;
+  border-bottom: 1px dotted rgba(0, 0, 0, 0.3);
+}
+
+.acc-timeline li b {
+  flex: none;
+  min-width: 46px;
+  font-family: 'Fira Code', monospace;
+  font-size: 9.5px;
+  color: var(--ink-soft);
+}
+
+.acc-timeline li.fail,
+.acc-timeline li.fail b {
+  font-weight: 800;
+  color: var(--hot);
+}
+
+.acc-mugs {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+@container acc (min-height: 760px) {
+  .acc-mugs {
+    display: grid;
+  }
+}
+
+.acc-mug {
+  margin: 0;
+}
+
+.acc-mug svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+  filter: grayscale(0.92) contrast(1.1) sepia(0.3);
+}
+
+.acc-mug figcaption {
+  font-size: 9px;
+  line-height: 1.2;
+  color: var(--ink-soft);
+  padding-top: 2px;
+}
+
+.acc-foot {
+  flex: none;
+  margin-top: 6px;
+  padding-top: 3px;
+  border-top: 1px solid var(--rule);
+  font-size: 9.5px;
+  color: var(--ink-soft);
+  text-align: right;
+}
+
+/* khung hep: anh ben trai, chu + so lieu ben phai */
+@container acc (max-width: 780px) {
+  .acc-body {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    grid-template-areas: 'photo a' 'photo c';
+  }
+  .acc-paper.extended .acc-body {
+    grid-template-rows: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+  .acc-col-a {
+    border-right: 0;
+    padding-right: 0;
+  }
+  .acc-col-c {
+    border-left: 0;
+    padding-left: 0;
+  }
+}
+
+@container acc (max-width: 540px) {
+  .acc-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'photo' 'a' 'c';
+  }
+  .acc-paper.extended .acc-body {
+    grid-template-rows: minmax(200px, 1.2fr) auto auto;
+  }
+}
+
+/* KHUNG DUNG (cao hon rong): trang nhat bao in -- anh lon tran ngang, ben duoi 3 cot: chu | so lieu | dong thoi gian */
+@container acc (aspect-ratio < 1.05) {
+  .acc-name {
+    font-size: clamp(30px, 6cqw, 64px);
+  }
+  .acc-headline {
+    font-size: clamp(24px, 5.2cqw, 62px);
+    margin-top: 8px;
+  }
+  .acc-deck {
+    font-size: clamp(12px, 1.7cqw, 18px);
+    padding-bottom: 8px;
+  }
+  .acc-paper.extended .acc-body {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: 'photo photo photo' 'a facts time';
+    gap: 12px 18px;
+    padding-top: 10px;
+  }
+  .acc-paper.extended .acc-col-c {
+    display: contents;
+  }
+  .acc-paper.extended .acc-box.facts {
+    grid-area: facts;
+  }
+  .acc-paper.extended .acc-box.time {
+    grid-area: time;
+  }
+  .acc-paper.extended .acc-col-a {
+    overflow: visible;
+    border-right: 1px solid rgba(0, 0, 0, 0.28);
+    padding-right: 16px;
+  }
+  .acc-paper.extended .acc-text p {
+    font-size: clamp(11px, 1.3cqw, 14px);
+  }
+  .acc-paper.extended .acc-facts .acc-fact:nth-child(n + 4) {
+    display: block;
+  }
+  .acc-paper.extended .acc-fact-v {
+    font-size: clamp(16px, 2.2cqw, 26px);
+  }
+  .acc-paper.extended .acc-fact-l {
+    font-size: 10px;
+  }
+  .acc-paper.extended .acc-timeline {
+    font-size: 11px;
+  }
+  .acc-paper.extended .acc-mugs {
+    display: grid;
+  }
+  .acc-paper.extended .acc-photo figcaption {
+    font-size: 12px;
+    padding-top: 4px;
+  }
+}
+
+@container acc (aspect-ratio < 1.05) and (max-width: 700px) {
+  .acc-paper.extended .acc-body {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: 'photo photo' 'a facts' 'a time';
+  }
+}
+
+/* ban gon trong cua so hoi thoai */
+.acc-paper.compact {
+  padding: 10px 14px 8px 14px;
+}
+
+.acc-paper.compact .acc-name {
+  font-size: 28px;
+}
+
+.acc-paper.compact .acc-headline {
+  font-size: 19px;
+  margin-top: 6px;
+}
+
+.acc-paper.compact .acc-deck {
+  font-size: 11px;
+}
+
+.acc-paper.compact .acc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.acc-paper.compact .acc-photo {
+  order: -1;
+}
+
+.acc-paper.compact .acc-photo-frame {
+  flex: none;
+  min-height: 0;
+  aspect-ratio: 2.1 / 1;
+}
+
+.acc-paper.compact .acc-col-a,
+.acc-paper.compact .acc-col-c {
+  border: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.acc-paper.compact .acc-text p {
+  font-size: 12px;
+}
+
+.acc-paper.compact .acc-facts-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.acc-paper.compact .acc-fact-v {
+  font-size: 15px;
+}
+
+/* ---- cua so hoi thoai: 2 to bao thay cho khung "hau qua nhan loai" cu ---- */
+.term-comm-window.has-news {
+  width: min(1060px, 100%);
+}
+
+.term-comm-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+}
+
+.story-news {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  margin: 6px 14px 12px 14px;
+  align-items: stretch;
+}
+
+.story-news.single {
+  grid-template-columns: minmax(0, 560px);
+  justify-content: center;
+}
+
+.story-news-item {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  animation: acc-print 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.story-news-item:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.story-news-item > .news-paper,
+.story-news-item > .acc-paper {
+  flex: 1 1 auto;
+}
+
+@keyframes acc-print {
+  from {
+    opacity: 0;
+    transform: translateY(16px) rotate(-0.8deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .story-news {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- man LAUNCH: o ben trai la khung 3D o tren, to bao tai nan (extended) lap day phan con lai ---- */
+.launch-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.launch-left > .viewport-box {
+  flex: none;
+}
+
+.launch-left > .acc-paper.extended {
+  margin-top: 12px;
+}
+
+/* cua so hoi thoai co 2 to bao: thu nho chan dung (van giu khung chat 2 nhan vat) de thay duoc bao ma it phai cuon */
+.term-comm-window.has-news .term-node .portrait,
+.term-comm-window.has-news .term-node .term-avatar {
+  display: block;
+  width: 100%;
+  height: 196px;
+  max-height: none;
+}
+
+.term-comm-window.has-news .term-comm-nodes {
+  padding-bottom: 2px;
+}
+
+.term-comm-window.has-news .term-comm-log {
+  min-height: 84px;
+  max-height: 132px;
 }

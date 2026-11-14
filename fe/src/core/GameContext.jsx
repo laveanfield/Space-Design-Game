@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { apiFetch, beep, playSoundAsset } from '../api/client';
+import { buildAccidentInfo } from '../components/AccidentNewspaper';
 import { tx } from '../components/CampaignPanels';
 import { SCENES } from '../story/14-11-2026-script';
 import {
@@ -413,6 +414,13 @@ export function GameProvider({ children }) {
         addLog(false, tx(result.failure?.title) || 'Mất tên lửa', tx(result.failure?.cause));
         const key = result.aborted === 'scrub' ? 'abort_scrub' : result.aborted === 'fts' ? 'abort_fts' : 'launch_fail';
         const after = repAfter <= 0 ? () => playScene('fired', { rep: 0, mood: { boss: 'angry', eng: 'worried' } }) : null;
+        // du lieu that cua su co (ten ten lua, bai phong, so lieu, cac moc bay) cho to bao tai nan trong cua so hoi thoai
+        const accident = buildAccidentInfo({
+          failure: result.failure,
+          flight: flightData,
+          catalog,
+          cost: Number(evalReport?.metrics?.['cost.total_musd'] || 0),
+        });
         setTimeout(
           () =>
             playScene(
@@ -423,6 +431,7 @@ export function GameProvider({ children }) {
                 showImpact: true,
                 success: false,
                 failureId: result.failure?.kind || 'launch',
+                accident,
                 mood: { boss: 'angry', eng: 'worried' },
               },
               after
@@ -432,7 +441,7 @@ export function GameProvider({ children }) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [design, selectedMissionId, reputation, evalReport, missionDetail]
+    [design, selectedMissionId, reputation, evalReport, missionDetail, flightData, catalog]
   );
 
   const startLife = async () => {

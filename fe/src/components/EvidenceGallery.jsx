@@ -33,8 +33,18 @@ export function gbPerShot(gbPerDay, altKm) {
   return gbPerDay ? gbPerDay / orbitsPerDay(altKm) : null;
 }
 
+/** Dung luong dang chu de doc: 2.68 GB / 21 MB / 400 KB. */
+export function fmtSize(gb) {
+  if (gb == null) return '';
+  if (gb >= 1) return `${gb.toFixed(2)} GB`;
+  if (gb >= 0.001) return `${(gb * 1024).toFixed(0)} MB`;
+  return `${(gb * 1024 * 1024).toFixed(0)} KB`;
+}
+
 /** Do phan giai tuong doi theo luong du lieu cam bien (minh hoa: cam bien sinh nhieu GB -> anh nhieu diem anh). */
-function resOf(gbPerDay) {
+function resOf(gbPerDay, theme) {
+  // khung du lieu cua tu ke / may do hat vi nhieu it GB/ngay theo ban chat, khong phai vi chat luong kem -> giu nguyen do phan giai
+  if (theme === 'space_weather') return 1;
   if (!gbPerDay) return 0.5;
   return Math.max(0.22, Math.min(1, 0.3 + 0.35 * Math.log10(1 + gbPerDay * 3)));
 }
@@ -56,6 +66,8 @@ function srcOf(shot, thermal) {
   const v = Math.abs(shot.seed || 0) % VARIANTS;
   // nhiem vu khi nha kinh: anh pho chum khi methane (khong co ban hong ngoai nhiet)
   if (shot.theme === 'methane') return `/imagery/ch4_${shot.target_id}_${v}.jpg`;
+  // nhiem vu bao Mat Troi: khung quan trac cua tu ke / may do hat (do thi, ban do vanh dai buc xa, cuc quang)
+  if (shot.theme === 'space_weather') return `/imagery/sw_${shot.target_id}_${v}.jpg`;
   return `/imagery/fire_${shot.target_id}_${v}${thermal ? '_ir' : ''}.jpg`;
 }
 
@@ -65,9 +77,10 @@ function paint(cv, im, shot, res) {
   const r = rng(shot.seed || 1);
   const blur = shot.blur || 0;
   // 1) cat mot khung ngau nhien (moi lan chup lech vi tri mot chut) va thu nho theo do phan giai
-  const cw = im.width * 0.72, ch = im.height * 0.72;
+  const whole = shot.theme === 'space_weather';       // do thi / ban do co truc, nhan: giu nguyen ca khung, khong cat
+  const cw = whole ? im.width : im.width * 0.72, ch = whole ? im.height : im.height * 0.72;
   // dam chay nam gan giua anh goc -> chi lech quanh tam de khong cat mat tuyen lua
-  const sx = (im.width - cw) * (0.5 + (r() - 0.5) * 0.6), sy = (im.height - ch) * (0.5 + (r() - 0.5) * 0.6);
+  const sx = whole ? 0 : (im.width - cw) * (0.5 + (r() - 0.5) * 0.6), sy = whole ? 0 : (im.height - ch) * (0.5 + (r() - 0.5) * 0.6);
   const tw = Math.max(16, Math.round(W * res)), th = Math.max(10, Math.round(H * res));
   const tmp = document.createElement('canvas');
   tmp.width = tw; tmp.height = th;
@@ -119,6 +132,7 @@ function paint(cv, im, shot, res) {
   g.putImageData(img, 0, 0);
   // 5) khung ngam + toa do (giong anh tram mat dat)
   const k = W / 200;
+  if (shot.theme === 'space_weather') return finishLabel(g, shot, W, H, k);
   g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = Math.max(1, k * 0.8);
   const cx = W / 2, cy = H / 2, q = 14 * k;
   g.beginPath();
@@ -126,7 +140,15 @@ function paint(cv, im, shot, res) {
   g.stroke();
   const fk = Math.min(k, 1.5);
   g.font = `${Math.round(9 * fk)}px monospace`; g.fillStyle = 'rgba(255,255,255,0.9)';
-  g.fillText(`${shot.lat.toFixed(2)}°, ${shot.lon.toFixed(2)}°`, 5 * fk, H - 6 * fk);
+  const hasGeo = Number.isFinite(shot.lat) && Number.isFinite(shot.lon);
+  if (hasGeo) g.fillText(`${shot.lat.toFixed(2)}°, ${shot.lon.toFixed(2)}°`, 5 * fk, H - 6 * fk);
+  else g.fillText(shot.target_id, 5 * fk, 14 * fk);   // khung bao Mat Troi khong co toa do dia ly: ghi ma khung
+}
+
+function finishLabel(g, shot, W, H, k) {
+  const fk = Math.min(k, 1.5);
+  g.font = `${Math.round(9 * fk)}px monospace`; g.fillStyle = 'rgba(255,255,255,0.9)';
+  g.fillText(shot.target_id, 5 * fk, 14 * fk);
 }
 
 function ShotCanvas({ shot, thermal, res, w, h }) {
@@ -150,7 +172,7 @@ function Photo({ shot, shown, thermal, res, gb, onOpen }) {
       <div className="evidence-cap">
         <span className={`ev-dot ${state}`}>{state === 'ok' ? '✔' : state === 'bad' ? '✕' : '…'}</span>
         <span>#{shot.n}</span>
-        {gb != null && <span className="ev-gb">💾 {gb < 0.1 ? gb.toFixed(3) : gb.toFixed(2)} GB</span>}
+        {gb != null && <span className="ev-gb">💾 {fmtSize(gb)}</span>}
       </div>
     </button>
   );
@@ -160,7 +182,7 @@ function Photo({ shot, shown, thermal, res, gb, onOpen }) {
 export default function EvidenceGallery({ evidence, need, step, sensorName, imaging, altKm }) {
   const [open, setOpen] = useState(null);
   const thermal = /thermal|hồng ngoại|infrared/i.test(sensorName || imaging?.name || '');
-  const res = resOf(imaging?.gb_per_day);
+  const res = resOf(imaging?.gb_per_day, imaging?.theme);
   const gb = gbPerShot(imaging?.gb_per_day, altKm);
   const taken = evidence.filter((s) => s.k <= step);
   const isShown = (s) => s.delivered_k != null && s.delivered_k <= step;
@@ -169,7 +191,7 @@ export default function EvidenceGallery({ evidence, need, step, sensorName, imag
   return (
     <div className="evidence">
       <div className="evidence-head">
-        <span>📷 {sensorName || imaging?.name}</span>
+        <span>{imaging?.theme === 'space_weather' ? '📡' : '📷'} {sensorName || imaging?.name}</span>
         <span className="ev-meter" title="ảnh rõ đã về / ảnh cần">
           {Array.from({ length: need }, (_, i) => <i key={i} className={i < usable ? 'on' : ''} />)}
           <b className={usable >= need ? 'ok-text' : ''}>{usable}/{need}</b>
@@ -177,7 +199,7 @@ export default function EvidenceGallery({ evidence, need, step, sensorName, imag
       </div>
       {usable >= need && <div className="ok-banner" style={{ margin: '0 0 8px 0' }}>✔ ĐỦ BẰNG CHỨNG</div>}
       <div className="evidence-grid">
-        {taken.length === 0 && <div className="small muted">{evidence[0]?.theme === 'methane' ? 'CH₄' : '🔥'} —</div>}
+        {taken.length === 0 && <div className="small muted">{{ methane: 'CH₄', space_weather: '☀' }[evidence[0]?.theme] || '🔥'} —</div>}
         {taken.map((s) => (
           <Photo key={s.n} shot={{ ...s, sensor }} shown={isShown(s)} thermal={thermal} res={res} gb={gb} onOpen={() => setOpen(s)} />
         ))}
@@ -190,7 +212,7 @@ export default function EvidenceGallery({ evidence, need, step, sensorName, imag
             <div className="evidence-big-cap">
               <b>#{open.n} {open.target}</b>
               <span>tháng {open.month}</span>
-              {gb != null && <span>💾 {gb.toFixed(3)} GB</span>}
+              {gb != null && <span>💾 {fmtSize(gb)}</span>}
               <span className={open.blur >= BLUR_USABLE ? 'err-text' : 'ok-text'}>{open.blur >= BLUR_USABLE ? '✕ nhòe' : '✔ rõ'}</span>
               {open.seu && <span className="err-text">☢ SEU</span>}
               <button className="btn" onClick={() => setOpen(null)}>✕</button>

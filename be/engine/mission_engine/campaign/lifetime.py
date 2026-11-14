@@ -19,15 +19,26 @@ FIRE_CHANCE = 0.65         # [estimate] xac suat moi moc co mot muc tieu (dam ch
 
 # Moi nhiem vu chup anh co mot BO MUC TIEU rieng (mission yaml: gameplay.params.evidence_set).
 # Chi khac nhau o file toa do va loi thoai; luat cham diem (EVIDENCE_NEED, nhoe, SEU, duong truyen) giu nguyen.
+# "categories": nhom science_category cua thiet bi tao ra bang chung (Earth observation = may anh; Space physics = tu ke / may do hat).
 EVIDENCE_SETS = {
     "wildfire": {
         "file": FIRE_TARGETS,
+        "categories": ("Earth observation",),
         "seen": ("Phát hiện cháy rừng tại {name}: đã tự động chụp ảnh #{n}.", "Wildfire detected at {name}: image #{n} captured automatically."),
         "missed": ("Cháy rừng tại {name} nhưng máy tính đang khởi động lại: bỏ lỡ lần chụp.", "Wildfire at {name} but the computer was rebooting: pass missed."),
         "ok": ("Đã có đủ {need} ảnh bằng chứng cháy rừng rõ nét về tới mặt đất.", "{need} clear wildfire evidence images have reached the ground."),
     },
+    "space_weather": {
+        "file": TARGETS_DIR / "15-11-2026-space_weather_events.yaml",
+        "categories": ("Space physics",),
+        "must_survive": True,     # nhiem vu "song sot qua bao": du khung ma ve tinh chet vi buc xa van TRUOT (khac nhiem vu chup anh thuong)
+        "seen": ("Ghi được khung quan trắc bão Mặt Trời #{n}: {name}.", "Space weather frame #{n} recorded: {name}."),
+        "missed": ("Có biến động bão ({name}) nhưng máy tính đang khởi động lại: bỏ lỡ khung ghi.", "Storm activity ({name}) but the computer was rebooting: frame missed."),
+        "ok": ("Đã có đủ {need} khung quan trắc bão rõ nét về tới mặt đất.", "{need} clear space weather frames have reached the ground."),
+    },
     "methane": {
         "file": TARGETS_DIR / "14-11-2026-methane_sites.yaml",
+        "categories": ("Earth observation",),
         "seen": ("Phát hiện chùm khí methane tại {name}: đã tự động chụp phổ #{n}.", "Methane plume detected at {name}: spectral image #{n} captured automatically."),
         "missed": ("Chùm methane tại {name} nhưng máy tính đang khởi động lại: bỏ lỡ lần chụp.", "Methane plume at {name} but the computer was rebooting: pass missed."),
         "ok": ("Đã có đủ {need} ảnh phổ chùm khí methane rõ nét về tới mặt đất.", "{need} clear methane plume images have reached the ground."),
@@ -160,6 +171,8 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
         theme = "wildfire"
     texts = EVIDENCE_SETS[theme]
     fires = _fire_targets(theme)
+    ids = set((imaging or {}).get("ids") or [(imaging or {}).get("id")])
+    fires = [t for t in fires if not t.get("instruments") or ids & set(t["instruments"])] or fires   # vd. tu ke chi ghi tu pho
     evidence, credit, passed_at = [], 0.0, None
     link_ratio = min(1.0, m["data.downlink_gb_per_day"] / max(m["data.generated_gb_per_day"], 1e-9))
 
@@ -225,7 +238,7 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
                     ev.append({"code": "FIRE_MISSED", "level": "warn", "text": _t(vi.format(name=tgt["name"]), en.format(name=tgt["name"]))})
                 else:
                     shot = {"n": len(evidence) + 1, "k": k, "month": round(k * life_years, 1), "target": tgt["name"], "target_id": tgt["id"],
-                            "lat": tgt["lat_deg"], "lon": tgt["lon_deg"], "biome": tgt.get("biome", ""), "kind": tgt.get("kind", ""),
+                            "lat": tgt.get("lat_deg"), "lon": tgt.get("lon_deg"), "biome": tgt.get("biome", ""), "kind": tgt.get("kind", ""),
                             "theme": theme, "sensor": imaging["sensor"],
                             "blur": round(blur, 2), "seu": bool(seu), "delivered_k": None, "seed": fire_rng.randint(0, 10 ** 6)}
                     evidence.append(shot)
@@ -260,7 +273,7 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
     usable_evidence = [s for s in evidence if s["delivered_k"] is not None and s["blur"] < BLUR_USABLE]
     if imaging:
         # Nhiem vu chup anh: du bang chung la DAT, ke ca khi ve tinh hong sau do
-        success = len(usable_evidence) >= EVIDENCE_NEED
+        success = len(usable_evidence) >= EVIDENCE_NEED and (alive or not texts.get("must_survive"))
         if success:
             dossier = _dossier(killer, cons.get(killer)) if killer else (_dossier(boss_fail[0], cons.get(boss_fail[0])) if boss_fail else None)
         elif killer:
