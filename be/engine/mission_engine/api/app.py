@@ -19,6 +19,7 @@ class DesignRequest(BaseModel):
     mission_id: Optional[str] = None
     with_hints: bool = True
     seed: Optional[int] = None
+    allow_nofit: bool = False
 
 
 class OpsOpenRequest(BaseModel):
@@ -113,7 +114,7 @@ def create_app(root: str = ".") -> FastAPI:
     @app.post("/fly")
     def fly(req: DesignRequest):
         try:
-            return eng.fly(req.design, mission_id=req.mission_id, seed=req.seed)
+            return eng.fly(req.design, mission_id=req.mission_id, seed=req.seed, allow_nofit=req.allow_nofit)
         except Exception as exc:
             _handle_err(exc)
 

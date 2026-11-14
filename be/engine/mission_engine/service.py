@@ -45,8 +45,14 @@ class Engine:
     def evaluate(self, design, mission_id=None, with_hints=False):
         return _evaluate(design, self._m(design, mission_id), self.catalog, with_hints)
 
-    def fly(self, design, mission_id=None, seed=None):
-        return _fly(design, self._m(design, mission_id), self.catalog, design.get("seed", 0) if seed is None else seed)
+    def fly(self, design, mission_id=None, seed=None, allow_nofit=False):
+        return _fly(
+            design,
+            self._m(design, mission_id),
+            self.catalog,
+            design.get("seed", 0) if seed is None else seed,
+            allow_nofit=allow_nofit,
+        )
 
     def lifetime(self, design, mission_id=None, seed=None):
         """Vong doi 12 moc tren quy dao: hau qua cua thiet ke (xem campaign/lifetime.py)."""

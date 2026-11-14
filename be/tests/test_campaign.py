@@ -47,6 +47,17 @@ def test_fly_refuses_payload_that_does_not_fit(client):
     assert r.status_code == 400 and r.json()["detail"]["code"] == "PAYLOAD_DOES_NOT_FIT"
 
 
+def test_fly_allows_nofit_when_requested_and_breaks_at_maxq(client):
+    d = preset(client, M1, "good")
+    d["launch"] = {"vehicle": "LV-ARIANE64", "site": "SITE-KOUROU"}
+    r = client.post("/fly", json={"design": d, "mission_id": M1, "allow_nofit": True})
+    assert r.status_code == 200
+    body = r.json()
+    assert not body["meta"]["fit_ok"]
+    assert not body["meta"]["reaches_orbit"]
+    assert body["failure"] and body["failure"]["kind"] == "structural_maxq" and body["failure"]["explode"]
+
+
 def test_good_design_collects_wildfire_evidence(client):
     life = client.post("/campaign/lifetime", json={"design": preset(client, M1, "good"), "mission_id": M1}).json()
     assert life["imaging"] and life["evidence_need"] == 3

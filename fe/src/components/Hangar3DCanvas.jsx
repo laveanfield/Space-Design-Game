@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { buildRocket, buildSatellite, loadRocket, loadSatellite } from '../three/modelLoader';
+import { buildRocket, buildSatellite, loadInstruments, loadRocket, loadSatellite } from '../three/modelLoader';
 import { buildHangarEnv, buildIntegrationHall } from '../three/environments';
 
 const BUS_DIMS = {
@@ -299,16 +299,34 @@ function fitOf(object) {
 export default function Hangar3DCanvas({ design, catalog, theme }) {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
-  const stageRef = useRef({ holder: null, rig: null, fallback: null, f: 0, fTarget: 0, pop: 1, fitStowed: 1, fitOpen: 1 });
+  const stageRef = useRef({
+    holder: null,
+    rig: null,
+    fallback: null,
+    obj: null,
+    pivot: null,
+    f: 0.15,
+    fTarget: 1,
+    pop: 1,
+    fitStowed: 1,
+    fitOpen: 1,
+    sizeYStowed: 1,
+    sizeYOpen: 1,
+    centerStowed: new THREE.Vector3(),
+    centerOpen: new THREE.Vector3(),
+  });
   const rotRef = useRef({ yaw: 0.55, pitch: 0.28, zoom: 5.2, dragging: false, lx: 0, ly: 0 });
   const [view, setView] = useState('sat');
-  const [deployed, setDeployed] = useState(false);
+  const [deployed, setDeployed] = useState(true);
   const [source, setSource] = useState('');
 
   const busId = design?.bus;
   const commId = design?.comm;
   const vehicleId = design?.launch?.vehicle;
   const powerId = design?.power;
+  const batteryId = design?.battery;
+  const obcId = design?.obc;
+  const adcsId = design?.adcs;
   const instrumentsKey = (design?.instruments || []).join(',');
   const orbitId = design?.orbit;
 
@@ -399,13 +417,17 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
       }
       // model moi "bat" vao vi tri: phong nhe tu 0.86 -> 1
       st.pop += (1 - st.pop) * Math.min(1, dt * 9);
-      if (st.rig || st.fallback) {
-        const fit = st.fitStowed + (st.fitOpen - st.fitStowed) * st.f;
-        const target = st.fallback || st.rig.root;
-        target.scale.setScalar(fit * st.pop);
+      const rocketView = st.view === 'rocket';
+      if (st.pivot && st.obj) {
+        const tDeploy = rocketView ? 0 : st.f;
+        const fit = st.fitStowed + (st.fitOpen - st.fitStowed) * tDeploy;
+        const curSizeY = st.sizeYStowed + (st.sizeYOpen - st.sizeYStowed) * tDeploy;
+        st.obj.position.lerpVectors(st.centerStowed, st.centerOpen, tDeploy).multiplyScalar(-1);
+        st.pivot.scale.setScalar(fit * st.pop);
+        const baseTop = rocketView && st.hall ? st.hall.mlpTop : -0.92;
+        st.pivot.position.y = baseTop + (curSizeY * fit * st.pop) / 2 + 0.02;
       }
       // camera luon nhin vao TAM model; mode ten lua: lui xa va nhin cao hon de thay ca toa tich hop
-      const rocketView = st.view === 'rocket';
       // ngoai troi (toa tich hop) -> nen troi xanh; trong xuong sach -> nen xam
       scene.background.set(rocketView ? 0xa9c9e6 : theme === 'light' ? 0xdfe6ea : 0x1a2229);
       scene.fog.color.copy(scene.background);
@@ -432,7 +454,22 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
       env.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
       hall.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
       if (stageRef.current.fallback) disposeGroup(stageRef.current.fallback);
-      stageRef.current = { holder: null, rig: null, fallback: null, f: 0, fTarget: 0, pop: 1, fitStowed: 1, fitOpen: 1 };
+      stageRef.current = {
+        holder: null,
+        rig: null,
+        fallback: null,
+        obj: null,
+        pivot: null,
+        f: 0.15,
+        fTarget: 1,
+        pop: 1,
+        fitStowed: 1,
+        fitOpen: 1,
+        sizeYStowed: 1,
+        sizeYOpen: 1,
+        centerStowed: new THREE.Vector3(),
+        centerOpen: new THREE.Vector3(),
+      };
       renderer.dispose();
     };
   }, [theme]);
@@ -442,6 +479,11 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
     const st = stageRef.current;
     if (!st.holder || !design) return undefined;
     let cancelled = false;
+    const setAdapterVisible = (rigObj, visible) => {
+      rigObj?.inner?.traverse((o) => {
+        if (o.userData?.role === 'adapter') o.visible = visible;
+      });
+    };
     const place = (rig, fallback, label) => {
       if (cancelled || !st.holder) return;
       if (st.fallback) disposeGroup(st.fallback);
@@ -451,39 +493,52 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
       const obj = fallback || rig.root;
       obj.scale.setScalar(1);
       obj.position.set(0, 0, 0);
-      let halfH = 1.15; // nua chieu cao model sau khi chuan hoa, de dat day model len mat ban xoay
       if (rig?.setDeploy) {
+        setAdapterVisible(rig, false);
         rig.setDeploy(1);
         const open = fitOf(obj);
+        setAdapterVisible(rig, true);
         rig.setDeploy(0);
         const stowed = fitOf(obj);
         st.fitStowed = 2.3 / stowed.max;
         st.fitOpen = 2.9 / open.max;
-        obj.position.copy(stowed.center).multiplyScalar(-1);
-        halfH = (stowed.size.y * st.fitStowed) / 2;
+        st.sizeYStowed = stowed.size.y;
+        st.sizeYOpen = open.size.y;
+        st.centerStowed.copy(stowed.center);
+        st.centerOpen.copy(open.center);
+        setAdapterVisible(rig, !deployed || view !== 'sat');
         rig.setDeploy(st.f);
       } else if (rig) {
         const fit = fitOf(obj);
         st.fitStowed = st.fitOpen = 2.6 / fit.max;
-        obj.position.copy(fit.center).multiplyScalar(-1);
-        halfH = (fit.size.y * st.fitStowed) / 2;
+        st.sizeYStowed = st.sizeYOpen = fit.size.y;
+        st.centerStowed.copy(fit.center);
+        st.centerOpen.copy(fit.center);
       } else {
+        const fit = fitOf(obj);
         st.fitStowed = st.fitOpen = 1;
-        halfH = 0.95;
+        st.sizeYStowed = st.sizeYOpen = fit.size.y || 1.9;
+        st.centerStowed.copy(fit.center);
+        st.centerOpen.copy(fit.center);
       }
-      // dat model vao mot nhom trung gian de phong to quanh tam cua no.
-      // VE TINH: day dung tren mat ban xoay (y = -0.92). TEN LUA: dung tren be phong di dong trong toa tich hop.
       const pivot = new THREE.Group();
       pivot.add(obj);
       const rocketView = view === 'rocket';
       st.view = view;
+      st.obj = obj;
+      st.pivot = pivot;
       if (st.envSat) st.envSat.visible = !rocketView;
       if (st.hall) st.hall.group.visible = rocketView;
-      pivot.position.y = (rocketView && st.hall ? st.hall.mlpTop : -0.92) + halfH + 0.02;
+      const tDeploy = rocketView ? 0 : st.f;
+      const fitNow = st.fitStowed + (st.fitOpen - st.fitStowed) * tDeploy;
+      const sizeYNow = st.sizeYStowed + (st.sizeYOpen - st.sizeYStowed) * tDeploy;
+      obj.position.lerpVectors(st.centerStowed, st.centerOpen, tDeploy).multiplyScalar(-1);
+      pivot.scale.setScalar(fitNow);
+      pivot.position.y = (rocketView && st.hall ? st.hall.mlpTop : -0.92) + (sizeYNow * fitNow) / 2 + 0.02;
       st.holder.add(pivot);
       if (rig) { st.rig = { ...rig, root: pivot }; }
       else { st.fallback = pivot; }
-      st.pop = 0.86;
+      st.pop = 0.88;
       setSource(label);
     };
     (async () => {
@@ -491,23 +546,26 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
         const model = await loadRocket(vehicleId);
         if (model) return place(buildRocket(model), null, 'MODEL THAT');
       } else {
-        const model = await loadSatellite(busId, commId);
-        if (model) return place(buildSatellite(model), null, 'MODEL THAT');
+        const [model, insModels] = await Promise.all([
+          loadSatellite(busId, commId),
+          loadInstruments(design?.instruments),
+        ]);
+        if (model) return place(buildSatellite(model, { withAdapter: true, design, insModels }), null, 'MODEL THAT');
       }
       return place(null, buildSatelliteGroup(design, catalog, null), 'MODEL DU PHONG');
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, busId, commId, vehicleId, powerId, instrumentsKey, orbitId, catalog, theme]);
+  }, [view, busId, commId, vehicleId, powerId, batteryId, obcId, adcsId, instrumentsKey, orbitId, catalog, theme]);
 
   // Nut gap/mo: chi doi muc tieu, vong lap ve tu chay muot toi do
   useEffect(() => {
     const st = stageRef.current;
     st.fTarget = deployed && view === 'sat' ? 1 : 0;
     if (st.rig?.inner) {
-      st.rig.inner.traverse((o) => { if (o.userData?.role === 'adapter') o.visible = !deployed; });
+      st.rig.inner.traverse((o) => { if (o.userData?.role === 'adapter') o.visible = !deployed || view !== 'sat'; });
     }
-  }, [deployed, view, source, busId, commId]);
+  }, [deployed, view, source, busId, commId, powerId, batteryId, obcId, adcsId, instrumentsKey]);
 
   const busDims = BUS_DIMS[design?.bus] || null;
   return (
@@ -517,7 +575,9 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
         {view === 'sat' ? `HANGAR_3D // ${design?.bus || 'NO_BUS'}` : `HANGAR_3D // ${design?.launch?.vehicle || 'NO_LV'}`}
         {view === 'sat' && busDims ? ` (${busDims[0]}×${busDims[1]}×${busDims[2]} m)` : ''}
         <br />
-        PWR: {design?.power || '-'} | COM: {design?.comm || '-'} | {source}
+        PWR: {design?.power || '-'} | COM: {design?.comm || '-'} | BAT: {design?.battery || '-'}
+        <br />
+        OBC: {design?.obc || '-'} | ADCS: {design?.adcs || '-'} | INS: {(design?.instruments || []).length} | {source}
       </div>
       <div className="viewport-tools">
         <button className={`btn small ${view === 'sat' ? 'primary' : ''}`} onClick={() => setView('sat')}>VỆ TINH</button>

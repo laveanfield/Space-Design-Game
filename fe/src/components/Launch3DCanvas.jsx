@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { decodeF32, decodeU8, playSoundAsset } from '../api/client';
-import { buildRocket, buildSatellite, loadRocket, loadSatellite, loadSite } from '../three/modelLoader';
+import { buildRocket, buildSatellite, loadInstruments, loadRocket, loadSatellite, loadSite } from '../three/modelLoader';
 import { buildLaunchComplex, buildServiceTower } from '../three/environments';
 import { Puffs, drivePlume, emitLaunchSmoke, padFires, plumeGroup } from '../three/launchFx';
 
@@ -173,7 +173,11 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
     };
 
     (async () => {
-      const [rocketModel, satModel] = await Promise.all([loadRocket(design?.launch?.vehicle), loadSatellite(design?.bus, design?.comm)]);
+      const [rocketModel, satModel, insModels] = await Promise.all([
+        loadRocket(design?.launch?.vehicle),
+        loadSatellite(design?.bus, design?.comm),
+        loadInstruments(design?.instruments),
+      ]);
       if (disposed) return;
       if (rocketModel) {
         rig = buildRocket(rocketModel);
@@ -223,7 +227,7 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
       }
       if (satModel && rig.payload) {
         // thay khoi tai trong chung bang ve tinh THAT (ti le that) nam trong fairing
-        satRig = buildSatellite(satModel, { withAdapter: false });
+        satRig = buildSatellite(satModel, { withAdapter: false, design, insModels });
         satRig.inner.rotation.set(0, 0, 0);
         const lo = rig.payload.userData.lo;
         const carrier = new THREE.Group();

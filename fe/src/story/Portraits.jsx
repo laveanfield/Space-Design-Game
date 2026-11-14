@@ -1,86 +1,152 @@
 import React from 'react';
 
 /**
- * Chan dung minh hoa (SVG, ve tay) cho 2 vai: Ky su truong va Sep Ke Toan.
- * Muon thay bang tranh rieng cua nhom: sua 2 ham duoi day tra ve <img src=...> la xong (StoryScene khong can doi).
+ * Chan dung minh hoa phong cach xuong co khi (matching concept art):
+ * - Ky su truong: mu bao ho vang, kinh han, quan yếm, cam bao cao ky thuat.
+ * - Sep ke toan: mu tru cao, kinh 1 trong, cam so sach va tien mat.
  * mood: 'calm' | 'worried' | 'smug' | 'angry' | 'happy'
  */
 
 export function EngineerPortrait({ mood = 'calm' }) {
-  const brow = mood === 'worried' ? 'M110 120 q14 -10 28 -2 M162 118 q14 -8 28 2' : 'M110 118 q14 -6 28 0 M162 118 q14 -6 28 0';
-  const mouth = mood === 'happy' ? 'M135 172 q15 12 30 0' : mood === 'worried' ? 'M136 176 q14 -6 28 0' : 'M137 173 q13 4 26 0';
+  const angryOrFirm = mood === 'worried' || mood === 'calm';
+  const brow = angryOrFirm ? 'M76 92 L96 98 M124 92 L104 98' : 'M76 90 Q86 86 96 90 M104 90 Q114 86 124 90';
+  const mouth =
+    mood === 'happy'
+      ? 'M88 128 Q100 138 112 128'
+      : mood === 'worried'
+        ? 'M88 132 Q100 124 112 132'
+        : 'M89 130 L111 130';
+
   return (
-    <svg viewBox="0 0 300 380" className="portrait" aria-label="Kỹ sư trưởng">
+    <svg viewBox="0 0 220 175" className="portrait" aria-label="Kỹ sư trưởng">
       <defs>
-        <linearGradient id="eh" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#2b2420" /><stop offset="1" stopColor="#15110f" /></linearGradient>
-        <linearGradient id="es" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#f3f4f6" /><stop offset="1" stopColor="#d5d9de" /></linearGradient>
+        <linearGradient id="engBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#352a1e" />
+          <stop offset="100%" stopColor="#1b1815" />
+        </linearGradient>
+        <linearGradient id="engHat" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#f3bd52" />
+          <stop offset="100%" stopColor="#b87b22" />
+        </linearGradient>
       </defs>
-      {/* toc phia sau */}
-      <path d="M78 150 q-6 -110 72 -112 q78 2 72 112 l8 92 q-30 18 -58 6 l-6 -60 h-34 l-6 60 q-28 12 -56 -6z" fill="url(#eh)" />
-      {/* than, ao so mi trang */}
-      <path d="M40 380 q4 -96 70 -118 l40 -10 l40 10 q66 22 70 118z" fill="url(#es)" stroke="#9aa3ab" strokeWidth="1.5" />
-      <path d="M128 252 l22 36 l22 -36" fill="none" stroke="#b9c0c7" strokeWidth="2" />
-      {/* co + mat */}
-      <rect x="132" y="200" width="36" height="52" rx="14" fill="#e8bfa0" />
-      <ellipse cx="150" cy="140" rx="54" ry="66" fill="#f0c9a8" />
-      <path d="M96 128 q-2 -74 56 -78 q60 2 56 76 q-14 -30 -46 -40 q-36 20 -66 42z" fill="url(#eh)" />
-      <path d={brow} fill="none" stroke="#2b2420" strokeWidth="4" strokeLinecap="round" />
-      <ellipse cx="124" cy="136" rx="7" ry="8" fill="#2c2420" /><ellipse cx="176" cy="136" rx="7" ry="8" fill="#2c2420" />
-      <circle cx="126" cy="133" r="2" fill="#fff" /><circle cx="178" cy="133" r="2" fill="#fff" />
-      <path d="M150 140 q-4 14 2 20" fill="none" stroke="#c99a7c" strokeWidth="2.5" strokeLinecap="round" />
-      <path d={mouth} fill="none" stroke="#a5503f" strokeWidth="3.5" strokeLinecap="round" />
-      {/* day deo the + the nhan vien */}
-      <path d="M120 256 L140 330 M180 256 L160 330" stroke="#2f6fb0" strokeWidth="5" />
-      <rect x="132" y="326" width="36" height="44" rx="4" fill="#e9eef3" stroke="#6b7884" strokeWidth="1.5" />
-      <rect x="138" y="333" width="24" height="16" rx="2" fill="#9db3c8" />
-      <rect x="138" y="354" width="24" height="3" fill="#6b7884" /><rect x="138" y="361" width="16" height="3" fill="#6b7884" />
-      {/* bang kep giay ban ve */}
-      <g transform="rotate(-14 230 320)">
-        <rect x="196" y="262" width="78" height="104" rx="5" fill="#c8a477" stroke="#7d6340" strokeWidth="2" />
-        <rect x="204" y="274" width="62" height="86" fill="#f6f2e6" />
-        <rect x="222" y="256" width="26" height="12" rx="3" fill="#8a9097" />
-        <path d="M212 292 h44 M212 304 h34 M212 316 h40 M212 330 l14 -10 l12 8 l16 -14" stroke="#4f7ca8" strokeWidth="2" fill="none" />
+      <rect x="2" y="2" width="216" height="171" rx="4" fill="url(#engBg)" stroke="#70583c" strokeWidth="2" />
+      <radialGradient id="engGlow" cx="50%" cy="35%" r="55%">
+        <stop offset="0%" stopColor="rgba(255,190,90,0.28)" />
+        <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+      </radialGradient>
+      <rect x="2" y="2" width="216" height="171" fill="url(#engGlow)" />
+
+      {/* Tattered technical report held up in left hand */}
+      <g transform="rotate(-10 38 122)">
+        <rect x="14" y="76" width="50" height="68" rx="2" fill="#e8dcc0" stroke="#2c241b" strokeWidth="2.5" />
+        <text x="39" y="93" fontSize="6.5" fontWeight="800" fill="#2c241b" textAnchor="middle" fontFamily="monospace">
+          TECHNICAL
+        </text>
+        <text x="39" y="102" fontSize="6.5" fontWeight="800" fill="#2c241b" textAnchor="middle" fontFamily="monospace">
+          REPORT
+        </text>
+        <path d="M22 112 h34 M22 120 h26 M22 128 h30" stroke="#5f5240" strokeWidth="2" />
+        <circle cx="48" cy="130" r="8" fill="none" stroke="#c0392b" strokeWidth="1.6" />
       </g>
-      <path d="M196 300 q22 6 30 28" fill="none" stroke="#f0c9a8" strokeWidth="18" strokeLinecap="round" />
+
+      {/* Body & Work Overalls */}
+      <path d="M58 173 L66 138 L134 138 L142 173 Z" fill="#9ea3a8" stroke="#221e1a" strokeWidth="2.5" />
+      <rect x="74" y="142" width="52" height="31" fill="#6d6452" stroke="#221e1a" strokeWidth="2" />
+      <rect x="74" y="138" width="11" height="28" fill="#5b5344" stroke="#221e1a" strokeWidth="1.8" />
+      <rect x="115" y="138" width="11" height="28" fill="#5b5344" stroke="#221e1a" strokeWidth="1.8" />
+      <circle cx="80" cy="152" r="2.2" fill="#e8b84b" />
+      <circle cx="120" cy="152" r="2.2" fill="#e8b84b" />
+
+      {/* Pointing arm */}
+      <path d="M132 146 L186 138" stroke="#e4bfa0" strokeWidth="12" strokeLinecap="round" />
+      <path d="M132 146 L186 138" stroke="#221e1a" strokeWidth="12" strokeLinecap="round" opacity="0.12" />
+      <circle cx="192" cy="138" r="6" fill="#e4bfa0" stroke="#221e1a" strokeWidth="2" />
+
+      {/* Messy dark hair + head */}
+      <path d="M62 112 Q54 76 100 72 Q146 76 138 112 Q144 126 132 132 L68 132 Q56 126 62 112 Z" fill="#2d2621" stroke="#181310" strokeWidth="2" />
+      <ellipse cx="100" cy="108" rx="30" ry="30" fill="#e7c2a3" stroke="#221e1a" strokeWidth="2.5" />
+      <path d="M66 96 L78 86 L92 94 L106 84 L122 94 L134 86 L132 74 Q100 66 68 74 Z" fill="#2d2621" />
+
+      {/* Eyes + Dark under-eye circles + Brows */}
+      <path d={brow} fill="none" stroke="#1d1815" strokeWidth="3" strokeLinecap="round" />
+      <ellipse cx="86" cy="107" rx="7" ry="6" fill="#fff" stroke="#1d1815" strokeWidth="2" />
+      <ellipse cx="114" cy="107" rx="7" ry="6" fill="#fff" stroke="#1d1815" strokeWidth="2" />
+      <circle cx="88" cy="107" r="3" fill="#1d1815" />
+      <circle cx="116" cy="107" r="3" fill="#1d1815" />
+      <path d="M78 114 Q86 118 94 114 M106 114 Q114 118 122 114" fill="none" stroke="#8a6250" strokeWidth="1.5" />
+      <path d="M98 112 Q96 119 101 121" fill="none" stroke="#8a6250" strokeWidth="2" strokeLinecap="round" />
+      <path d={mouth} fill="none" stroke="#632f25" strokeWidth="2.8" strokeLinecap="round" />
+
+      {/* Hard hat + Brass goggles */}
+      <path d="M60 72 Q62 32 100 30 Q138 32 140 72 Z" fill="url(#engHat)" stroke="#221e1a" strokeWidth="2.5" />
+      <path d="M94 31 L106 31 L109 64 L91 64 Z" fill="#f7cf6c" stroke="#221e1a" strokeWidth="2" />
+      <rect x="54" y="68" width="92" height="9" rx="4" fill="#c98d2b" stroke="#221e1a" strokeWidth="2.5" />
+      <rect x="70" y="53" width="24" height="17" rx="5" fill="#70808c" stroke="#221e1a" strokeWidth="2.2" />
+      <rect x="106" y="53" width="24" height="17" rx="5" fill="#70808c" stroke="#221e1a" strokeWidth="2.2" />
+      <circle cx="82" cy="61.5" r="6" fill="#3a4b56" />
+      <circle cx="118" cy="61.5" r="6" fill="#3a4b56" />
+      <rect x="94" y="59" width="12" height="5" fill="#3d352c" />
     </svg>
   );
 }
 
 export function BossPortrait({ mood = 'smug' }) {
-  const brow = mood === 'angry' ? 'M108 112 q16 10 30 4 M162 116 q14 6 30 -4' : 'M108 112 q15 -6 30 0 M162 112 q15 -6 30 0';
-  const mouth = mood === 'angry' ? 'M132 182 q18 -10 36 0' : mood === 'happy' || mood === 'smug' ? 'M130 176 q20 16 40 -2' : 'M134 178 h32';
+  const isAlert = mood === 'angry' || mood === 'worried';
+  const mouth = isAlert ? 'M100 128 Q114 121 128 129' : 'M100 124 Q114 134 128 122';
+
   return (
-    <svg viewBox="0 0 300 380" className="portrait" aria-label="Sếp kế toán">
+    <svg viewBox="0 0 220 175" className="portrait" aria-label="Sếp kế toán">
       <defs>
-        <linearGradient id="bs" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#f6f7f9" /><stop offset="1" stopColor="#d8dde3" /></linearGradient>
+        <linearGradient id="bossBg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#35251d" />
+          <stop offset="100%" stopColor="#191614" />
+        </linearGradient>
       </defs>
-      {/* than: ao so mi trang + ca vat toi */}
-      <path d="M36 380 q4 -100 74 -122 l40 -8 l40 8 q70 22 74 122z" fill="url(#bs)" stroke="#9aa3ab" strokeWidth="1.5" />
-      <path d="M150 252 l-12 14 l12 96 l12 -96z" fill="#2a3340" />
-      <path d="M138 252 l12 12 l12 -12 l-12 -4z" fill="#1d242e" />
-      <path d="M112 256 l38 10 l-20 26z M188 256 l-38 10 l20 26z" fill="#eef1f4" stroke="#aab2ba" strokeWidth="1.2" />
-      <rect x="132" y="200" width="36" height="54" rx="14" fill="#e6bb9c" />
-      <ellipse cx="150" cy="138" rx="56" ry="68" fill="#efc5a4" />
-      {/* toc vuot nguoc + mai */}
-      <path d="M94 128 q-4 -82 60 -84 q58 2 54 82 q-10 -40 -56 -44 q-36 4 -58 46z" fill="#3b3631" />
-      <path d="M100 112 q30 -38 92 -22" fill="none" stroke="#5a524a" strokeWidth="3" />
-      <path d={brow} fill="none" stroke="#3b3631" strokeWidth="4.5" strokeLinecap="round" />
-      {/* kinh gong den */}
-      <rect x="106" y="122" width="38" height="28" rx="6" fill="rgba(200,220,235,0.25)" stroke="#1f2328" strokeWidth="4" />
-      <rect x="156" y="122" width="38" height="28" rx="6" fill="rgba(200,220,235,0.25)" stroke="#1f2328" strokeWidth="4" />
-      <path d="M144 134 h12" stroke="#1f2328" strokeWidth="4" />
-      <circle cx="125" cy="137" r="5" fill="#2c2420" /><circle cx="175" cy="137" r="5" fill="#2c2420" />
-      <path d="M150 146 q-5 14 3 20" fill="none" stroke="#c99a7c" strokeWidth="2.5" strokeLinecap="round" />
-      <path d={mouth} fill="none" stroke="#9c4a3c" strokeWidth="3.5" strokeLinecap="round" />
-      {mood === 'angry' && <path d="M206 92 l10 -10 M214 104 l14 -4 M200 82 l2 -14" stroke="#d33" strokeWidth="4" strokeLinecap="round" />}
-      {/* may tinh cam tay */}
-      <g transform="rotate(10 84 318)">
-        <rect x="44" y="270" width="80" height="104" rx="8" fill="#2b2f35" stroke="#111" strokeWidth="2" />
-        <rect x="54" y="282" width="60" height="22" rx="3" fill="#a8c3a0" />
-        <text x="110" y="299" fontSize="14" textAnchor="end" fontFamily="monospace" fill="#203020">-$$$</text>
-        {[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => <rect key={`${r}${c}`} x={56 + c * 20} y={312 + r * 15} width="15" height="10" rx="2" fill={c === 2 && r === 3 ? '#d98a2b' : '#5d646d'} />))}
+      <rect x="2" y="2" width="216" height="171" rx="4" fill="url(#bossBg)" stroke="#70583c" strokeWidth="2" />
+
+      {/* Sweat drops when confronted */}
+      {isAlert && (
+        <g fill="#a9dcff" stroke="#243a47" strokeWidth="1.2">
+          <path d="M68 88 Q62 98 68 103 Q74 98 68 88 Z" />
+          <path d="M160 80 Q155 89 160 94 Q165 89 160 80 Z" />
+        </g>
+      )}
+
+      {/* Suit & Tie */}
+      <path d="M58 173 L68 134 L158 134 L168 173 Z" fill="#2c333c" stroke="#14181d" strokeWidth="2.5" />
+      <path d="M100 134 L114 156 L128 134 Z" fill="#eae5d5" stroke="#14181d" strokeWidth="1.8" />
+      <path d="M114 138 L108 168 L114 173 L120 168 Z" fill="#8b2b2b" stroke="#14181d" strokeWidth="1.5" />
+
+      {/* Face */}
+      <ellipse cx="114" cy="108" rx="33" ry="30" fill="#ecc4a6" stroke="#221e1a" strokeWidth="2.5" />
+      <path d="M84 92 L102 96 M142 91 L126 96" stroke="#2b2623" strokeWidth="3.2" strokeLinecap="round" />
+
+      {/* Eyes + Monocle */}
+      <ellipse cx="99" cy="106" rx="7" ry="6.5" fill="#fff" stroke="#221e1a" strokeWidth="2" />
+      <ellipse cx="129" cy="106" rx="8.5" ry="8" fill="#d8edf5" stroke="#d49b38" strokeWidth="2.6" />
+      <circle cx="98" cy="106" r="2.8" fill="#1f1b18" />
+      <circle cx="128" cy="106" r="2.8" fill="#1f1b18" />
+      <path d="M137 112 Q144 132 135 148" fill="none" stroke="#d49b38" strokeWidth="1.6" />
+
+      {/* Mustache & mouth */}
+      <path d="M98 119 Q106 113 114 118 Q122 113 130 119" fill="none" stroke="#453b34" strokeWidth="4.2" strokeLinecap="round" />
+      <path d={mouth} fill="none" stroke="#753429" strokeWidth="2.5" strokeLinecap="round" />
+
+      {/* Top Hat */}
+      <path d="M78 76 L85 24 L143 24 L150 76 Z" fill="#20252c" stroke="#111317" strokeWidth="2.5" />
+      <rect x="81" y="64" width="66" height="10" fill="#5e4b32" stroke="#111317" strokeWidth="1.5" />
+      <rect x="64" y="74" width="100" height="8" rx="4" fill="#1b2026" stroke="#111317" strokeWidth="2.5" />
+
+      {/* Ledger & Cash clutched in hands */}
+      <g transform="rotate(-12 68 150)">
+        <rect x="40" y="122" width="44" height="50" rx="3" fill="#464d55" stroke="#15181c" strokeWidth="2.2" />
+        <rect x="46" y="130" width="32" height="32" fill="#e9dfc4" />
+        <path d="M51 138 h22 M51 146 h18 M51 154 h22" stroke="#5a4f3f" strokeWidth="2" />
       </g>
-      <path d="M86 300 q-6 22 18 34" fill="none" stroke="#efc5a4" strokeWidth="18" strokeLinecap="round" />
+      <g transform="rotate(14 166 146)">
+        <rect x="148" y="132" width="38" height="22" rx="2" fill="#77966c" stroke="#1f291c" strokeWidth="2" />
+        <circle cx="167" cy="143" r="5" fill="#9fc490" />
+      </g>
     </svg>
   );
 }
