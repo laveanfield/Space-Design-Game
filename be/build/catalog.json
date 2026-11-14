@@ -1,0 +1,1655 @@
+{
+ "schema_version": "catalog/1",
+ "catalog_hash": "d810d608",
+ "tables": {
+  "scenarios": {
+   "SC-01": {
+    "id": "SC-01",
+    "name": "First Eyes on Earth",
+    "difficulty": "Easy",
+    "objective_text": "Build a CubeSat that takes pictures of Earth.",
+    "budget_musd": 12.0,
+    "min_science_pts": 10,
+    "min_mission_life_years": 1,
+    "deadline_months": 18,
+    "allowed_orbit_ids": [
+     "ORB-LEO-400",
+     "ORB-LEO-500"
+    ],
+    "learning_goal": "Mass, power and data basics.",
+    "mission_type": "earth_observation"
+   },
+   "SC-02": {
+    "id": "SC-02",
+    "name": "Coastal Watch",
+    "difficulty": "Normal",
+    "objective_text": "Monitor coastlines and farmland with a multispectral imager.",
+    "budget_musd": 70.0,
+    "min_science_pts": 40,
+    "min_mission_life_years": 3,
+    "deadline_months": 36,
+    "allowed_orbit_ids": [
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600",
+     "ORB-LEO-500"
+    ],
+    "learning_goal": "Why Sun-synchronous orbits are useful; power vs eclipse.",
+    "mission_type": "earth_observation"
+   },
+   "SC-03": {
+    "id": "SC-03",
+    "name": "Space Weather Sentinel",
+    "difficulty": "Normal",
+    "objective_text": "Measure particles in medium Earth orbit.",
+    "budget_musd": 180.0,
+    "min_science_pts": 20,
+    "min_mission_life_years": 5,
+    "deadline_months": 48,
+    "allowed_orbit_ids": [
+     "ORB-MEO-20200",
+     "ORB-GTO"
+    ],
+    "learning_goal": "Radiation hardening and delta-v.",
+    "mission_type": "earth_observation"
+   },
+   "SC-04": {
+    "id": "SC-04",
+    "name": "Greenhouse Gas Monitor",
+    "difficulty": "Hard",
+    "objective_text": "Measure CO2 from a Sun-synchronous orbit.",
+    "budget_musd": 300.0,
+    "min_science_pts": 70,
+    "min_mission_life_years": 5,
+    "deadline_months": 60,
+    "allowed_orbit_ids": [
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600"
+    ],
+    "learning_goal": "Matching bus, power and data downlink to a big instrument.",
+    "mission_type": "earth_observation"
+   },
+   "SC-05": {
+    "id": "SC-05",
+    "name": "All-Weather Radar Eye",
+    "difficulty": "Hard",
+    "objective_text": "Image Earth through clouds with radar.",
+    "budget_musd": 250.0,
+    "min_science_pts": 80,
+    "min_mission_life_years": 5,
+    "deadline_months": 60,
+    "allowed_orbit_ids": [
+     "ORB-POLAR-800",
+     "ORB-SSO-600",
+     "ORB-LEO-500"
+    ],
+    "learning_goal": "Huge data volumes need fast downlink.",
+    "mission_type": "earth_observation"
+   },
+   "SC-06": {
+    "id": "SC-06",
+    "name": "Deep Sky Telescope",
+    "difficulty": "Expert",
+    "objective_text": "Observe the sky from a steady, sunlit orbit.",
+    "budget_musd": 400.0,
+    "min_science_pts": 80,
+    "min_mission_life_years": 7,
+    "deadline_months": 72,
+    "allowed_orbit_ids": [
+     "ORB-SSO-DD-600",
+     "ORB-SSO-600"
+    ],
+    "learning_goal": "Fine pointing and thermal/power stability.",
+    "mission_type": "earth_observation"
+   },
+   "SC-07": {
+    "id": "SC-07",
+    "name": "Geostationary Weather Eye",
+    "difficulty": "Hard",
+    "objective_text": "Watch the same weather from geostationary orbit for 10 years.",
+    "budget_musd": 700.0,
+    "min_science_pts": 40,
+    "min_mission_life_years": 10,
+    "deadline_months": 72,
+    "allowed_orbit_ids": [
+     "ORB-GEO"
+    ],
+    "learning_goal": "Delta-v to reach GEO and long-life radiation.",
+    "mission_type": "earth_observation"
+   },
+   "SC-08": {
+    "id": "SC-08",
+    "name": "Sandbox",
+    "difficulty": "Sandbox",
+    "objective_text": "No constraints: experiment freely.",
+    "budget_musd": 100000.0,
+    "min_science_pts": 0,
+    "min_mission_life_years": 0,
+    "deadline_months": 999,
+    "allowed_orbit_ids": [
+     "ORB-LEO-400",
+     "ORB-LEO-500",
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600",
+     "ORB-POLAR-800",
+     "ORB-MEO-20200",
+     "ORB-GTO",
+     "ORB-GEO"
+    ],
+    "learning_goal": "Free exploration.",
+    "mission_type": "earth_observation"
+   }
+  },
+  "orbits": {
+   "ORB-LEO-400": {
+    "id": "ORB-LEO-400",
+    "name": "LEO 400 km (ISS-like)",
+    "altitude_km": 400.0,
+    "perigee_km": 400.0,
+    "inclination_deg": 51.6,
+    "period_min": 92.6,
+    "eclipse_fraction": 0.37,
+    "ground_contact_min_per_day": 40,
+    "radiation_dose_krad_per_year": 1,
+    "orbital_lifetime_years_no_reboost": 2,
+    "lv_payload_ref": "LEO",
+    "lv_payload_factor": 1,
+    "description_simple": "Low and easy to reach, but air drag brings satellites down in a couple of years.",
+    "class": "LEO"
+   },
+   "ORB-LEO-500": {
+    "id": "ORB-LEO-500",
+    "name": "LEO 500 km",
+    "altitude_km": 500.0,
+    "perigee_km": 500.0,
+    "inclination_deg": 51.6,
+    "period_min": 94.6,
+    "eclipse_fraction": 0.37,
+    "ground_contact_min_per_day": 45,
+    "radiation_dose_krad_per_year": 1.5,
+    "orbital_lifetime_years_no_reboost": 10,
+    "lv_payload_ref": "LEO",
+    "lv_payload_factor": 0.97,
+    "description_simple": "Longer life than 400 km, slightly harder to reach.",
+    "class": "LEO"
+   },
+   "ORB-SSO-600": {
+    "id": "ORB-SSO-600",
+    "name": "Sun-synchronous 600 km (10:30)",
+    "altitude_km": 600.0,
+    "perigee_km": 600.0,
+    "inclination_deg": 97.8,
+    "period_min": 96.7,
+    "eclipse_fraction": 0.35,
+    "ground_contact_min_per_day": 55,
+    "radiation_dose_krad_per_year": 3,
+    "orbital_lifetime_years_no_reboost": 25,
+    "lv_payload_ref": "SSO",
+    "lv_payload_factor": 1,
+    "description_simple": "Passes over each place at the same local time: great for consistent imaging.",
+    "class": "SSO"
+   },
+   "ORB-SSO-DD-600": {
+    "id": "ORB-SSO-DD-600",
+    "name": "Dawn-dusk Sun-synchronous 600 km",
+    "altitude_km": 600.0,
+    "perigee_km": 600.0,
+    "inclination_deg": 97.8,
+    "period_min": 96.7,
+    "eclipse_fraction": 0.03,
+    "ground_contact_min_per_day": 55,
+    "radiation_dose_krad_per_year": 3,
+    "orbital_lifetime_years_no_reboost": 25,
+    "lv_payload_ref": "SSO",
+    "lv_payload_factor": 0.97,
+    "description_simple": "Almost always in sunlight: lots of solar power and stable temperature.",
+    "class": "SSO"
+   },
+   "ORB-POLAR-800": {
+    "id": "ORB-POLAR-800",
+    "name": "Polar LEO 800 km",
+    "altitude_km": 800.0,
+    "perigee_km": 800.0,
+    "inclination_deg": 90.0,
+    "period_min": 100.9,
+    "eclipse_fraction": 0.33,
+    "ground_contact_min_per_day": 65,
+    "radiation_dose_krad_per_year": 8,
+    "orbital_lifetime_years_no_reboost": 100,
+    "lv_payload_ref": "LEO",
+    "lv_payload_factor": 0.85,
+    "description_simple": "Covers the whole globe, but more radiation and costly to reach.",
+    "class": "Polar"
+   },
+   "ORB-MEO-20200": {
+    "id": "ORB-MEO-20200",
+    "name": "Medium Earth Orbit 20,200 km",
+    "altitude_km": 20200.0,
+    "perigee_km": 20200.0,
+    "inclination_deg": 55.0,
+    "period_min": 718.7,
+    "eclipse_fraction": 0.07,
+    "ground_contact_min_per_day": 240,
+    "radiation_dose_krad_per_year": 25,
+    "lv_payload_ref": "GTO",
+    "lv_payload_factor": 0.85,
+    "description_simple": "Navigation-satellite altitude: long contact windows, high radiation.",
+    "orbital_lifetime_years_no_reboost": 1000.0,
+    "class": "MEO"
+   },
+   "ORB-GTO": {
+    "id": "ORB-GTO",
+    "name": "Geostationary Transfer Orbit",
+    "altitude_km": 35786.0,
+    "perigee_km": 250.0,
+    "inclination_deg": 27.0,
+    "period_min": 632,
+    "eclipse_fraction": 0.05,
+    "ground_contact_min_per_day": 360,
+    "radiation_dose_krad_per_year": 15,
+    "lv_payload_ref": "GTO",
+    "lv_payload_factor": 1,
+    "description_simple": "A stretched orbit used as a stepping stone to GEO.",
+    "orbital_lifetime_years_no_reboost": 1000.0,
+    "class": "GTO"
+   },
+   "ORB-GEO": {
+    "id": "ORB-GEO",
+    "name": "Geostationary Orbit 35,786 km",
+    "altitude_km": 35786.0,
+    "perigee_km": 35786.0,
+    "inclination_deg": 0.0,
+    "period_min": 1436,
+    "eclipse_fraction": 0.01,
+    "ground_contact_min_per_day": 1440,
+    "radiation_dose_krad_per_year": 8,
+    "lv_payload_ref": "GTO",
+    "lv_payload_factor": 1,
+    "description_simple": "Hovers over one spot: constant contact, but you must burn from GTO to get there.",
+    "orbital_lifetime_years_no_reboost": 1000.0,
+    "class": "GEO"
+   }
+  },
+  "instruments": {
+   "INS-01": {
+    "id": "INS-01",
+    "name": "Compact RGB Camera",
+    "tier": "basic",
+    "science_category": "Earth observation",
+    "science_value_pts": 10,
+    "mass_kg": 0.8,
+    "power_operating_w": 4.0,
+    "duty_cycle_pct": 20,
+    "data_generated_gb_per_day": 0.4,
+    "pointing_required_deg": 1.0,
+    "cost_musd": 0.3,
+    "lead_time_months": 6,
+    "compatible_orbit_ids": [
+     "ORB-LEO-400",
+     "ORB-LEO-500",
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600"
+    ],
+    "description_simple": "Takes ordinary color pictures of Earth.",
+    "kind": "imager_rgb"
+   },
+   "INS-02": {
+    "id": "INS-02",
+    "name": "Multispectral Imager",
+    "tier": "advanced",
+    "science_category": "Earth observation",
+    "science_value_pts": 40,
+    "mass_kg": 25.0,
+    "power_operating_w": 45.0,
+    "duty_cycle_pct": 30,
+    "data_generated_gb_per_day": 12.0,
+    "pointing_required_deg": 0.1,
+    "cost_musd": 15.0,
+    "lead_time_months": 24,
+    "compatible_orbit_ids": [
+     "ORB-LEO-500",
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600",
+     "ORB-POLAR-800",
+     "ORB-GEO"
+    ],
+    "description_simple": "Sees several colors of light to map land, water and crops.",
+    "kind": "imager_multispectral"
+   },
+   "INS-03": {
+    "id": "INS-03",
+    "name": "Thermal Infrared Imager",
+    "tier": "advanced",
+    "science_category": "Earth observation",
+    "science_value_pts": 45,
+    "mass_kg": 12.0,
+    "power_operating_w": 30.0,
+    "duty_cycle_pct": 30,
+    "data_generated_gb_per_day": 8.0,
+    "pointing_required_deg": 0.1,
+    "cost_musd": 18.0,
+    "lead_time_months": 24,
+    "compatible_orbit_ids": [
+     "ORB-LEO-500",
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600",
+     "ORB-POLAR-800",
+     "ORB-GEO"
+    ],
+    "description_simple": "Detects heat: fires, volcanoes, urban heat.",
+    "kind": "imager_rgb"
+   },
+   "INS-04": {
+    "id": "INS-04",
+    "name": "Hyperspectral Imager",
+    "tier": "expert",
+    "science_category": "Earth observation",
+    "science_value_pts": 70,
+    "mass_kg": 60.0,
+    "power_operating_w": 120.0,
+    "duty_cycle_pct": 25,
+    "data_generated_gb_per_day": 40.0,
+    "pointing_required_deg": 0.05,
+    "cost_musd": 45.0,
+    "lead_time_months": 30,
+    "compatible_orbit_ids": [
+     "ORB-LEO-400",
+     "ORB-LEO-500",
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600"
+    ],
+    "description_simple": "Hundreds of colors per pixel to identify materials and gases.",
+    "kind": "spectrometer"
+   },
+   "INS-05": {
+    "id": "INS-05",
+    "name": "Small SAR (X-band radar)",
+    "tier": "expert",
+    "science_category": "Earth observation",
+    "science_value_pts": 80,
+    "mass_kg": 85.0,
+    "power_operating_w": 450.0,
+    "duty_cycle_pct": 15,
+    "data_generated_gb_per_day": 150.0,
+    "pointing_required_deg": 0.2,
+    "cost_musd": 80.0,
+    "lead_time_months": 36,
+    "compatible_orbit_ids": [
+     "ORB-LEO-400",
+     "ORB-LEO-500",
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600",
+     "ORB-POLAR-800"
+    ],
+    "description_simple": "Radar sees through clouds and at night; produces lots of data.",
+    "kind": "radar_sar"
+   },
+   "INS-06": {
+    "id": "INS-06",
+    "name": "Atmospheric Gas Sounder",
+    "tier": "expert",
+    "science_category": "Atmosphere / climate",
+    "science_value_pts": 75,
+    "mass_kg": 140.0,
+    "power_operating_w": 150.0,
+    "duty_cycle_pct": 40,
+    "data_generated_gb_per_day": 10.0,
+    "pointing_required_deg": 0.1,
+    "cost_musd": 90.0,
+    "lead_time_months": 42,
+    "compatible_orbit_ids": [
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600",
+     "ORB-POLAR-800"
+    ],
+    "description_simple": "Measures carbon dioxide in the atmosphere.",
+    "kind": "generic"
+   },
+   "INS-07": {
+    "id": "INS-07",
+    "name": "Fluxgate Magnetometer",
+    "tier": "basic",
+    "science_category": "Space physics",
+    "science_value_pts": 15,
+    "mass_kg": 1.5,
+    "power_operating_w": 2.0,
+    "duty_cycle_pct": 100,
+    "data_generated_gb_per_day": 0.02,
+    "pointing_required_deg": 10.0,
+    "cost_musd": 2.0,
+    "lead_time_months": 12,
+    "compatible_orbit_ids": [
+     "ORB-LEO-400",
+     "ORB-LEO-500",
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600",
+     "ORB-POLAR-800",
+     "ORB-MEO-20200",
+     "ORB-GTO",
+     "ORB-GEO"
+    ],
+    "description_simple": "Measures magnetic fields in space; tiny data.",
+    "kind": "magnetometer"
+   },
+   "INS-08": {
+    "id": "INS-08",
+    "name": "Particle & Radiation Detector",
+    "tier": "basic",
+    "science_category": "Space physics",
+    "science_value_pts": 20,
+    "mass_kg": 3.0,
+    "power_operating_w": 5.0,
+    "duty_cycle_pct": 100,
+    "data_generated_gb_per_day": 0.05,
+    "pointing_required_deg": 10.0,
+    "cost_musd": 4.0,
+    "lead_time_months": 12,
+    "compatible_orbit_ids": [
+     "ORB-LEO-400",
+     "ORB-LEO-500",
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600",
+     "ORB-POLAR-800",
+     "ORB-MEO-20200",
+     "ORB-GTO",
+     "ORB-GEO"
+    ],
+    "description_simple": "Counts charged particles to study space weather.",
+    "kind": "particle_detector"
+   },
+   "INS-09": {
+    "id": "INS-09",
+    "name": "UV/Optical Space Telescope (0.3 m)",
+    "tier": "expert",
+    "science_category": "Astrophysics",
+    "science_value_pts": 80,
+    "mass_kg": 80.0,
+    "power_operating_w": 60.0,
+    "duty_cycle_pct": 60,
+    "data_generated_gb_per_day": 5.0,
+    "pointing_required_deg": 0.001,
+    "cost_musd": 120.0,
+    "lead_time_months": 48,
+    "compatible_orbit_ids": [
+     "ORB-SSO-600",
+     "ORB-SSO-DD-600",
+     "ORB-GTO",
+     "ORB-GEO"
+    ],
+    "description_simple": "Looks at stars and galaxies; needs extremely steady pointing.",
+    "kind": "telescope"
+   },
+   "INS-10": {
+    "id": "INS-10",
+    "name": "Near-IR All-Sky Survey Spectrometer",
+    "tier": "expert",
+    "science_category": "Astrophysics",
+    "science_value_pts": 85,
+    "mass_kg": 110.0,
+    "power_operating_w": 90.0,
+    "duty_cycle_pct": 80,
+    "data_generated_gb_per_day": 20.0,
+    "pointing_required_deg": 0.01,
+    "cost_musd": 100.0,
+    "lead_time_months": 42,
+    "compatible_orbit_ids": [
+     "ORB-SSO-DD-600"
+    ],
+    "description_simple": "Maps the whole sky in many infrared colors; works best in a dawn-dusk orbit.",
+    "kind": "spectrometer"
+   }
+  },
+  "buses": {
+   "BUS-3U": {
+    "id": "BUS-3U",
+    "name": "3U CubeSat Bus",
+    "class": "nano",
+    "form_factor": "3U",
+    "tier": "basic",
+    "mass_kg": 1.0,
+    "max_total_mass_kg": 6.0,
+    "max_payload_mass_kg": 2.0,
+    "max_payload_power_w": 6.0,
+    "housekeeping_power_w": 1.0,
+    "cost_musd": 0.4,
+    "lead_time_months": 6,
+    "description_simple": "Tiny and cheap, but very little power and room.",
+    "size_m": 0.5
+   },
+   "BUS-6U": {
+    "id": "BUS-6U",
+    "name": "6U CubeSat Bus",
+    "class": "nano",
+    "form_factor": "6U",
+    "tier": "basic",
+    "mass_kg": 2.5,
+    "max_total_mass_kg": 12.0,
+    "max_payload_mass_kg": 6.0,
+    "max_payload_power_w": 25.0,
+    "housekeeping_power_w": 2.5,
+    "cost_musd": 1.2,
+    "lead_time_months": 9,
+    "description_simple": "Room for a real instrument and a little maneuvering.",
+    "size_m": 0.5
+   },
+   "BUS-12U": {
+    "id": "BUS-12U",
+    "name": "12U CubeSat Bus",
+    "class": "nano",
+    "form_factor": "12U",
+    "tier": "basic",
+    "mass_kg": 5.0,
+    "max_total_mass_kg": 24.0,
+    "max_payload_mass_kg": 12.0,
+    "max_payload_power_w": 50.0,
+    "housekeeping_power_w": 5.0,
+    "cost_musd": 3.0,
+    "lead_time_months": 12,
+    "description_simple": "The largest CubeSat: more payload, still low cost.",
+    "size_m": 0.5
+   },
+   "BUS-ESPA": {
+    "id": "BUS-ESPA",
+    "name": "ESPA-class Microsat Bus",
+    "class": "micro",
+    "form_factor": "~180 kg class",
+    "tier": "advanced",
+    "mass_kg": 45.0,
+    "max_total_mass_kg": 180.0,
+    "max_payload_mass_kg": 70.0,
+    "max_payload_power_w": 150.0,
+    "housekeeping_power_w": 15.0,
+    "cost_musd": 18.0,
+    "lead_time_months": 24,
+    "description_simple": "A proper small satellite that fits many rideshares.",
+    "size_m": 0.5
+   },
+   "BUS-SMALL500": {
+    "id": "BUS-SMALL500",
+    "name": "500 kg-class Small Satellite Bus",
+    "class": "small",
+    "form_factor": "~500 kg class",
+    "tier": "advanced",
+    "mass_kg": 130.0,
+    "max_total_mass_kg": 500.0,
+    "max_payload_mass_kg": 200.0,
+    "max_payload_power_w": 500.0,
+    "housekeeping_power_w": 40.0,
+    "cost_musd": 60.0,
+    "lead_time_months": 30,
+    "description_simple": "A flexible mid-size bus for serious science.",
+    "size_m": 0.5
+   },
+   "BUS-LARGE-LEO": {
+    "id": "BUS-LARGE-LEO",
+    "name": "Large LEO Observatory Bus",
+    "class": "large",
+    "form_factor": "~2,000 kg class",
+    "tier": "expert",
+    "mass_kg": 500.0,
+    "max_total_mass_kg": 2000.0,
+    "max_payload_mass_kg": 800.0,
+    "max_payload_power_w": 2500.0,
+    "housekeeping_power_w": 120.0,
+    "cost_musd": 220.0,
+    "lead_time_months": 48,
+    "description_simple": "Big power and payload budget, big price.",
+    "size_m": 0.5
+   },
+   "BUS-GEO": {
+    "id": "BUS-GEO",
+    "name": "GEO-class Bus",
+    "class": "large",
+    "form_factor": "~4,000 kg class",
+    "tier": "expert",
+    "mass_kg": 900.0,
+    "max_total_mass_kg": 4000.0,
+    "max_payload_mass_kg": 1000.0,
+    "max_payload_power_w": 5000.0,
+    "housekeeping_power_w": 200.0,
+    "cost_musd": 450.0,
+    "lead_time_months": 60,
+    "description_simple": "Built to reach and hold geostationary orbit for 15 years.",
+    "size_m": 0.5
+   }
+  },
+  "power_arrays": {
+   "PWR-SA-BODY": {
+    "id": "PWR-SA-BODY",
+    "name": "Body-Mounted Solar Cells (3U)",
+    "tier": "basic",
+    "generation_w": 12.0,
+    "area_m2": 0.06,
+    "degradation_pct_per_year": 2,
+    "mass_kg": 0.3,
+    "cost_musd": 0.25,
+    "lead_time_months": 4,
+    "description_simple": "Cells glued to the satellite body: simple but low power.",
+    "kind": "deployable"
+   },
+   "PWR-SA-DEP": {
+    "id": "PWR-SA-DEP",
+    "name": "Deployable Solar Panels (6U-12U)",
+    "tier": "basic",
+    "generation_w": 60.0,
+    "area_m2": 0.24,
+    "degradation_pct_per_year": 2,
+    "mass_kg": 1.5,
+    "cost_musd": 1.0,
+    "lead_time_months": 6,
+    "description_simple": "Fold-out wings that catch more sunlight.",
+    "kind": "deployable"
+   },
+   "PWR-SA-SMALL": {
+    "id": "PWR-SA-SMALL",
+    "name": "SmallSat Solar Array (350 W)",
+    "tier": "advanced",
+    "generation_w": 350.0,
+    "area_m2": 1.05,
+    "degradation_pct_per_year": 1.5,
+    "mass_kg": 11.0,
+    "cost_musd": 4.0,
+    "lead_time_months": 9,
+    "description_simple": "Enough power for a mid-size instrument.",
+    "kind": "deployable"
+   },
+   "PWR-SA-LARGE": {
+    "id": "PWR-SA-LARGE",
+    "name": "Large LEO Solar Array (2.5 kW)",
+    "tier": "expert",
+    "generation_w": 2500.0,
+    "area_m2": 7.5,
+    "degradation_pct_per_year": 1.5,
+    "mass_kg": 65.0,
+    "cost_musd": 18.0,
+    "lead_time_months": 15,
+    "description_simple": "Big wings for power-hungry radar and spectrometers.",
+    "kind": "deployable"
+   },
+   "PWR-SA-GEO": {
+    "id": "PWR-SA-GEO",
+    "name": "GEO Solar Array (6 kW)",
+    "tier": "expert",
+    "generation_w": 6000.0,
+    "area_m2": 18,
+    "degradation_pct_per_year": 1.5,
+    "mass_kg": 150.0,
+    "cost_musd": 45.0,
+    "lead_time_months": 18,
+    "description_simple": "Large, long-lived array for geostationary orbit.",
+    "kind": "deployable"
+   }
+  },
+  "batteries": {
+   "BAT-S": {
+    "id": "BAT-S",
+    "name": "Small Li-ion Battery (40 Wh)",
+    "tier": "basic",
+    "capacity_wh": 40.0,
+    "usable_dod": 0.3,
+    "mass_kg": 0.3,
+    "cost_musd": 0.1,
+    "lead_time_months": 3,
+    "description_simple": "Keeps a CubeSat alive in Earth's shadow."
+   },
+   "BAT-M": {
+    "id": "BAT-M",
+    "name": "Medium Li-ion Battery (200 Wh)",
+    "tier": "basic",
+    "capacity_wh": 200.0,
+    "usable_dod": 0.3,
+    "mass_kg": 1.4,
+    "cost_musd": 0.4,
+    "lead_time_months": 5,
+    "description_simple": "Good for small satellites in low orbit."
+   },
+   "BAT-L": {
+    "id": "BAT-L",
+    "name": "Large Li-ion Battery (1 kWh)",
+    "tier": "advanced",
+    "capacity_wh": 1000.0,
+    "usable_dod": 0.3,
+    "mass_kg": 6.5,
+    "cost_musd": 2.0,
+    "lead_time_months": 8,
+    "description_simple": "Powers big instruments through eclipse."
+   },
+   "BAT-XL": {
+    "id": "BAT-XL",
+    "name": "GEO Battery (8 kWh)",
+    "tier": "expert",
+    "capacity_wh": 8000.0,
+    "usable_dod": 0.6,
+    "mass_kg": 55.0,
+    "cost_musd": 12.0,
+    "lead_time_months": 12,
+    "description_simple": "Few eclipses in GEO, so it can be discharged deeper."
+   }
+  },
+  "comms": {
+   "COM-UHF": {
+    "id": "COM-UHF",
+    "name": "UHF Beacon Radio",
+    "band": "UHF",
+    "tier": "basic",
+    "antenna_gain_dbi": 2,
+    "tx_power_w": 1.0,
+    "power_w": 3.0,
+    "downlink_mbps": 0.0096,
+    "max_range_km": 3000.0,
+    "pointing_required_deg": 30.0,
+    "mass_kg": 0.1,
+    "cost_musd": 0.1,
+    "lead_time_months": 3,
+    "description_simple": "Very slow but very cheap: good for telemetry only."
+   },
+   "COM-S-CUBE": {
+    "id": "COM-S-CUBE",
+    "name": "S-band CubeSat Transmitter",
+    "band": "S",
+    "tier": "basic",
+    "antenna_gain_dbi": 6,
+    "tx_power_w": 2.0,
+    "power_w": 8.0,
+    "downlink_mbps": 2.0,
+    "max_range_km": 3000.0,
+    "pointing_required_deg": 10.0,
+    "mass_kg": 0.4,
+    "cost_musd": 0.3,
+    "lead_time_months": 4,
+    "description_simple": "Modest speed for small image downloads."
+   },
+   "COM-X-SMALL": {
+    "id": "COM-X-SMALL",
+    "name": "X-band SmallSat Transmitter",
+    "band": "X",
+    "tier": "advanced",
+    "antenna_gain_dbi": 12,
+    "tx_power_w": 10.0,
+    "power_w": 35.0,
+    "downlink_mbps": 50.0,
+    "max_range_km": 3000.0,
+    "pointing_required_deg": 3.0,
+    "mass_kg": 3.0,
+    "cost_musd": 2.0,
+    "lead_time_months": 6,
+    "description_simple": "Fast enough for multispectral imagery in LEO."
+   },
+   "COM-KA-LEO": {
+    "id": "COM-KA-LEO",
+    "name": "Ka-band High-rate LEO Link",
+    "band": "Ka",
+    "tier": "expert",
+    "antenna_gain_dbi": 30,
+    "tx_power_w": 40.0,
+    "power_w": 120.0,
+    "downlink_mbps": 500.0,
+    "max_range_km": 3000.0,
+    "pointing_required_deg": 0.5,
+    "mass_kg": 12.0,
+    "cost_musd": 8.0,
+    "lead_time_months": 12,
+    "description_simple": "Hundreds of Mbps for radar and hyperspectral data."
+   },
+   "COM-OPT-LEO": {
+    "id": "COM-OPT-LEO",
+    "name": "Optical (Laser) Terminal",
+    "band": "Optical",
+    "tier": "expert",
+    "tx_power_w": 1.0,
+    "power_w": 90.0,
+    "downlink_mbps": 1000.0,
+    "max_range_km": 3000.0,
+    "pointing_required_deg": 0.01,
+    "mass_kg": 10.0,
+    "cost_musd": 12.0,
+    "lead_time_months": 18,
+    "description_simple": "Huge speed, but clouds can block the link and pointing must be precise.",
+    "antenna_gain_dbi": 110.0
+   },
+   "COM-X-MGA": {
+    "id": "COM-X-MGA",
+    "name": "X-band Medium-gain Antenna",
+    "band": "X",
+    "tier": "advanced",
+    "antenna_gain_dbi": 25,
+    "tx_power_w": 30.0,
+    "power_w": 90.0,
+    "downlink_mbps": 10.0,
+    "max_range_km": 60000.0,
+    "pointing_required_deg": 1.0,
+    "mass_kg": 8.0,
+    "cost_musd": 10.0,
+    "lead_time_months": 10,
+    "description_simple": "Reaches MEO and GEO at moderate speed."
+   },
+   "COM-X-HGA": {
+    "id": "COM-X-HGA",
+    "name": "X-band High-gain Dish (1.5 m)",
+    "band": "X",
+    "tier": "expert",
+    "antenna_gain_dbi": 38,
+    "tx_power_w": 50.0,
+    "power_w": 150.0,
+    "downlink_mbps": 60.0,
+    "max_range_km": 400000.0,
+    "pointing_required_deg": 0.3,
+    "mass_kg": 25.0,
+    "cost_musd": 25.0,
+    "lead_time_months": 18,
+    "description_simple": "Strong long-range link; also useful beyond Earth orbit."
+   },
+   "COM-KA-GEO": {
+    "id": "COM-KA-GEO",
+    "name": "Ka-band GEO Payload Link",
+    "band": "Ka",
+    "tier": "expert",
+    "antenna_gain_dbi": 45,
+    "tx_power_w": 100.0,
+    "power_w": 280.0,
+    "downlink_mbps": 300.0,
+    "max_range_km": 100000.0,
+    "pointing_required_deg": 0.1,
+    "mass_kg": 40.0,
+    "cost_musd": 45.0,
+    "lead_time_months": 24,
+    "description_simple": "Very high throughput from geostationary orbit."
+   }
+  },
+  "avionics": {
+   "OBC-BASIC": {
+    "id": "OBC-BASIC",
+    "name": "Basic Microcontroller OBC",
+    "type": "obc",
+    "tier": "basic",
+    "storage_gb": 4,
+    "rad_tolerance_krad": 10.0,
+    "power_w": 0.5,
+    "mass_kg": 0.05,
+    "cost_musd": 0.05,
+    "lead_time_months": 3,
+    "description_simple": "Simple and tiny; little memory and low radiation tolerance.",
+    "torque_nm": 0.001
+   },
+   "OBC-CUBE": {
+    "id": "OBC-CUBE",
+    "name": "CubeSat Linux Computer",
+    "type": "obc",
+    "tier": "basic",
+    "storage_gb": 32,
+    "rad_tolerance_krad": 20.0,
+    "power_w": 1.5,
+    "mass_kg": 0.1,
+    "cost_musd": 0.15,
+    "lead_time_months": 3,
+    "description_simple": "More memory for image data.",
+    "torque_nm": 0.001
+   },
+   "OBC-SPACE": {
+    "id": "OBC-SPACE",
+    "name": "Space-grade Processor Board",
+    "type": "obc",
+    "tier": "advanced",
+    "storage_gb": 128,
+    "rad_tolerance_krad": 50.0,
+    "power_w": 8.0,
+    "mass_kg": 1.0,
+    "cost_musd": 1.5,
+    "lead_time_months": 9,
+    "description_simple": "Lots of storage and decent radiation tolerance.",
+    "torque_nm": 0.001
+   },
+   "OBC-RADHARD": {
+    "id": "OBC-RADHARD",
+    "name": "Radiation-hardened Flight Computer",
+    "type": "obc",
+    "tier": "expert",
+    "storage_gb": 64,
+    "rad_tolerance_krad": 200.0,
+    "power_w": 25.0,
+    "mass_kg": 8.0,
+    "cost_musd": 12.0,
+    "lead_time_months": 18,
+    "description_simple": "Survives harsh orbits for years, but heavy and power-hungry.",
+    "torque_nm": 0.001
+   },
+   "ADCS-MAG": {
+    "id": "ADCS-MAG",
+    "name": "Magnetorquers + Sun Sensors",
+    "type": "adcs",
+    "tier": "basic",
+    "pointing_accuracy_deg": 5.0,
+    "power_w": 0.8,
+    "mass_kg": 0.2,
+    "cost_musd": 0.1,
+    "lead_time_months": 3,
+    "description_simple": "Rough pointing using Earth's magnetic field.",
+    "torque_nm": 0.001
+   },
+   "ADCS-WHEEL": {
+    "id": "ADCS-WHEEL",
+    "name": "3-axis Reaction Wheels",
+    "type": "adcs",
+    "tier": "basic",
+    "pointing_accuracy_deg": 1.0,
+    "power_w": 2.5,
+    "mass_kg": 1.0,
+    "cost_musd": 0.6,
+    "lead_time_months": 4,
+    "description_simple": "Good pointing for cameras on small satellites.",
+    "torque_nm": 0.001
+   },
+   "ADCS-STAR": {
+    "id": "ADCS-STAR",
+    "name": "Reaction Wheels + Star Tracker",
+    "type": "adcs",
+    "tier": "advanced",
+    "pointing_accuracy_deg": 0.05,
+    "power_w": 15.0,
+    "mass_kg": 6.0,
+    "cost_musd": 4.0,
+    "lead_time_months": 9,
+    "description_simple": "Accurate pointing for imagers and radar.",
+    "torque_nm": 0.001
+   },
+   "ADCS-FINE": {
+    "id": "ADCS-FINE",
+    "name": "Fine-pointing System",
+    "type": "adcs",
+    "tier": "expert",
+    "pointing_accuracy_deg": 0.001,
+    "power_w": 60.0,
+    "mass_kg": 30.0,
+    "cost_musd": 25.0,
+    "lead_time_months": 18,
+    "description_simple": "Needed by telescopes; heavy and expensive.",
+    "torque_nm": 0.001
+   }
+  },
+  "launch_vehicles": {
+   "LV-ELECTRON": {
+    "id": "LV-ELECTRON",
+    "name": "Electron",
+    "variant": "Standard",
+    "manufacturer": "Rocket Lab",
+    "height_m": 18.0,
+    "diameter_m": 1.2,
+    "fairing_diameter_m": 1.2,
+    "liftoff_mass_kg": 13000.0,
+    "leo_capacity_kg": 300.0,
+    "sso_capacity_kg": 200.0,
+    "propulsion": "Stage 1: 9x Rutherford; Stage 2: 1x Rutherford Vacuum",
+    "fuel": "LOX / RP-1 (kerosene)",
+    "cost_musd": 7.5,
+    "reliability": 0.95,
+    "lead_time_months": 6,
+    "compatible_site_ids": [
+     "SITE-MAHIA",
+     "SITE-WALLOPS"
+    ],
+    "stages": [
+     {
+      "name": "stage_1",
+      "thrust_n": 190000.0,
+      "isp_s": 311.0,
+      "propellant_kg": 9250,
+      "dry_kg": 1006
+     },
+     {
+      "name": "stage_2",
+      "thrust_n": 22000.0,
+      "isp_s": 343.0,
+      "propellant_kg": 2150,
+      "dry_kg": 250
+     }
+    ]
+   },
+   "LV-ARIANE62": {
+    "id": "LV-ARIANE62",
+    "name": "Ariane 6",
+    "variant": "A62 (2x P120C)",
+    "manufacturer": "ArianeGroup / Arianespace",
+    "height_m": 63.0,
+    "diameter_m": 5.4,
+    "fairing_diameter_m": 5.4,
+    "liftoff_mass_kg": 540000.0,
+    "leo_capacity_kg": 10300.0,
+    "sso_capacity_kg": 7200.0,
+    "gto_capacity_kg": 4500.0,
+    "propulsion": "Core: 1x Vulcain 2.1; Upper: 1x Vinci; 2x P120C solid boosters",
+    "fuel": "LH2 / LOX (core + upper); solid HTPB/AP/Al (boosters)",
+    "cost_musd": 95.0,
+    "reliability": 0.97,
+    "lead_time_months": 18,
+    "compatible_site_ids": [
+     "SITE-KOUROU"
+    ],
+    "stages": [
+     {
+      "name": "boosters_2x_p120c",
+      "thrust_n": 5422000.0,
+      "isp_s": 280.0,
+      "propellant_kg": 282800,
+      "dry_kg": 26000
+     },
+     {
+      "name": "core_vulcain21",
+      "thrust_n": 1370000.0,
+      "isp_s": 436.0,
+      "propellant_kg": 150000,
+      "dry_kg": 21500
+     },
+     {
+      "name": "upper_vinci",
+      "thrust_n": 180000.0,
+      "isp_s": 457.0,
+      "propellant_kg": 32000,
+      "dry_kg": 6000
+     }
+    ]
+   },
+   "LV-ARIANE64": {
+    "id": "LV-ARIANE64",
+    "name": "Ariane 6",
+    "variant": "A64 (4x P120C)",
+    "manufacturer": "ArianeGroup / Arianespace",
+    "height_m": 63.0,
+    "diameter_m": 5.4,
+    "fairing_diameter_m": 5.4,
+    "liftoff_mass_kg": 870000.0,
+    "leo_capacity_kg": 21600.0,
+    "sso_capacity_kg": 15500.0,
+    "gto_capacity_kg": 11500.0,
+    "propulsion": "Core: 1x Vulcain 2.1; Upper: 1x Vinci; 4x P120C solid boosters",
+    "fuel": "LH2 / LOX (core + upper); solid HTPB/AP/Al (boosters)",
+    "cost_musd": 125.0,
+    "reliability": 0.96,
+    "lead_time_months": 24,
+    "compatible_site_ids": [
+     "SITE-KOUROU"
+    ],
+    "stages": [
+     {
+      "name": "boosters_4x_p120c",
+      "thrust_n": 10844000.0,
+      "isp_s": 280.0,
+      "propellant_kg": 565600,
+      "dry_kg": 52000
+     },
+     {
+      "name": "core_vulcain21",
+      "thrust_n": 1370000.0,
+      "isp_s": 436.0,
+      "propellant_kg": 150000,
+      "dry_kg": 21500
+     },
+     {
+      "name": "upper_vinci",
+      "thrust_n": 180000.0,
+      "isp_s": 457.0,
+      "propellant_kg": 32000,
+      "dry_kg": 6000
+     }
+    ]
+   },
+   "LV-VEGAC": {
+    "id": "LV-VEGAC",
+    "name": "Vega-C",
+    "variant": "Standard",
+    "manufacturer": "Avio (ESA / Arianespace)",
+    "height_m": 35.0,
+    "diameter_m": 3.4,
+    "fairing_diameter_m": 3.3,
+    "liftoff_mass_kg": 210000.0,
+    "leo_capacity_kg": 3300.0,
+    "sso_capacity_kg": 2300.0,
+    "propulsion": "Stages 1-3: P120C, Zefiro-40, Zefiro-9 (solid); Stage 4: AVUM+ (1x liquid engine)",
+    "fuel": "Solid HTPB (stages 1-3); UDMH / N2O4 (AVUM+)",
+    "cost_musd": 40.0,
+    "reliability": 0.88,
+    "lead_time_months": 18,
+    "compatible_site_ids": [
+     "SITE-KOUROU"
+    ],
+    "stages": [
+     {
+      "name": "stage_1_p120c",
+      "thrust_n": 2681000.0,
+      "isp_s": 279.0,
+      "propellant_kg": 141634,
+      "dry_kg": 13400
+     },
+     {
+      "name": "stage_2_zefiro40",
+      "thrust_n": 1123000.0,
+      "isp_s": 293.5,
+      "propellant_kg": 36239,
+      "dry_kg": 3230
+     },
+     {
+      "name": "stage_3_zefiro9",
+      "thrust_n": 256400.0,
+      "isp_s": 295.9,
+      "propellant_kg": 10567,
+      "dry_kg": 929
+     },
+     {
+      "name": "stage_4_avum_plus",
+      "thrust_n": 2420.0,
+      "isp_s": 315.8,
+      "propellant_kg": 740,
+      "dry_kg": 695
+     }
+    ]
+   },
+   "LV-LVM3": {
+    "id": "LV-LVM3",
+    "name": "LVM3",
+    "variant": "Standard",
+    "manufacturer": "ISRO",
+    "height_m": 43.5,
+    "diameter_m": 4.0,
+    "fairing_diameter_m": 5.0,
+    "liftoff_mass_kg": 640000.0,
+    "leo_capacity_kg": 8000.0,
+    "gto_capacity_kg": 4000.0,
+    "propulsion": "2x S200 solid; L110 core: 2x Vikas; C25 upper: 1x CE-20 (cryogenic)",
+    "fuel": "S200: HTPB solid; L110: UDMH-based liquid (ISRO page says 'UDMH + H2O' - verify; commonly UDMH/N2O4); C25: LOX / LH2",
+    "cost_musd": 42.0,
+    "reliability": 0.97,
+    "lead_time_months": 24,
+    "compatible_site_ids": [
+     "SITE-SRIHARIKOTA"
+    ],
+    "stages": [
+     {
+      "name": "boosters_2x_s200",
+      "thrust_n": 7580000.0,
+      "isp_s": 274.5,
+      "propellant_kg": 410000,
+      "dry_kg": 62000
+     },
+     {
+      "name": "core_l110",
+      "thrust_n": 1468000.0,
+      "isp_s": 293.0,
+      "propellant_kg": 116000,
+      "dry_kg": 9000
+     },
+     {
+      "name": "upper_c25",
+      "thrust_n": 190000.0,
+      "isp_s": 443.0,
+      "propellant_kg": 28000,
+      "dry_kg": 5000
+     }
+    ]
+   },
+   "LV-VULCAN-VC6": {
+    "id": "LV-VULCAN-VC6",
+    "name": "Vulcan Centaur",
+    "variant": "VC6 (6x GEM-63XL)",
+    "manufacturer": "United Launch Alliance (ULA)",
+    "height_m": 61.6,
+    "diameter_m": 5.4,
+    "fairing_diameter_m": 5.4,
+    "liftoff_mass_kg": 546700.0,
+    "leo_capacity_kg": 27200.0,
+    "sso_capacity_kg": 22300.0,
+    "gto_capacity_kg": 14500.0,
+    "propulsion": "Booster: 2x BE-4; Centaur V: 2x RL10C; up to 6x GEM-63XL solid",
+    "fuel": "Booster: LOX / LNG (methane); Centaur: LOX / LH2; solid boosters",
+    "cost_musd": 110.0,
+    "reliability": 0.95,
+    "lead_time_months": 18,
+    "compatible_site_ids": [
+     "SITE-CAPE",
+     "SITE-VANDENBERG"
+    ],
+    "stages": [
+     {
+      "name": "boosters_6x_gem63xl",
+      "thrust_n": 8448000.0,
+      "isp_s": 280.3,
+      "propellant_kg": 287118,
+      "dry_kg": 31062
+     },
+     {
+      "name": "core_be4",
+      "thrust_n": 4800000.0,
+      "isp_s": 340.0,
+      "propellant_kg": 353400,
+      "dry_kg": 28600
+     },
+     {
+      "name": "upper_centaur_v",
+      "thrust_n": 203600.0,
+      "isp_s": 453.8,
+      "propellant_kg": 54000,
+      "dry_kg": 3500
+     }
+    ]
+   },
+   "LV-NEWGLENN": {
+    "id": "LV-NEWGLENN",
+    "name": "New Glenn",
+    "variant": "7x2",
+    "manufacturer": "Blue Origin",
+    "height_m": 98.0,
+    "diameter_m": 7.0,
+    "fairing_diameter_m": 7.0,
+    "leo_capacity_kg": 45000.0,
+    "gto_capacity_kg": 13000.0,
+    "propulsion": "Stage 1: 7x BE-4; Stage 2: 2x BE-3U",
+    "fuel": "Stage 1: LOX / LNG; Stage 2: LOX / LH2",
+    "cost_musd": 90.0,
+    "reliability": 0.9,
+    "lead_time_months": 18,
+    "compatible_site_ids": [
+     "SITE-CAPE"
+    ],
+    "liftoff_mass_kg": 1325000,
+    "stages": [
+     {
+      "name": "stage_1_gs1",
+      "thrust_n": 17100000.0,
+      "isp_s": 340.0,
+      "propellant_kg": 1000000,
+      "dry_kg": 90000
+     },
+     {
+      "name": "stage_2_gs2",
+      "thrust_n": 1422000.0,
+      "isp_s": 445.0,
+      "propellant_kg": 210000,
+      "dry_kg": 25000
+     }
+    ]
+   },
+   "LV-H3-24L": {
+    "id": "LV-H3-24L",
+    "name": "H3",
+    "variant": "H3-24L (4x SRB-3, long fairing)",
+    "manufacturer": "JAXA / Mitsubishi Heavy Industries",
+    "height_m": 63.0,
+    "diameter_m": 5.2,
+    "fairing_diameter_m": 5.2,
+    "liftoff_mass_kg": 574000.0,
+    "leo_capacity_kg": 16500.0,
+    "gto_capacity_kg": 6500.0,
+    "propulsion": "Stage 1: 2x LE-9; Stage 2: 1x LE-5B-3; 4x SRB-3 solid",
+    "fuel": "LH2 / LOX; solid boosters (SRB-3)",
+    "cost_musd": 65.0,
+    "reliability": 0.85,
+    "lead_time_months": 24,
+    "compatible_site_ids": [
+     "SITE-TANEGASHIMA"
+    ],
+    "stages": [
+     {
+      "name": "boosters_4x_srb3",
+      "thrust_n": 6232000.0,
+      "isp_s": 283.6,
+      "propellant_kg": 268800,
+      "dry_kg": 36000
+     },
+     {
+      "name": "stage_1_le9",
+      "thrust_n": 2942000.0,
+      "isp_s": 425.0,
+      "propellant_kg": 226000,
+      "dry_kg": 15000
+     },
+     {
+      "name": "stage_2_le5b3",
+      "thrust_n": 137000.0,
+      "isp_s": 448.0,
+      "propellant_kg": 24600,
+      "dry_kg": 3400
+     }
+    ]
+   }
+  },
+  "launch_sites": {
+   "SITE-KOUROU": {
+    "id": "SITE-KOUROU",
+    "name": "Guiana Space Centre (Kourou)",
+    "country": "France (French Guiana)",
+    "lat_deg": 5.24,
+    "lon_deg": -52.77
+   },
+   "SITE-CAPE": {
+    "id": "SITE-CAPE",
+    "name": "Cape Canaveral SFS",
+    "country": "USA (Florida)",
+    "lat_deg": 28.5,
+    "lon_deg": -80.6
+   },
+   "SITE-VANDENBERG": {
+    "id": "SITE-VANDENBERG",
+    "name": "Vandenberg SFB",
+    "country": "USA (California)",
+    "lat_deg": 34.74,
+    "lon_deg": -120.57
+   },
+   "SITE-SRIHARIKOTA": {
+    "id": "SITE-SRIHARIKOTA",
+    "name": "Satish Dhawan Space Centre",
+    "country": "India",
+    "lat_deg": 13.72,
+    "lon_deg": 80.23
+   },
+   "SITE-TANEGASHIMA": {
+    "id": "SITE-TANEGASHIMA",
+    "name": "Tanegashima Space Center",
+    "country": "Japan",
+    "lat_deg": 30.4,
+    "lon_deg": 130.97
+   },
+   "SITE-MAHIA": {
+    "id": "SITE-MAHIA",
+    "name": "Rocket Lab LC-1 (Mahia)",
+    "country": "New Zealand",
+    "lat_deg": -39.26,
+    "lon_deg": 177.86
+   },
+   "SITE-WALLOPS": {
+    "id": "SITE-WALLOPS",
+    "name": "Rocket Lab LC-2 (Wallops)",
+    "country": "USA (Virginia)",
+    "lat_deg": 37.83,
+    "lon_deg": -75.49
+   }
+  },
+  "ground_stations": {
+   "GS-GOLDSTONE": {
+    "id": "GS-GOLDSTONE",
+    "name": "GOLDSTONE",
+    "lat_deg": 35.43,
+    "lon_deg": -116.89,
+    "min_elevation_deg": 10
+   },
+   "GS-MADRID": {
+    "id": "GS-MADRID",
+    "name": "MADRID",
+    "lat_deg": 40.43,
+    "lon_deg": -4.25,
+    "min_elevation_deg": 10
+   },
+   "GS-CANBERRA": {
+    "id": "GS-CANBERRA",
+    "name": "CANBERRA",
+    "lat_deg": -35.4,
+    "lon_deg": 148.98,
+    "min_elevation_deg": 10
+   },
+   "GS-SVALBARD": {
+    "id": "GS-SVALBARD",
+    "name": "SVALBARD",
+    "lat_deg": 78.23,
+    "lon_deg": 15.4,
+    "min_elevation_deg": 5
+   },
+   "GS-SANTIAGO": {
+    "id": "GS-SANTIAGO",
+    "name": "SANTIAGO",
+    "lat_deg": -33.15,
+    "lon_deg": -70.67,
+    "min_elevation_deg": 10
+   }
+  },
+  "targets": {
+   "TGT-MEKONG": {
+    "id": "TGT-MEKONG",
+    "name": "Mekong Delta",
+    "lat_deg": 10.0,
+    "lon_deg": 106.0,
+    "kind": "coast",
+    "mission_tags": [
+     "coast"
+    ]
+   },
+   "TGT-GBR": {
+    "id": "TGT-GBR",
+    "name": "Great Barrier Reef",
+    "lat_deg": -18.3,
+    "lon_deg": 147.7,
+    "kind": "coast",
+    "mission_tags": [
+     "coast"
+    ]
+   },
+   "TGT-AMAZON": {
+    "id": "TGT-AMAZON",
+    "name": "Amazon river mouth",
+    "lat_deg": -0.2,
+    "lon_deg": -50.0,
+    "kind": "coast",
+    "mission_tags": [
+     "coast"
+    ]
+   },
+   "TGT-PERMIAN": {
+    "id": "TGT-PERMIAN",
+    "name": "Permian Basin",
+    "lat_deg": 31.9,
+    "lon_deg": -102.0,
+    "kind": "methane",
+    "mission_tags": [
+     "ghg_hotspots"
+    ]
+   },
+   "TGT-RUHR": {
+    "id": "TGT-RUHR",
+    "name": "Ruhr area",
+    "lat_deg": 51.5,
+    "lon_deg": 7.3,
+    "kind": "co2",
+    "mission_tags": [
+     "ghg_hotspots"
+    ]
+   },
+   "TGT-BEIJING": {
+    "id": "TGT-BEIJING",
+    "name": "Beijing-Tianjin",
+    "lat_deg": 39.5,
+    "lon_deg": 116.5,
+    "kind": "co2",
+    "mission_tags": [
+     "ghg_hotspots"
+    ]
+   }
+  }
+ },
+ "_prov": {
+  "scenarios": {
+   "SC-01": {
+    "mission_type": "default"
+   },
+   "SC-02": {
+    "mission_type": "default"
+   },
+   "SC-03": {
+    "mission_type": "default"
+   },
+   "SC-04": {
+    "mission_type": "default"
+   },
+   "SC-05": {
+    "mission_type": "default"
+   },
+   "SC-06": {
+    "mission_type": "default"
+   },
+   "SC-07": {
+    "mission_type": "default"
+   },
+   "SC-08": {
+    "mission_type": "default"
+   }
+  },
+  "orbits": {
+   "ORB-MEO-20200": {
+    "orbital_lifetime_years_no_reboost": "default",
+    "class": "default"
+   },
+   "ORB-GTO": {
+    "orbital_lifetime_years_no_reboost": "default",
+    "class": "default"
+   },
+   "ORB-GEO": {
+    "orbital_lifetime_years_no_reboost": "default",
+    "class": "default"
+   },
+   "ORB-LEO-400": {
+    "class": "default"
+   },
+   "ORB-LEO-500": {
+    "class": "default"
+   },
+   "ORB-SSO-600": {
+    "class": "default"
+   },
+   "ORB-SSO-DD-600": {
+    "class": "default"
+   },
+   "ORB-POLAR-800": {
+    "class": "default"
+   }
+  },
+  "instruments": {
+   "INS-01": {
+    "kind": "default"
+   },
+   "INS-02": {
+    "kind": "default"
+   },
+   "INS-03": {
+    "kind": "default"
+   },
+   "INS-04": {
+    "kind": "default"
+   },
+   "INS-05": {
+    "kind": "default"
+   },
+   "INS-06": {
+    "kind": "default"
+   },
+   "INS-07": {
+    "kind": "default"
+   },
+   "INS-08": {
+    "kind": "default"
+   },
+   "INS-09": {
+    "kind": "default"
+   },
+   "INS-10": {
+    "kind": "default"
+   }
+  },
+  "buses": {
+   "BUS-3U": {
+    "size_m": "default"
+   },
+   "BUS-6U": {
+    "size_m": "default"
+   },
+   "BUS-12U": {
+    "size_m": "default"
+   },
+   "BUS-ESPA": {
+    "size_m": "default"
+   },
+   "BUS-SMALL500": {
+    "size_m": "default"
+   },
+   "BUS-LARGE-LEO": {
+    "size_m": "default"
+   },
+   "BUS-GEO": {
+    "size_m": "default"
+   }
+  },
+  "power_arrays": {
+   "PWR-SA-BODY": {
+    "kind": "default"
+   },
+   "PWR-SA-DEP": {
+    "kind": "default"
+   },
+   "PWR-SA-SMALL": {
+    "kind": "default"
+   },
+   "PWR-SA-LARGE": {
+    "kind": "default"
+   },
+   "PWR-SA-GEO": {
+    "kind": "default"
+   }
+  },
+  "comms": {
+   "COM-OPT-LEO": {
+    "antenna_gain_dbi": "default"
+   }
+  },
+  "avionics": {
+   "OBC-BASIC": {
+    "torque_nm": "default"
+   },
+   "OBC-CUBE": {
+    "torque_nm": "default"
+   },
+   "OBC-SPACE": {
+    "torque_nm": "default"
+   },
+   "OBC-RADHARD": {
+    "torque_nm": "default"
+   },
+   "ADCS-MAG": {
+    "torque_nm": "default"
+   },
+   "ADCS-WHEEL": {
+    "torque_nm": "default"
+   },
+   "ADCS-STAR": {
+    "torque_nm": "default"
+   },
+   "ADCS-FINE": {
+    "torque_nm": "default"
+   }
+  },
+  "launch_vehicles": {
+   "LV-ELECTRON": {
+    "stages": "derived"
+   },
+   "LV-ARIANE62": {
+    "stages": "derived"
+   },
+   "LV-ARIANE64": {
+    "stages": "derived"
+   },
+   "LV-VEGAC": {
+    "stages": "derived"
+   },
+   "LV-LVM3": {
+    "stages": "derived"
+   },
+   "LV-VULCAN-VC6": {
+    "stages": "derived"
+   },
+   "LV-NEWGLENN": {
+    "liftoff_mass_kg": "estimate",
+    "stages": "estimate"
+   },
+   "LV-H3-24L": {
+    "stages": "derived"
+   }
+  }
+ },
+ "meta": {
+  "sources": [
+   "space_mission_library.py"
+  ]
+ }
+}
