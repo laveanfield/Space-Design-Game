@@ -231,6 +231,9 @@ export function LifePhase({
   const effectivePaused = paused || (!finished && tutorialPaused);
   const cur = shown > 0 ? life.steps[shown - 1] : null;
   const dead = Boolean(cur && !cur.alive);
+  const communications = life.communications;
+  const commTime = communications ? communications.duration_s * Math.min(1, shown / Math.max(1, total)) : 0;
+  const commSample = communications?.samples?.findLast((sample) => sample.t_s <= commTime) || null;
 
   useEffect(() => {
     setShown(0);
@@ -271,10 +274,16 @@ export function LifePhase({
     auto: true,
     dead,
     link: {
-      state: dead ? 'DEGRADED' : cur?.events.some((e) => e.level === 'warn') ? 'MARGINAL' : 'LOCK',
-      station: 'GS',
+      state: dead
+        ? 'DEGRADED'
+        : ['WEAK_SIGNAL', 'POWER_HOLD'].includes(commSample?.state)
+          ? 'MARGINAL'
+          : ['NO_PASS'].includes(commSample?.state)
+            ? 'NO_PASS'
+            : 'LOCK',
+      station: communications?.station?.name || 'GS',
     },
-    power: { eclipse: false },
+    power: { eclipse: Boolean(commSample?.eclipse) },
   };
   const soc = cur ? cur.soc : 1;
   const doseFrac = cur ? Math.min(1, cur.dose_krad / Math.max(1e-6, cur.tolerance_krad)) : 0;
@@ -283,7 +292,17 @@ export function LifePhase({
   const feed = life.steps
     .slice(0, shown)
     .flatMap((s) => s.events.map((e) => ({ level: e.level, code: e.code, text: tx(e.text), month: s.month, k: s.k })));
-  const linkLabel = dead ? 'MẤT LIÊN LẠC' : snapshot.link.state === 'MARGINAL' ? 'TÍN HIỆU YẾU' : 'LIÊN LẠC TỐT';
+  const linkLabel = dead
+    ? 'MẤT LIÊN LẠC'
+    : commSample?.state === 'POWER_HOLD'
+      ? 'GIỮ PIN · HOÃN TRUYỀN'
+      : commSample?.state === 'WEAK_SIGNAL'
+        ? 'TÍN HIỆU YẾU'
+        : commSample?.state === 'TRANSMITTING'
+          ? 'ĐANG TRUYỀN DỮ LIỆU'
+          : commSample?.state === 'NO_PASS'
+            ? 'NGOÀI VÙNG TRẠM THU'
+            : 'LIÊN LẠC TỐT';
   const logStatus = cur ? `${linkLabel} · MỐC ${cur.k}/${life.steps_total} · PIN ${(soc * 100).toFixed(0)}%` : 'ĐANG TÁCH VỆ TINH…';
 
   return (
@@ -442,6 +461,22 @@ export function LifePhase({
               imaging={life.imaging}
               altKm={cur ? cur.alt_km : alt0}
             />
+          </div>
+        )}
+        {communications && (
+          <div className="comms-orbit-summary">
+            <div className="row-between small">
+              <strong>COMMUNICATIONS PHYSICS · 7 NGÀY ĐẠI DIỆN</strong>
+              <span className={`badge ${communications.summary.delivered >= life.evidence_need ? 'ok' : 'warn'}`}>
+                {communications.summary.delivered} ĐÃ VỀ · {communications.summary.pending} ĐANG CHỜ
+              </span>
+            </div>
+            <div className="small muted">
+              {communications.windows.length} lượt qua {communications.station.name} · {num(communications.summary.usable_min)} phút đủ margin · pin thấp nhất {num(communications.summary.min_soc * 100, 0)}%
+            </div>
+            {finished && communications.diagnostics.map((reason) => (
+              <div className="small" key={reason}>→ {reason}</div>
+            ))}
           </div>
         )}
         <div className="small muted" style={{ margin: '12px 0 6px 0' }}>

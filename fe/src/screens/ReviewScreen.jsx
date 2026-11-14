@@ -108,6 +108,23 @@ export default function ReviewScreen() {
           <Dossier dossier={outcome.dossier} />
         </div>
 
+        {lifeData?.communications && (
+          <div className="comms-review-summary">
+            <div className="row-between small">
+              <strong>COMMUNICATIONS REVIEW</strong>
+              <span className={`badge ${lifeData.communications.summary.delivered >= lifeData.evidence_need ? 'ok' : 'err'}`}>
+                {lifeData.communications.summary.delivered}/{lifeData.evidence_need} BẰNG CHỨNG ĐÃ VỀ
+              </span>
+            </div>
+            <div className="small muted">
+              {lifeData.communications.windows.length} lượt qua trạm · {Number(lifeData.communications.summary.usable_min).toFixed(1)} phút đủ tín hiệu · {Number(lifeData.communications.summary.buffer_gb).toFixed(3)} GB còn chờ
+            </div>
+            {lifeData.communications.diagnostics.map((reason) => (
+              <div className="small" key={reason}>→ {reason}</div>
+            ))}
+          </div>
+        )}
+
         <div className="constraint-list" style={{ marginTop: 10 }}>
           {(outcome.review || []).map((r) => (
             <div key={r.id} className={`constraint-row ${r.pass ? 'pass' : 'fail'}`}>

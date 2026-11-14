@@ -13,6 +13,9 @@ from .session.ops import OpsSession
 from .campaign import simulate_lifetime as _lifetime
 from .campaign.lifetime import EVIDENCE_SETS
 from .campaign.accommodation import matrix as _accommodation_matrix
+from .integrations import mission_comms
+from .rules import metrics
+from .campaign.lifetime import _fire_targets
 
 
 class Engine:
@@ -74,7 +77,18 @@ class Engine:
                            "ids": [h[0] for h in hits],
                            "gb_per_day": ins.get("data_generated_gb_per_day"),   # de fe uoc luong dung luong moi khung
                            "theme": theme}
-        return _lifetime(report, mission.life_years, design.get("seed", 0) if seed is None else seed, imaging)
+        # Signal physics hien chi mo phong muc tieu dia ly. Space-weather la cac khung do tai cho,
+        # khong co lat/lon de dua vao bai toan footprint va tram mat dat nay.
+        communications = self.communications(design, mission_id) if imaging and theme != "space_weather" else None
+        return _lifetime(report, mission.life_years, design.get("seed", 0) if seed is None else seed, imaging, communications)
+
+    def communications(self, design, mission_id=None):
+        mission = self._m(design, mission_id)
+        it = metrics.resolve(design, self.catalog)
+        m = metrics.compute(design, it, mission, mission.ruleset)
+        theme = mission.gameplay.get("params", {}).get("evidence_set", "wildfire")
+        targets = [t for t in _fire_targets(theme) if "lat_deg" in t and "lon_deg" in t]
+        return mission_comms.simulate(design, it, m, mission.ruleset, targets, evidence_theme=theme)
 
     def accommodation(self):
         """Bang ten lua x (bus, ang-ten) -> lap duoc khong + ly do (campaign/accommodation.py)."""

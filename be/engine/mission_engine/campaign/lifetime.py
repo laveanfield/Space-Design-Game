@@ -153,7 +153,7 @@ def _fire_targets(theme="wildfire"):
         return [{"id": "FIRE-X", "name": "Forest", "lat_deg": 0.0, "lon_deg": 0.0, "biome": "rừng"}]
 
 
-def simulate_lifetime(report, life_years, seed=0, imaging=None):
+def simulate_lifetime(report, life_years, seed=0, imaging=None, communications=None):
     """Chay 12 moc tren quy dao tu bao cao evaluate(). Tat dinh theo seed (bao Mat Troi, dam chay).
 
     imaging: None neu ve tinh khong co thiet bi chup anh mat dat; nguoc lai {"sensor": kind, "name": ten thiet bi}.
@@ -181,6 +181,8 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
     alt0 = m["orbit.altitude_km"]
     decay_steps = STEPS * m["lifetime.years"] / max(life_years, 1e-6)          # so moc cho toi khi roi han
     gen_day, down_day = m["data.generated_gb_per_day"], m["data.downlink_gb_per_day"]
+    if communications and imaging:
+        down_day = communications["summary"]["sent_gb"] / (communications["duration_s"] / 86400.)
     blur = 0.0
     pc = cons.get("pointing")
     if pc and not pc["pass"]:
@@ -230,7 +232,7 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
             if blur > 0:
                 ev.append({"code": "BLUR", "level": "warn", "text": _t("Đội mặt đất báo dữ liệu nhận về bị nhòe.", "Ground team reports the received data is smeared.")})
             # --- dam chay rung: ve tinh tu dong chup khi bay qua (chi ve tinh co thiet bi chup anh)
-            if imaging and fire_rng.random() < FIRE_CHANCE:
+            if imaging and communications is None and fire_rng.random() < FIRE_CHANCE:
                 tgt = fire_rng.choice(fires)
                 missed = seu and fire_rng.random() < SEU_MISS
                 if missed:
@@ -245,11 +247,31 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
                     vi, en = texts["seen"]
                     ev.append({"code": "FIRE_CAPTURED", "level": "info", "text": _t(vi.format(name=tgt["name"], n=shot["n"]), en.format(name=tgt["name"], n=shot["n"]))})
             # --- anh trong bo nho duoc gui dan ve theo nang luc duong truyen
-            credit += link_ratio
-            for shot in evidence:
-                if shot["delivered_k"] is None and credit >= 1.0 - 1e-9:
-                    shot["delivered_k"] = k
-                    credit -= 1.0
+            if communications is not None:
+                for source in communications["evidence"]:
+                    if source["k"] == k:
+                        shot = dict(source, month=round(k * life_years, 1), delivered_k=None)
+                        evidence.append(shot)
+                        ev.append({"code": "FIRE_CAPTURED", "level": "info", "text": _t(
+                            f"Qua vùng quan sát {shot['target']}: chụp ảnh #{shot['n']}, lưu chờ truyền.",
+                            f"Target access: image #{shot['n']} stored for downlink.")})
+                for shot in evidence:
+                    source = communications["evidence"][shot["n"] - 1]
+                    if source["delivered_k"] == k:
+                        shot["delivered_k"] = k
+                        ev.append({"code": "IMAGE_DOWNLINKED", "level": "info", "text": _t(
+                            f"Ảnh #{shot['n']} đã truyền trọn gói về {communications['station']['name']} trong cửa sổ liên lạc.",
+                            f"Image #{shot['n']} completely downlinked during station contact.")})
+                if k == 1:
+                    for reason in communications["diagnostics"]:
+                        ev.append({"code": "RF_DIAGNOSTIC", "level": "warn", "text": _t(reason, reason)})
+            else:
+                # Capacity before capture is not banked as credit for future images.
+                credit = credit + link_ratio if any(s["delivered_k"] is None for s in evidence) else 0.
+                for shot in evidence:
+                    if shot["delivered_k"] is None and credit >= 1.0 - 1e-9:
+                        shot["delivered_k"] = k
+                        credit -= 1.0
             usable_now = [s for s in evidence if s["delivered_k"] is not None and s["blur"] < BLUR_USABLE]
             if imaging and passed_at is None and len(usable_now) >= EVIDENCE_NEED:
                 passed_at = k
@@ -296,9 +318,20 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
             dossier = _dossier(boss_fail[0], cons.get(boss_fail[0]))
         else:
             dossier = None
+    if communications and dossier and dossier["id"] in ("data", "science"):
+        reasons = communications["diagnostics"]
+        if reasons:
+            dossier["cause"] = _t(" ".join(reasons), " ".join(reasons))
+        dossier["lesson"] = _t(
+            "Chọn quỹ đạo đi qua mục tiêu và trạm thu. Giảm tốc độ tăng biên tín hiệu nhưng mất thêm thời gian truyền; tăng công suất rút pin nhanh hơn. Ảnh chỉ tính khi đã truyền trọn gói.",
+            "Orbit must access the target and station. Lower bitrate improves link margin but increases airtime; higher transmit power drains the battery. Only fully delivered images count.")
+        dossier["numbers"] += [{"label": "contact_min_7d", "value": round(communications["summary"]["contact_min"], 1)},
+                               {"label": "usable_min_7d", "value": round(communications["summary"]["usable_min"], 1)},
+                               {"label": "pending_gb_7d", "value": communications["summary"]["buffer_gb"]}]
     return {
         "schema_version": "lifetime/2", "steps_total": STEPS, "life_years": life_years, "steps": steps,
         "imaging": imaging, "evidence": evidence, "evidence_need": EVIDENCE_NEED if imaging else 0,
+        "communications": communications,
         "outcome": {"alive": alive, "survived_steps": len(steps) if alive else len(steps) - 1, "killer": killer,
                     "success": success, "boss_fail": boss_fail, "review_fail": failed_review, "review": review,
                     "generated_gb": round(generated, 3), "delivered_gb": round(delivered, 3), "usable_gb": round(usable, 3),

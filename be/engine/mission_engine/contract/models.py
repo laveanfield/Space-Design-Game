@@ -1,11 +1,19 @@
 """Model dau vao cua API (pydantic). Core engine khong phu thuoc pydantic; schema JSON xuat bang tools/export_schemas.py."""
-from typing import Any
+from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 
 class LaunchModel(BaseModel):
     vehicle: str
     site: str
+
+
+class CommunicationsModel(BaseModel):
+    station_id: str = "GS-GOLDSTONE"
+    target_id: str = "all"
+    tx_scale: float = Field(default=1., ge=.25, le=1.)
+    rate_scale: float = Field(default=1., ge=.1, le=1.)
+    strategy: Literal["balanced", "data_first", "save_power"] = "balanced"
 
 
 class DesignSpecModel(BaseModel):
@@ -21,6 +29,7 @@ class DesignSpecModel(BaseModel):
     adcs: str
     launch: LaunchModel
     seed: int = 0
+    communications: CommunicationsModel | None = None
 
 
 class OpsStep(BaseModel):

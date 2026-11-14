@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { beep } from '../api/client';
 import { BossPanel, CoreTelemetryBars, DatasheetTotals, Logbook, tx } from '../components/CampaignPanels';
 import Hangar3DCanvas from '../components/Hangar3DCanvas';
+import MissionComms from '../components/MissionComms';
 import PartCard from '../components/PartCard';
 import TrajectoryScope from '../components/TrajectoryScope';
 import { DEV } from '../core/devFlag';
@@ -247,6 +248,16 @@ export default function BuildScreen() {
               );
             })}
           </div>
+
+          {!tutorialMode && activeSlot === 'comm' && missionDetail?.communications_supported && (
+            <MissionComms
+              design={design}
+              catalog={catalog}
+              mission={missionDetail}
+              onChange={updateDesign}
+              setupOnly
+            />
+          )}
 
           {activeSlot === 'launch' && allSites.length > 0 && (
             <div style={{ marginTop: 10 }}>

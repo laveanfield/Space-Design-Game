@@ -16,6 +16,9 @@ where = ["engine"]
 [tool.setuptools.package-dir]
 "" = "engine"
 
+[tool.setuptools.package-data]
+cubesat_link = ["*.schema.json"]
+
 [tool.pytest.ini_options]
 pythonpath = ["engine"]
 testpaths = ["tests"]
