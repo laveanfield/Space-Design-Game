@@ -152,7 +152,7 @@ export default function BuildScreen() {
                 item={item}
                 selected={selected}
                 warnText={warnText}
-                deadlineMonths={effectiveDeadline}
+                budgetMusd={effectiveBudget ?? scenario.budget_musd}
                 onPick={pick}
               />
             );

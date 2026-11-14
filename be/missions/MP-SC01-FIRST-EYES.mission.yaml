@@ -13,7 +13,7 @@ design_space:
 constraints:
   - { id: data, critical: true }
 starter: fail_data
-gameplay: { mode: auto, params: { target_set: coast } }
+gameplay: { mode: auto, params: { target_set: coast, evidence_set: wildfire } }
 hazards: { profile: standard, seed: 42 }
 presets:
   - id: good

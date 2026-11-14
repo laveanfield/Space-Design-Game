@@ -3,6 +3,9 @@ import { beep } from '../api/client';
 import { DEV } from '../core/devFlag';
 import { useGame } from '../core/GameContext';
 
+// Anh nen minh hoa cua tung nhiem vu (be/tools/14-11-2026-render_mission_art.py -> fe/public/mission_art/<ID>.jpg; khong dung /missions vi Vite chuyen duong do sang API)
+export const missionArt = (id) => `/mission_art/${id}.jpg`;
+
 export default function BriefScreen() {
   const {
     missions,
@@ -27,10 +30,11 @@ export default function BriefScreen() {
           <span className="small muted">{catalog?.catalog_hash ? `#${catalog.catalog_hash.slice(0, 8)}` : ''}</span>
         </h2>
         <div className="mission-list">
-          {missions.map((m) => (
+          {[...missions].sort((a, b) => (a.difficulty ?? 9) - (b.difficulty ?? 9)).map((m) => (
             <button
               key={m.id}
               className={`mission-card ${m.id === selectedMissionId ? 'selected' : ''}`}
+              style={{ backgroundImage: `linear-gradient(90deg, rgba(10,14,18,0.92) 35%, rgba(10,14,18,0.45)), url(${missionArt(m.id)})` }}
               onClick={() => {
                 beep(audioOn, 780, 0.04);
                 loadMission(m.id);
@@ -55,9 +59,14 @@ export default function BriefScreen() {
         </h2>
         {missionDetail ? (
           <div>
-            <h3 style={{ margin: '0 0 6px 0', color: 'var(--accent)' }}>
-              {missionDetail.meta?.title?.vi} ({missionDetail.meta?.title?.en})
-            </h3>
+            <div className="mission-hero" style={{ backgroundImage: `url(${missionArt(missionDetail.id)})` }}>
+              <span className="badge info mission-hero-lvl">LEVEL {missionDetail.meta?.difficulty ?? 1}</span>
+              <h3 className="mission-hero-title">
+                {missionDetail.meta?.title?.vi}
+                <small>{missionDetail.meta?.title?.en}</small>
+              </h3>
+              <span className="mission-hero-note">ảnh minh họa</span>
+            </div>
             <p style={{ marginTop: 0 }}>{missionDetail.meta?.brief?.vi || scenario.description_simple}</p>
             <p
               className="small boss-quote"

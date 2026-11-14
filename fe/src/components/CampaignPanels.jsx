@@ -46,22 +46,26 @@ export function BossPanel({
         <span className="small muted">ATTEMPT #{attempts + 1}</span>
       </div>
       <div className="boss-meter" title="Chi phí thiết kế / Ngân sách cho phép">
-        <span className="small muted">BUDG</span>
+        <div className="boss-meter-head">
+          <span className="small muted">BUDGET</span>
+          <b className={overBudget ? 'over' : ''}>
+            ${num(cost)}/{budget || '-'}M
+          </b>
+        </div>
         <div className="gauge-bar">
           <div className={`gauge-fill ${overBudget ? 'err' : ''}`} style={{ width: bar(cost, budget) }} />
         </div>
-        <b className={overBudget ? 'over' : ''}>
-          ${num(cost)}/{budget || '-'}M
-        </b>
       </div>
       <div className="boss-meter" title="Thời gian đặt linh kiện / Hạn chót (vượt hạn sẽ bị trừ giờ kiểm định)">
-        <span className="small muted">DEAD</span>
+        <div className="boss-meter-head">
+          <span className="small muted">DEADLINE</span>
+          <b className={overTime ? 'over' : ''}>
+            {num(months, 0)}/{deadline || '-'} MO
+          </b>
+        </div>
         <div className="gauge-bar">
           <div className={`gauge-fill ${overTime ? 'warn' : ''}`} style={{ width: bar(months, deadline) }} />
         </div>
-        <b className={overTime ? 'over' : ''}>
-          {num(months, 0)}/{deadline || '-'} MO
-        </b>
       </div>
       {overTime && (
         <div className="small err-text" style={{ marginTop: 4 }}>

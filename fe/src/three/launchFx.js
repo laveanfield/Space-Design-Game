@@ -53,14 +53,67 @@ const PLUME_L = 14.0; // luoi dung voi L = 14 m, roi co gian theo Lm nhu game
 const FLAME_BOOST = 2.2; // phong to cho de nhin tren man hinh web nho (game Ursina chay toan man hinh)
 const KIND_LS = { solid: 1.0, hypergolic: 0.8, kerolox: 0.85, methalox: 0.8, hydrolox: 0.7 };
 
+// ---------------------------------------------------------------- vat lieu lua (shader)
+// Ban cu dung MeshBasicMaterial: alpha deu quanh vong -> vien lua hien ra nhu mot khoi tron dac ("qua bong").
+// Lua that phat sang tu ben trong: sang nhat o truc, mo dan ra mep (nhin xien qua it khi nong hon),
+// chap chon theo dong khi va tat dan ve cuoi. Shader duoi lam dung 3 viec do:
+//   edge  = |N.V|^k      -> mep mem, khong con duong vien cung
+//   turb  = nhieu cuon theo truc (thoi gian) -> lua "song", khong dung yen
+//   tail  = mo dan o 25 % cuoi chieu dai, sang ngay mieng phun
+const FLAME_VS = `
+attribute vec4 color;
+uniform float uLen;
+varying vec4 vC; varying vec3 vN; varying vec3 vV; varying float vS; varying float vAng;
+void main() {
+  vC = color;
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  vN = normalize(normalMatrix * normal);
+  vV = normalize(-mv.xyz);
+  vS = clamp(-position.z / uLen, 0.0, 1.0);
+  vAng = atan(position.y, position.x);
+  gl_Position = projectionMatrix * mv;
+}`;
+const FLAME_FS = `
+uniform float uTime; uniform float uOpacity; uniform float uEdge; uniform float uGain;
+varying vec4 vC; varying vec3 vN; varying vec3 vV; varying float vS; varying float vAng;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+  vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+void main() {
+  float facing = abs(dot(normalize(vN), normalize(vV)));
+  float edge = pow(facing, uEdge);
+  vec2 q = vec2(vAng * 1.6, vS * 9.0 - uTime * 7.0);
+  float turb = 0.62 + 0.38 * noise(q) + 0.18 * (noise(q * 2.3 + 4.0) - 0.5);
+  float tail = 1.0 - smoothstep(0.72, 1.0, vS);
+  float a = vC.a * edge * turb * tail * uOpacity;
+  vec3 col = vC.rgb * (uGain + 0.5 * edge);
+  gl_FragColor = vec4(col, a); // AdditiveBlending: mau dich += mau * a
+  if (a < 0.002) discard;
+}`;
+
+function flameMaterial(len, edgePow, gain) {
+  return new THREE.ShaderMaterial({
+    vertexShader: FLAME_VS,
+    fragmentShader: FLAME_FS,
+    uniforms: { uLen: { value: len }, uTime: { value: 0 }, uOpacity: { value: 1 }, uEdge: { value: edgePow }, uGain: { value: gain } },
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending, // lua la nguon sang: cong mau, khong che khuat nhau
+  });
+}
+
 /** Mot ngon lua tai mieng phun (x, y, z, r_e) trong he z-up cua ten lua. Giong make_plume() cua game. */
 export function plumeGroup([x, y, z, re], kind) {
   const hydro = kind === 'hydrolox';
   const prof = hydro ? hydroProfile : plumeProfile;
   const g = new THREE.Group();
   g.position.set(x, y, z);
-  const outer = new THREE.Mesh(latheWithColors(prof(re, PLUME_L, false)), new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
-  const core = new THREE.Mesh(latheWithColors(prof(re, PLUME_L, true)), new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+  const outer = new THREE.Mesh(latheWithColors(prof(re, PLUME_L, false)), flameMaterial(PLUME_L, 1.8, 0.9));
+  const core = new THREE.Mesh(latheWithColors(prof(re, PLUME_L, true)), flameMaterial(PLUME_L * 0.62, 0.9, 1.25));
+  core.renderOrder = 2;
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: siteTexture('glow', false), color: hydro ? 0x99bfff : 0xff9e38, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
   glow.position.z = -0.5;
   g.add(outer, core, glow);
@@ -70,27 +123,34 @@ export function plumeGroup([x, y, z, re], kind) {
 
 /** drive() cua game: th = muc luc day 0..1, h = do cao (m). */
 export function drivePlume(p, th, h) {
-  const pfac = Math.exp(-h / 7000), expW = 1 + 3.4 * Math.pow(1 - pfac, 1.4);
-  const Lm = (9 + 24 * (1 - pfac)) * th * p.Ls * FLAME_BOOST;
+  const pfac = Math.exp(-h / 7000); // ap suat khi quyen tuong doi: 1 o mat dat, ~0 ngoai khong gian
+  // Chan khong: khi phut ra loe rong nhung rat loang -> gan nhu trong suot. Ban cu loe toi ~6 lan be ngang
+  // voi do dac nhu o mat dat nen thanh "qua bong" sang. Gio chi loe ~2.2 lan va mo di theo pfac.
+  const expW = 1 + 1.2 * Math.pow(1 - pfac, 1.4);
+  const Lm = (9 + 14 * (1 - pfac)) * th * p.Ls * FLAME_BOOST;
   const on = th > 0.05 && Lm > 0.1;
   p.g.visible = on;
   if (!on) return;
-  const fl = 1 + rand(-0.07, 0.07);
-  const w = expW * (0.85 + 0.15 * th) * (1 + 0.35 * (FLAME_BOOST - 1));
+  const fl = 1 + rand(-0.06, 0.06);
+  const w = expW * (0.85 + 0.15 * th);
   p.outer.scale.set(w, w, Math.max(0.05, Lm / PLUME_L) * fl);
-  p.core.scale.copy(p.outer.scale);
+  p.core.scale.set(1, 1, p.outer.scale.z * (0.9 + 0.1 * pfac)); // loi sang khong loe theo, giu manh o mieng phun
   p.outer.rotation.z = Math.random() * Math.PI * 2;
+  const t = performance.now() / 1000;
+  p.outer.material.uniforms.uTime.value = t;
+  p.core.material.uniforms.uTime.value = t + 3.7;
   const gs = Math.pow(p.re / 0.7, 0.6);
+  const vac = 0.35 + 0.65 * pfac; // do sang chung giam khi ra chan khong
   if (p.hydro) {
-    p.outer.material.opacity = 0.55 + 0.2 * pfac;
-    p.core.material.opacity = Math.min(1, 0.75 + 0.3 * pfac);
+    p.outer.material.uniforms.uOpacity.value = 0.45 * vac;
+    p.core.material.uniforms.uOpacity.value = 0.95;
     p.glow.scale.setScalar((4.2 + 3.0 * th) * fl * gs);
-    p.glow.material.opacity = 0.55;
+    p.glow.material.opacity = 0.45;
   } else {
-    p.outer.material.opacity = Math.min(1, (0.22 + 0.38 * pfac) / 0.6);
-    p.core.material.opacity = Math.min(1, 0.4 + 0.6 * pfac);
-    p.glow.scale.setScalar((3.0 + 4.0 * th) * (1 + 0.3 * (1 - pfac)) * fl * gs);
-    p.glow.material.opacity = Math.min(1, 0.28 * (0.4 + 0.6 * pfac) * 2.2);
+    p.outer.material.uniforms.uOpacity.value = 0.85 * vac;
+    p.core.material.uniforms.uOpacity.value = 0.75 + 0.25 * pfac;
+    p.glow.scale.setScalar((3.0 + 4.0 * th) * fl * gs);
+    p.glow.material.opacity = Math.min(1, 0.6 * (0.4 + 0.6 * pfac));
   }
 }
 

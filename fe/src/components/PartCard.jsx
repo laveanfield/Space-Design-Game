@@ -69,10 +69,11 @@ export function statsOf(slot, item) {
   return s.slice(0, 3);
 }
 
-function badgeOf(slot, item, deadlineMonths) {
+function badgeOf(slot, item, budgetMusd) {
   if (slot === 'orbit') return { cls: 'ok', text: 'ORBIT PARAMETER' };
-  if (deadlineMonths && item.lead_time_months != null && Number(item.lead_time_months) > Number(deadlineMonths)) {
-    return { cls: 'warn', text: `OVER-DEADLINE (${item.lead_time_months}m)` };
+  // mot mon linh kien da dat hon ca ngan sach cap tren cho -> canh bao vuot ngan sach
+  if (budgetMusd && item.cost_musd != null && Number(item.cost_musd) > Number(budgetMusd)) {
+    return { cls: 'warn', text: `OVER-BUDGET ($${Number(item.cost_musd).toFixed(1)}M)` };
   }
   const lowRad = item.rad_tolerance_krad != null && Number(item.rad_tolerance_krad) <= 20;
   const lowRel = item.reliability != null && Number(item.reliability) < 0.96;
@@ -116,9 +117,9 @@ function OrbitIcon() {
   );
 }
 
-export default function PartCard({ slot, item, selected, warnText, deadlineMonths, onPick }) {
+export default function PartCard({ slot, item, selected, warnText, budgetMusd, onPick }) {
   const stats = statsOf(slot, item);
-  const tag = badgeOf(slot, item, deadlineMonths);
+  const tag = badgeOf(slot, item, budgetMusd);
   const tip = [
     item.name,
     item.description_simple,

@@ -1403,13 +1403,20 @@ dialog.modal::backdrop {
 }
 
 /* ---- bang Sep + datasheet gon (bieu tuong + thanh do thay cho cau van) ---- */
+/* moi thanh do 2 dong: dong tren = tieu de + so, dong duoi = thanh bieu thi */
 .boss-meter {
-  display: grid;
-  grid-template-columns: 18px 1fr auto;
-  gap: 6px;
-  align-items: center;
-  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
   font-size: 12px;
+}
+
+.boss-meter-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .boss-meter .gauge-bar {
@@ -2532,4 +2539,353 @@ dialog.modal::backdrop {
   color: #f3dfb8;
   border-top: 1px dashed rgba(255, 196, 77, 0.35);
   padding-top: 5px;
+}
+
+/* ---- anh nen tung nhiem vu (man BRIEF) ---- */
+.mission-card {
+  background-size: cover;
+  background-position: center right;
+  min-height: 64px;
+}
+
+.mission-hero {
+  position: relative;
+  aspect-ratio: 2.5 / 1;
+  margin: -2px 0 12px 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+}
+
+.mission-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(5, 8, 12, 0) 45%, rgba(5, 8, 12, 0.88) 100%);
+  pointer-events: none;
+}
+
+.mission-hero-title {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0 14px 12px 14px;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1.2;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.mission-hero-title small {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.mission-hero-lvl {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+}
+
+.mission-hero-note {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  z-index: 1;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ======================================================================
+   BAO CAO HAU QUA = TRANG BAO "TIN NONG" (The Orbital Times -- ten hu cau)
+   Giay ngà, muc den, chu co chan; do cho tin khan / xanh cho tin tot.
+   ====================================================================== */
+.news-paper {
+  --paper: #f3efe5;
+  --ink: #141414;
+  --ink-soft: #3d3a35;
+  --rule: #1b1b1b;
+  --hot: #b3121b;
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 18px 22px 14px 22px;
+  border-radius: 2px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 60px rgba(120, 100, 60, 0.12);
+  font-family: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  text-align: left;
+}
+
+.news-paper.ok {
+  --hot: #136b3a;
+}
+
+.news-masthead {
+  text-align: center;
+  border-bottom: 3px double var(--rule);
+  padding-bottom: 6px;
+}
+
+.news-ears {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+
+.news-name {
+  margin: 2px 0 4px 0;
+  font-family: 'UnifrakturMaguntia', 'Old English Text MT', 'Noto Serif', serif;
+  font-weight: 400;
+  font-size: clamp(30px, 4.4vw, 54px);
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+.news-dateline {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-top: 1px solid var(--rule);
+  padding-top: 4px;
+  color: var(--ink-soft);
+}
+
+.news-breaking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 6px 0;
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--hot);
+}
+
+.news-breaking b {
+  background: var(--hot);
+  color: #fff;
+  padding: 2px 8px;
+  animation: news-blink 1.6s steps(2, start) infinite;
+}
+
+@keyframes news-blink {
+  50% { opacity: 0.55; }
+}
+
+.news-headline {
+  margin: 0 0 6px 0;
+  font-family: 'Playfair Display', 'Noto Serif', Georgia, serif;
+  font-weight: 900;
+  font-size: clamp(22px, 2.6vw, 36px);
+  line-height: 1.12;
+  color: var(--ink);
+}
+
+.news-deck {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.news-byline {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 3px 0;
+  margin-bottom: 10px;
+}
+
+.news-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 18px;
+}
+
+.news-main {
+  min-width: 0;
+}
+
+.news-photo {
+  margin: 0 0 8px 0;
+}
+
+.news-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2.5 / 1;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+.news-paper.fail .news-photo img {
+  filter: grayscale(0.85) contrast(1.15) sepia(0.25);
+}
+
+.news-photo figcaption {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ink-soft);
+  padding-top: 3px;
+}
+
+.news-columns {
+  column-width: 260px;
+  column-gap: 20px;
+  column-rule: 1px solid rgba(0, 0, 0, 0.25);
+  font-size: 14px;
+  line-height: 1.55;
+  text-align: justify;
+  hyphens: auto;
+}
+
+.news-columns p {
+  margin: 0 0 8px 0;
+}
+
+.news-columns p.lead::first-letter {
+  float: left;
+  font-family: 'Playfair Display', 'Noto Serif', serif;
+  font-weight: 900;
+  font-size: 46px;
+  line-height: 0.9;
+  padding: 4px 6px 0 0;
+  color: var(--hot);
+}
+
+.news-sidebar {
+  border-left: 1px solid var(--rule);
+  padding-left: 14px;
+}
+
+.news-sidebar-title {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  border-bottom: 2px solid var(--rule);
+  padding-bottom: 3px;
+  margin-bottom: 8px;
+}
+
+.news-figure {
+  padding: 6px 0 8px 0;
+  border-bottom: 1px dotted rgba(0, 0, 0, 0.35);
+}
+
+.news-figure-value {
+  font-family: 'Playfair Display', 'Noto Serif', serif;
+  font-weight: 900;
+  font-size: 26px;
+  line-height: 1.05;
+  color: var(--hot);
+}
+
+.news-figure-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.news-figure-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.news-infographic {
+  margin-top: 10px;
+}
+
+.news-infographic svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.news-pullquote {
+  margin: 12px 0 6px 0;
+  padding: 10px 14px;
+  border-top: 3px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  font-family: 'Playfair Display', 'Noto Serif', serif;
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.news-foot {
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-align: right;
+  margin-top: 6px;
+}
+
+/* ban gon (o man quy dao / phong): bo tai bao, anh thap hon, so lieu xep hang ngang */
+.news-paper.compact {
+  padding: 12px 14px 10px 14px;
+}
+
+.news-paper.compact .news-name {
+  font-size: 30px;
+}
+
+.news-paper.compact .news-headline {
+  font-size: 22px;
+}
+
+.news-paper.compact .news-body {
+  grid-template-columns: 1fr;
+}
+
+.news-paper.compact .news-photo img {
+  aspect-ratio: 3.2 / 1;
+}
+
+.news-paper.compact .news-sidebar {
+  border-left: none;
+  padding-left: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.news-paper.compact .news-sidebar-title {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .news-body {
+    grid-template-columns: 1fr;
+  }
+  .news-sidebar {
+    border-left: none;
+    padding-left: 0;
+  }
 }

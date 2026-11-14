@@ -12,9 +12,27 @@ from pathlib import Path
 
 import yaml
 
-FIRE_TARGETS = Path(__file__).resolve().parents[3] / "data" / "geo" / "targets" / "wildfire.yaml"
-EVIDENCE_NEED = 3          # so anh dam chay DUNG DUOC (ve toi mat dat, khong nhoe) can de nhiem vu duoc cong nhan
-FIRE_CHANCE = 0.65         # [estimate] xac suat moi moc co mot dam chay lon trong vung ve tinh di qua
+TARGETS_DIR = Path(__file__).resolve().parents[3] / "data" / "geo" / "targets"
+FIRE_TARGETS = TARGETS_DIR / "wildfire.yaml"
+EVIDENCE_NEED = 3          # so anh DUNG DUOC (ve toi mat dat, khong nhoe) can de nhiem vu duoc cong nhan
+FIRE_CHANCE = 0.65         # [estimate] xac suat moi moc co mot muc tieu (dam chay / chum khi) trong dai quet ve tinh
+
+# Moi nhiem vu chup anh co mot BO MUC TIEU rieng (mission yaml: gameplay.params.evidence_set).
+# Chi khac nhau o file toa do va loi thoai; luat cham diem (EVIDENCE_NEED, nhoe, SEU, duong truyen) giu nguyen.
+EVIDENCE_SETS = {
+    "wildfire": {
+        "file": FIRE_TARGETS,
+        "seen": ("Phát hiện cháy rừng tại {name}: đã tự động chụp ảnh #{n}.", "Wildfire detected at {name}: image #{n} captured automatically."),
+        "missed": ("Cháy rừng tại {name} nhưng máy tính đang khởi động lại: bỏ lỡ lần chụp.", "Wildfire at {name} but the computer was rebooting: pass missed."),
+        "ok": ("Đã có đủ {need} ảnh bằng chứng cháy rừng rõ nét về tới mặt đất.", "{need} clear wildfire evidence images have reached the ground."),
+    },
+    "methane": {
+        "file": TARGETS_DIR / "14-11-2026-methane_sites.yaml",
+        "seen": ("Phát hiện chùm khí methane tại {name}: đã tự động chụp phổ #{n}.", "Methane plume detected at {name}: spectral image #{n} captured automatically."),
+        "missed": ("Chùm methane tại {name} nhưng máy tính đang khởi động lại: bỏ lỡ lần chụp.", "Methane plume at {name} but the computer was rebooting: pass missed."),
+        "ok": ("Đã có đủ {need} ảnh phổ chùm khí methane rõ nét về tới mặt đất.", "{need} clear methane plume images have reached the ground."),
+    },
+}
 SEU_MISS = 0.4             # [estimate] khi may tinh dang reset vi SEU: xac suat bo lo lan chup
 BLUR_USABLE = 0.35         # anh nhoe hon muc nay thi khong dung lam bang chung duoc
 STEPS = 12                # 12 moc thoi gian trai deu tren tuoi tho yeu cau cua de (1 nam -> moi moc = 1 thang)
@@ -114,9 +132,11 @@ def _dossier(cid, con, extra=None):
             "lesson": lesson, "numbers": numbers + (extra or [])}
 
 
-def _fire_targets():
+def _fire_targets(theme="wildfire"):
+    """Doc danh sach muc tieu cua bo bang chung (mac dinh: cac vung hay chay rung)."""
+    path = EVIDENCE_SETS.get(theme, EVIDENCE_SETS["wildfire"])["file"]
     try:
-        with open(FIRE_TARGETS, encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             return yaml.safe_load(fh)["items"]
     except OSError:
         return [{"id": "FIRE-X", "name": "Forest", "lat_deg": 0.0, "lon_deg": 0.0, "biome": "rừng"}]
@@ -135,7 +155,11 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
     storm_step = rng.randint(3, 10)
     storm_dose = m["radiation.dose_krad"] * rng.uniform(*STORM_DOSE)
     fire_rng = random.Random(int(seed) * 104729 + 7)
-    fires = _fire_targets()
+    theme = (imaging or {}).get("theme", "wildfire")
+    if theme not in EVIDENCE_SETS:
+        theme = "wildfire"
+    texts = EVIDENCE_SETS[theme]
+    fires = _fire_targets(theme)
     evidence, credit, passed_at = [], 0.0, None
     link_ratio = min(1.0, m["data.downlink_gb_per_day"] / max(m["data.generated_gb_per_day"], 1e-9))
 
@@ -197,13 +221,16 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
                 tgt = fire_rng.choice(fires)
                 missed = seu and fire_rng.random() < SEU_MISS
                 if missed:
-                    ev.append({"code": "FIRE_MISSED", "level": "warn", "text": _t(f"Cháy rừng tại {tgt['name']} nhưng máy tính đang khởi động lại: bỏ lỡ lần chụp.", f"Wildfire at {tgt['name']} but the computer was rebooting: pass missed.")})
+                    vi, en = texts["missed"]
+                    ev.append({"code": "FIRE_MISSED", "level": "warn", "text": _t(vi.format(name=tgt["name"]), en.format(name=tgt["name"]))})
                 else:
                     shot = {"n": len(evidence) + 1, "k": k, "month": round(k * life_years, 1), "target": tgt["name"], "target_id": tgt["id"],
-                            "lat": tgt["lat_deg"], "lon": tgt["lon_deg"], "biome": tgt.get("biome", ""), "sensor": imaging["sensor"],
+                            "lat": tgt["lat_deg"], "lon": tgt["lon_deg"], "biome": tgt.get("biome", ""), "kind": tgt.get("kind", ""),
+                            "theme": theme, "sensor": imaging["sensor"],
                             "blur": round(blur, 2), "seu": bool(seu), "delivered_k": None, "seed": fire_rng.randint(0, 10 ** 6)}
                     evidence.append(shot)
-                    ev.append({"code": "FIRE_CAPTURED", "level": "info", "text": _t(f"Phát hiện cháy rừng tại {tgt['name']}: đã tự động chụp ảnh #{shot['n']}.", f"Wildfire detected at {tgt['name']}: image #{shot['n']} captured automatically.")})
+                    vi, en = texts["seen"]
+                    ev.append({"code": "FIRE_CAPTURED", "level": "info", "text": _t(vi.format(name=tgt["name"], n=shot["n"]), en.format(name=tgt["name"], n=shot["n"]))})
             # --- anh trong bo nho duoc gui dan ve theo nang luc duong truyen
             credit += link_ratio
             for shot in evidence:
@@ -213,7 +240,8 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
             usable_now = [s for s in evidence if s["delivered_k"] is not None and s["blur"] < BLUR_USABLE]
             if imaging and passed_at is None and len(usable_now) >= EVIDENCE_NEED:
                 passed_at = k
-                ev.append({"code": "EVIDENCE_OK", "level": "info", "text": _t(f"Đã có đủ {EVIDENCE_NEED} ảnh bằng chứng cháy rừng rõ nét về tới mặt đất.", f"{EVIDENCE_NEED} clear wildfire evidence images have reached the ground.")})
+                vi, en = texts["ok"]
+                ev.append({"code": "EVIDENCE_OK", "level": "info", "text": _t(vi.format(need=EVIDENCE_NEED), en.format(need=EVIDENCE_NEED))})
             if not ev:
                 ev.append({"code": "NOMINAL", "level": "info", "text": _t("Mọi hệ thống hoạt động, dữ liệu về đều.", "All systems nominal, data flowing.")})
         steps.append({"k": k, "month": round(k * life_years, 1), "alive": killer is None, "soc": round(soc, 3),

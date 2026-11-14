@@ -5,7 +5,7 @@ meta:
   title: { vi: "Trạm gác thời tiết không gian", en: "Space Weather Sentinel" }
   brief: { vi: "Giữ máy đo từ hoạt động liên tục trong vành đai bức xạ.", en: "Keep a magnetometer sampling inside the radiation belts." }
   learning_goals: [ "radiation hardening" ]
-  difficulty: 3
+  difficulty: 2
 objective:
   statement: { vi: "Sống sót và lấy mẫu liên tục.", en: "Survive and sample continuously." }
 constraints:

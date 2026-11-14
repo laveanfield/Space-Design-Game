@@ -126,52 +126,85 @@ function MissionImpactArt({ missionKey, success }) {
   );
 }
 
+/** Ngay thang tren dau bao (theo dong ho may nguoi choi). */
+function editionDate() {
+  try {
+    return new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * HumanityImpactCard -- bao cao hau qua trinh bay nhu MOT TRANG BAO "tin nong" (kieu bao in khổ lon):
+ * ten bao chu gothic, tit lon chu co chan, sapo, anh dau trang, bai viet chia cot co chu cai dau to,
+ * khung "nhung con so" va trich dan noi bat. Ten bao "The Orbital Times" la HU CAU (khong dung ten / logo
+ * cua to bao that nao). Noi dung cau chuyen giu nguyen tu story/humanityImpact.js.
+ */
 export default function HumanityImpactCard({ missionId, success, failureId, outcome, compact = false }) {
   const story = getHumanityImpact(missionId, { success, failureId, outcome });
   const toneClass = story.success ? 'ok' : 'fail';
+  const paragraphs = compact ? story.paragraphs.slice(0, 1) : story.paragraphs;
 
   return (
-    <section className={`humanity-impact-card ${toneClass} ${compact ? 'compact' : ''}`}>
-      <div className="impact-header">
-        <div className="impact-header-left">
-          <span className="impact-kicker">EARTH IMPACT REPORT // BÁO CÁO HẬU QUẢ NHÂN LOẠI</span>
-          <span className="impact-story-tag">{story.levelTag}</span>
-        </div>
-        <span className={`badge ${story.success ? 'ok' : 'err'}`}>{story.badge}</span>
-      </div>
-
-      <h3 className="impact-headline">{story.headline}</h3>
-
-      {story.causeBridge && (
-        <div className="impact-cause-bridge">
-          <strong>NGUYÊN NHÂN KỸ THUẬT → TÁC ĐỘNG MẶT ĐẤT:</strong> {story.causeBridge}
-        </div>
-      )}
-
-      <div className={`impact-body-grid ${compact ? 'compact' : ''}`}>
+    <article className={`news-paper ${toneClass} ${compact ? 'compact' : ''}`}>
+      <header className="news-masthead">
         {!compact && (
-          <div className="impact-art-wrap">
-            <MissionImpactArt missionKey={story.missionKey} success={story.success} />
+          <div className="news-ears">
+            <span>ẤN BẢN TRÁI ĐẤT</span>
+            <span>“Mọi tin tức đều bắt đầu từ quỹ đạo”</span>
           </div>
         )}
-        <div className="impact-narrative">
-          {(compact ? story.paragraphs.slice(0, 1) : story.paragraphs).map((p, idx) => (
-            <p key={idx}>{p}</p>
-          ))}
+        <h2 className="news-name">The Orbital Times</h2>
+        <div className="news-dateline">
+          <span>{story.levelTag}</span>
+          <span>{editionDate()}</span>
+          <span>ẤN BẢN MINH HỌA</span>
         </div>
+      </header>
+
+      <div className="news-breaking">
+        <b>{story.success ? 'TIN NÓNG' : 'TIN KHẨN'}</b>
+        <span>{story.badge}</span>
       </div>
 
-      <div className="impact-metrics-grid">
-        {story.metrics.map((m) => (
-          <div key={m.label} className="impact-metric-box">
-            <div className="impact-metric-value">{m.value}</div>
-            <div className="impact-metric-label">{m.label}</div>
-            <div className="impact-metric-sub">{m.sub}</div>
+      <h1 className="news-headline">{story.headline}</h1>
+      {story.causeBridge && <p className="news-deck">{story.causeBridge}</p>}
+      <div className="news-byline">Bản tin Không gian &amp; Trái Đất · Trạm điều hành mặt đất</div>
+
+      <div className="news-body">
+        <div className="news-main">
+          <figure className="news-photo">
+            <img src={`/mission_art/${missionId}.jpg`} alt="" draggable={false} />
+            <figcaption>Ảnh minh họa vùng nhiệm vụ nhìn từ quỹ đạo.</figcaption>
+          </figure>
+          <div className="news-columns">
+            {paragraphs.map((p, idx) => (
+              <p key={idx} className={idx === 0 ? 'lead' : ''}>
+                {p}
+              </p>
+            ))}
           </div>
-        ))}
+        </div>
+        <aside className="news-sidebar">
+          <div className="news-sidebar-title">NHỮNG CON SỐ</div>
+          {story.metrics.map((m) => (
+            <div key={m.label} className="news-figure">
+              <div className="news-figure-value">{m.value}</div>
+              <div className="news-figure-label">{m.label}</div>
+              {!compact && <div className="news-figure-sub">{m.sub}</div>}
+            </div>
+          ))}
+          {!compact && (
+            <div className="news-infographic">
+              <MissionImpactArt missionKey={story.missionKey} success={story.success} />
+            </div>
+          )}
+        </aside>
       </div>
 
-      <div className="impact-moral-box">{story.moral}</div>
-    </section>
+      {!compact && <blockquote className="news-pullquote">{story.moral}</blockquote>}
+      <footer className="news-foot">Bài báo và số liệu là minh họa cho câu chuyện trong trò chơi, không phải thống kê thật.</footer>
+    </article>
   );
 }

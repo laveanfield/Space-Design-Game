@@ -170,6 +170,19 @@ export default function InspectScreen() {
             }
           });
         });
+        // FULL STACK: ve tinh THAT (dung ti le that, canh gap) nam trong long fairing tai dung cho gan payload,
+        // giong het luc phong (Launch3DCanvas). Truoc day ve tinh duoc ve to rieng o y=0.52 nen chi ra ngoai chop.
+        if (satModel && rig.payload) {
+          const inRig = buildSatellite(satModel, { withAdapter: false, design, insModels });
+          if (inRig.setDeploy) inRig.setDeploy(0);
+          inRig.inner.rotation.set(0, 0, 0); // cung he truc z-huong-len voi than ten lua
+          const lo = rig.payload.userData.lo;
+          const carrier = new THREE.Group();
+          carrier.position.set(0, 0, (lo ? lo[2] : 0) + 0.05);
+          carrier.add(inRig.inner);
+          rig.payload.clear();
+          rig.payload.add(carrier);
+        }
         const box = new THREE.Box3().setFromObject(rig.root);
         const size = box.getSize(new THREE.Vector3());
         const ctr = box.getCenter(new THREE.Vector3());
@@ -258,9 +271,11 @@ export default function InspectScreen() {
       assembly.rotation.y = curYaw;
       if (stackObj) stackObj.visible = modeRef.current === 'stack';
       if (satHolder) {
+        // ve tinh phong to chi hien o PAYLOAD FOCUS; o FULL STACK ve tinh da nam san trong fairing
         const payloadMode = modeRef.current === 'payload';
-        satHolder.scale.setScalar(payloadMode ? 1.2 : 0.72);
-        satHolder.position.y = payloadMode ? 0 : 0.52;
+        satHolder.visible = payloadMode;
+        satHolder.scale.setScalar(1.2);
+        satHolder.position.y = 0;
       }
 
       const { mx, my, inside } = pointerRef.current;

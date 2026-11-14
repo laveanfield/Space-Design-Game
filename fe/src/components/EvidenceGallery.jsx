@@ -53,7 +53,10 @@ function loadImg(src) {
 }
 
 function srcOf(shot, thermal) {
-  return `/imagery/fire_${shot.target_id}_${Math.abs(shot.seed || 0) % VARIANTS}${thermal ? '_ir' : ''}.jpg`;
+  const v = Math.abs(shot.seed || 0) % VARIANTS;
+  // nhiem vu khi nha kinh: anh pho chum khi methane (khong co ban hong ngoai nhiet)
+  if (shot.theme === 'methane') return `/imagery/ch4_${shot.target_id}_${v}.jpg`;
+  return `/imagery/fire_${shot.target_id}_${v}${thermal ? '_ir' : ''}.jpg`;
 }
 
 /** Ve anh len canvas roi lam xau theo tinh trang ve tinh. */
@@ -174,7 +177,7 @@ export default function EvidenceGallery({ evidence, need, step, sensorName, imag
       </div>
       {usable >= need && <div className="ok-banner" style={{ margin: '0 0 8px 0' }}>✔ ĐỦ BẰNG CHỨNG</div>}
       <div className="evidence-grid">
-        {taken.length === 0 && <div className="small muted">🔥 —</div>}
+        {taken.length === 0 && <div className="small muted">{evidence[0]?.theme === 'methane' ? 'CH₄' : '🔥'} —</div>}
         {taken.map((s) => (
           <Photo key={s.n} shot={{ ...s, sensor }} shown={isShown(s)} thermal={thermal} res={res} gb={gb} onOpen={() => setOpen(s)} />
         ))}

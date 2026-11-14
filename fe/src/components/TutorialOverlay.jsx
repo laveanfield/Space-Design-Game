@@ -36,7 +36,7 @@ export const TUTORIAL_STEPS = {
     },
     {
       target: 'build-telemetry',
-      title: '3. THEO DÕI 4 THANH SINH TỒN & SẾP',
+      title: '3. THEO DÕI YẾU TỐ SINH TỒN VÀ BUDGET TỪ CẤP TRÊN',
       body: 'Quan sát 4 thanh POWER, MASS, SIGNAL, INTEGRITY (10 nấc) cùng đồng hồ ngân sách/tiến độ để cân bằng chi phí và độ bền.',
     },
     {

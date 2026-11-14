@@ -418,6 +418,174 @@
    "theme": "ghg",
    "gas": "CO2",
    "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-PERMIAN_0.jpg",
+   "theme": "methane",
+   "target": "CH4-PERMIAN",
+   "kind": "oil_gas",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-PERMIAN_1.jpg",
+   "theme": "methane",
+   "target": "CH4-PERMIAN",
+   "kind": "oil_gas",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-PERMIAN_2.jpg",
+   "theme": "methane",
+   "target": "CH4-PERMIAN",
+   "kind": "oil_gas",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-TURKMEN_0.jpg",
+   "theme": "methane",
+   "target": "CH4-TURKMEN",
+   "kind": "oil_gas",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-TURKMEN_1.jpg",
+   "theme": "methane",
+   "target": "CH4-TURKMEN",
+   "kind": "oil_gas",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-TURKMEN_2.jpg",
+   "theme": "methane",
+   "target": "CH4-TURKMEN",
+   "kind": "oil_gas",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-ALGERIA_0.jpg",
+   "theme": "methane",
+   "target": "CH4-ALGERIA",
+   "kind": "oil_gas",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-ALGERIA_1.jpg",
+   "theme": "methane",
+   "target": "CH4-ALGERIA",
+   "kind": "oil_gas",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-ALGERIA_2.jpg",
+   "theme": "methane",
+   "target": "CH4-ALGERIA",
+   "kind": "oil_gas",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-KUZBASS_0.jpg",
+   "theme": "methane",
+   "target": "CH4-KUZBASS",
+   "kind": "coal",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-KUZBASS_1.jpg",
+   "theme": "methane",
+   "target": "CH4-KUZBASS",
+   "kind": "coal",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-KUZBASS_2.jpg",
+   "theme": "methane",
+   "target": "CH4-KUZBASS",
+   "kind": "coal",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-SHANXI_0.jpg",
+   "theme": "methane",
+   "target": "CH4-SHANXI",
+   "kind": "coal",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-SHANXI_1.jpg",
+   "theme": "methane",
+   "target": "CH4-SHANXI",
+   "kind": "coal",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-SHANXI_2.jpg",
+   "theme": "methane",
+   "target": "CH4-SHANXI",
+   "kind": "coal",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-BOWEN_0.jpg",
+   "theme": "methane",
+   "target": "CH4-BOWEN",
+   "kind": "coal",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-BOWEN_1.jpg",
+   "theme": "methane",
+   "target": "CH4-BOWEN",
+   "kind": "coal",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-BOWEN_2.jpg",
+   "theme": "methane",
+   "target": "CH4-BOWEN",
+   "kind": "coal",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-BUENOSAIRES_0.jpg",
+   "theme": "methane",
+   "target": "CH4-BUENOSAIRES",
+   "kind": "landfill",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-BUENOSAIRES_1.jpg",
+   "theme": "methane",
+   "target": "CH4-BUENOSAIRES",
+   "kind": "landfill",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-BUENOSAIRES_2.jpg",
+   "theme": "methane",
+   "target": "CH4-BUENOSAIRES",
+   "kind": "landfill",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-DELHI_0.jpg",
+   "theme": "methane",
+   "target": "CH4-DELHI",
+   "kind": "landfill",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-DELHI_1.jpg",
+   "theme": "methane",
+   "target": "CH4-DELHI",
+   "kind": "landfill",
+   "band": "spectral"
+  },
+  {
+   "file": "ch4_CH4-DELHI_2.jpg",
+   "theme": "methane",
+   "target": "CH4-DELHI",
+   "kind": "landfill",
+   "band": "spectral"
   }
  ]
 }

@@ -64,6 +64,15 @@ def test_good_design_collects_wildfire_evidence(client):
     assert life["outcome"]["success"] and life["outcome"]["evidence_usable"] >= 3
 
 
+def test_ghg_mission_photographs_methane_not_wildfire(client):
+    # nhiem vu khi nha kinh phai chup chum khi methane, khong duoc lay bo muc tieu chay rung
+    m4 = "MP-SC04-GHG"
+    life = client.post("/campaign/lifetime", json={"design": preset(client, m4, "good"), "mission_id": m4}).json()
+    assert life["imaging"]["theme"] == "methane"
+    assert life["evidence"], "ve tinh tot phai chup duoc it nhat mot anh"
+    assert all(s["theme"] == "methane" and s["target_id"].startswith("CH4-") for s in life["evidence"])
+
+
 @pytest.mark.parametrize("pid,cause", [("fail_data", "data"), ("fail_pointing", "pointing"), ("fail_power", "power")])
 def test_bad_designs_fail_for_the_right_reason(client, pid, cause):
     life = client.post("/campaign/lifetime", json={"design": preset(client, M1, pid), "mission_id": M1}).json()
