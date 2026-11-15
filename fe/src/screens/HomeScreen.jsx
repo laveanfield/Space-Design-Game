@@ -46,9 +46,9 @@ export default function HomeScreen() {
             {tr(lang, 'CHẾ TẠO VỆ TINH • ĐẤU TRÍ QUỸ ĐẠO', 'SATELLITE ENGINEERING • ORBITAL STRATEGY')}
           </div>
 
-          <h1 className="home-menu-title">ORBITAL ACCOUNTABILITY</h1>
+          <h1 className="home-menu-title">PHYSICS DOESN'T NEGOTIATE</h1>
           <p className="home-menu-subtitle">
-            {tr(lang, 'Bảo vệ khoa học trước Sếp cắt xén ngân sách', 'Defend science against budget-slashing directors')}
+            {tr(lang, 'Từ chối cắt góc kỹ thuật — bảo vệ Trái Đất bằng vật lý thực thụ', 'Refuse to cut corners — defend Earth with real orbital physics')}
           </p>
 
           <nav className="home-menu-buttons" aria-label={tr(lang, 'Menu chính', 'Main menu')} data-tutorial="home-start">
@@ -140,7 +140,7 @@ export default function HomeScreen() {
         <div className="menu-modal-backdrop" role="dialog" aria-modal="true" onClick={() => setModal(null)}>
           <div className="menu-modal" onClick={(e) => e.stopPropagation()}>
             <div className="menu-modal-head">
-              <strong>📖 {tr(lang, 'CỐT TRUYỆN // ORBITAL ACCOUNTABILITY', 'STORY // ORBITAL ACCOUNTABILITY')}</strong>
+              <strong>{tr(lang, "CỐT TRUYỆN // PHYSICS DOESN'T NEGOTIATE", "STORY // PHYSICS DOESN'T NEGOTIATE")}</strong>
               <button type="button" className="btn small" onClick={() => setModal(null)}>
                 {tr(lang, 'ĐÓNG', 'CLOSE')}
               </button>

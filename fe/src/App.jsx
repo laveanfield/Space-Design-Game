@@ -105,7 +105,7 @@ function TerminalShell() {
           title={tr(lang, 'Về màn hình chính', 'Return to home screen')}
         >
           <span className="brand-dot" />
-          <span>MISSION CONTROL // SPACE MISSION DESIGN TERMINAL</span>
+          <span>PHYSICS DOESN'T NEGOTIATE // MISSION CONTROL</span>
         </button>
 
         <nav className="stepper">

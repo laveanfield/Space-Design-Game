@@ -1,0 +1,28 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "frontend": {
+      "root": "fe"
+    },
+    "backend": {
+      "root": "be",
+      "entrypoint": "index:app"
+    }
+  },
+  "rewrites": [
+    { "source": "/health", "destination": { "service": "backend" } },
+    { "source": "/catalog", "destination": { "service": "backend" } },
+    { "source": "/missions", "destination": { "service": "backend" } },
+    { "source": "/missions/(.*)", "destination": { "service": "backend" } },
+    { "source": "/evaluate", "destination": { "service": "backend" } },
+    { "source": "/fly", "destination": { "service": "backend" } },
+    { "source": "/ops", "destination": { "service": "backend" } },
+    { "source": "/ops/(.*)", "destination": { "service": "backend" } },
+    { "source": "/advise", "destination": { "service": "backend" } },
+    { "source": "/validity", "destination": { "service": "backend" } },
+    { "source": "/campaign/(.*)", "destination": { "service": "backend" } },
+    { "source": "/radio-link", "destination": { "service": "backend" } },
+    { "source": "/radio-link/(.*)", "destination": { "service": "backend" } },
+    { "source": "/(.*)", "destination": { "service": "frontend" } }
+  ]
+}
