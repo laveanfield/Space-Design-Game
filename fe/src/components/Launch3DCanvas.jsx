@@ -655,11 +655,10 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
       const h = hudRef.current;
       if (h.met) {
         h.met.textContent = F.t < 0 ? `T-${Math.ceil(-F.t)}` : `T+${F.t.toFixed(0)} s`;
-        h.alt.textContent = F.altKm < 10 ? `${F.altKm.toFixed(2)} km` : `${F.altKm.toFixed(0)} km`;
-        h.vel.textContent = `${(F.vel / 1000).toFixed(2)} km/s`;
-        h.stage.textContent = F.phase === 'deploy' ? 'PAYLOAD' : `S${F.stageNow + 1}`;
-        h.velBar.style.width = `${clamp01(F.vel / 7800) * 100}%`;
-        h.altBar.style.width = `${clamp01(F.altKm / Math.max(200, S.alt[S.n - 1])) * 100}%`;
+        const pct = Math.round(clamp01(F.altKm / Math.max(200, S.alt[S.n - 1])) * 100);
+        if (h.ascent) h.ascent.textContent = F.phase === 'deploy' ? '100%' : `${pct}%`;
+        if (h.stage) h.stage.textContent = F.phase === 'deploy' ? 'PAYLOAD' : `S${F.stageNow + 1}`;
+        if (h.altBar) h.altBar.style.width = `${F.phase === 'deploy' ? 100 : pct}%`;
       }
       const nowMs = performance.now();
       if (nowMs - (tick.lastTelem || 0) >= 90) {
@@ -707,9 +706,8 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       <div className="launch-hud">
         <div className="hud-cell"><span className="hud-label">MET</span><span className="hud-val" ref={setHud('met')}>T-3</span></div>
-        <div className="hud-cell"><span className="hud-label">ALT</span><span className="hud-val" ref={setHud('alt')}>0 km</span><div className="hud-bar"><div ref={setHud('altBar')} /></div></div>
-        <div className="hud-cell"><span className="hud-label">VEL</span><span className="hud-val" ref={setHud('vel')}>0 km/s</span><div className="hud-bar"><div ref={setHud('velBar')} /></div></div>
         <div className="hud-cell"><span className="hud-label">STAGE</span><span className="hud-val" ref={setHud('stage')}>S1</span></div>
+        <div className="hud-cell"><span className="hud-label">ORBIT</span><span className="hud-val" ref={setHud('ascent')}>0%</span><div className="hud-bar"><div ref={setHud('altBar')} /></div></div>
       </div>
       {tutorialPaused && !banner && (
         <div className="launch-banner ok">

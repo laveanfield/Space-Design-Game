@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { decodeF32 } from '../api/client';
 import AccidentNewspaper, { buildAccidentInfo } from '../components/AccidentNewspaper';
 import { Dossier } from '../components/CampaignPanels';
 import Launch3DCanvas from '../components/Launch3DCanvas';
@@ -59,40 +60,52 @@ function MechDial({ label, valueText, unit, value, min = 0, max = 100, accent = 
   );
 }
 
-function MechOrbitDial({ orbitId, altKm, incDeg, periodMin, progress }) {
-  const angleRad = ((progress * 360 - 90) * Math.PI) / 180;
-  const satX = 54 + 36 * Math.cos(angleRad);
-  const satY = 54 + 36 * Math.sin(angleRad);
+function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, targetAlt, orbitId }) {
+  const W = 280;
+  const H = 96;
+  const padL = 8;
+  const padR = 8;
+  const padT = 12;
+  const padB = 12;
+  const maxAlt = Math.max(100, targetAlt, ...points.map((p) => p.alt));
+  const totalT = Math.max(1, tEnd);
+
+  const toX = (t) => padL + (Math.max(0, Math.min(totalT, t)) / totalT) * (W - padL - padR);
+  const toY = (alt) => H - padB - (Math.max(0, Math.min(maxAlt, alt)) / maxAlt) * (H - padT - padB);
+
+  const plannedPath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${toX(p.t).toFixed(1)},${toY(p.alt).toFixed(1)}`).join(' ');
+  const activePts = points.filter((p) => p.t <= Math.max(0, currentT));
+  const curX = toX(currentT);
+  const curY = toY(currentAlt);
+  const livePath =
+    activePts.length > 0
+      ? `${activePts.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${toX(p.t).toFixed(1)},${toY(p.alt).toFixed(1)}`).join(' ')} L${curX.toFixed(1)},${curY.toFixed(1)}`
+      : `M${padL},${H - padB}`;
+  const karmanY = maxAlt >= 120 ? toY(100) : null;
+
   return (
-    <div className="mech-gauge-card mech-orbit-card">
+    <div className="mech-gauge-card mech-traj-card">
       <span className="mech-rivet tl" />
       <span className="mech-rivet tr" />
       <span className="mech-rivet bl" />
       <span className="mech-rivet br" />
-      <svg className="mech-dial-svg" viewBox="0 0 108 108" aria-hidden="true">
-        <circle cx="54" cy="54" r="49" fill="#0b1216" stroke="#36464f" strokeWidth="2.5" />
-        <ellipse
-          cx="54"
-          cy="54"
-          rx="36"
-          ry="36"
-          fill="none"
-          stroke="#f59e0b"
-          strokeWidth="1.5"
-          strokeDasharray="4 3"
-          opacity="0.85"
-        />
-        <circle cx="54" cy="54" r="18" fill="#0d4a75" stroke="#38bdf8" strokeWidth="1.2" />
-        <line x1="12" y1="54" x2="96" y2="54" stroke="#22323c" strokeWidth="0.9" />
-        <line x1="54" y1="12" x2="54" y2="96" stroke="#22323c" strokeWidth="0.9" />
-        <circle cx={satX} cy={satY} r="4.2" fill="#34d399" stroke="#082419" strokeWidth="1.2" />
-      </svg>
-      <div className="mech-gauge-readout">
-        <div className="mech-gauge-val">{orbitId}</div>
-        <div className="mech-gauge-lbl">
-          {altKm} km · {incDeg}° · {periodMin}m
-        </div>
+      <div className="mech-traj-head">
+        <span className="mech-gauge-lbl">{orbitId} · {Math.round(targetAlt)} km</span>
+        <span className="mech-gauge-lbl">{Math.max(0, Math.round(currentT))}s / {Math.round(totalT)}s</span>
       </div>
+      <svg className="mech-traj-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+        <line x1={padL} y1={padT} x2={W - padR} y2={padT} stroke="#233742" strokeWidth="1" strokeDasharray="3 3" />
+        {karmanY != null && (
+          <line x1={padL} y1={karmanY} x2={W - padR} y2={karmanY} stroke="#2b424f" strokeWidth="1" strokeDasharray="2 3" />
+        )}
+        <line x1={padL} y1={H - padB} x2={W - padR} y2={H - padB} stroke="#2e3f49" strokeWidth="1" />
+        {plannedPath && (
+          <path d={plannedPath} fill="none" stroke="#f59e0b" strokeWidth="1.6" strokeDasharray="4 3" opacity="0.55" />
+        )}
+        <path d={livePath} fill="none" stroke="#34d399" strokeWidth="2.4" strokeLinecap="round" />
+        <circle cx={curX} cy={curY} r="6.5" fill="rgba(52, 211, 153, 0.22)" />
+        <circle cx={curX} cy={curY} r="3.4" fill="#34d399" stroke="#081b14" strokeWidth="1" />
+      </svg>
     </div>
   );
 }
@@ -152,14 +165,28 @@ export default function LaunchScreen() {
 
   const [telem, setTelem] = useState({ t: 0, altKm: 0, velKms: 0, pitchDeg: 0, targetAltKm: 400, phase: 'countdown' });
 
+  const trajSeries = useMemo(() => {
+    const s = flightData?.series;
+    if (!s?.alt_km || !s?.n) return { points: [{ t: 0, alt: 0 }, { t: 540, alt: 400 }], tEnd: 540 };
+    const alt = decodeF32(s.alt_km);
+    const n = s.n;
+    const dt = s.dt_s || 1;
+    const step = Math.max(1, Math.floor(n / 48));
+    const points = [];
+    for (let i = 0; i < n; i += step) {
+      points.push({ t: i * dt, alt: alt[i] || 0 });
+    }
+    if (points[points.length - 1]?.t < (n - 1) * dt) {
+      points.push({ t: (n - 1) * dt, alt: alt[n - 1] || 0 });
+    }
+    return { points, tEnd: (n - 1) * dt };
+  }, [flightData]);
+
   // vi tri bai phong + do nghieng quy dao -> Trai Dat o canh phong quay dung duoi ve tinh
   const site = catalog?.tables?.launch_sites?.[design?.launch?.site];
   const orbit = catalog?.tables?.orbits?.[design?.orbit];
   const geo = { latDeg: site?.lat_deg, lonDeg: site?.lon_deg, incDeg: orbit?.inclination_deg };
   const targetAltKm = Number(orbit?.altitude_km || telem.targetAltKm || 400);
-  const orbitRadiusKm = 6371 + targetAltKm;
-  const periodMin = Math.round((2 * Math.PI * Math.sqrt(Math.pow(orbitRadiusKm, 3) / 398600.44)) / 60);
-  const incDeg = Number(orbit?.inclination_deg ?? 53).toFixed(0);
 
   // To bao tai nan (du lieu su co that cua chuyen bay) lap day o trong duoi khung 3D khi phong that bai
   const accident =
@@ -275,12 +302,13 @@ export default function LaunchScreen() {
       {!accident && (
         <section className="panel launch-gauges-panel" aria-label="Telemetry Gauges">
           <div className="mech-gauges-grid">
-            <MechOrbitDial
+            <MechTrajectoryGraph
+              points={trajSeries.points}
+              tEnd={trajSeries.tEnd}
+              currentT={telem.t}
+              currentAlt={telem.altKm}
+              targetAlt={targetAltKm}
               orbitId={design?.orbit || 'LEO'}
-              altKm={targetAltKm}
-              incDeg={incDeg}
-              periodMin={periodMin}
-              progress={(Math.max(0, telem.t) % 120) / 120}
             />
             <MechDial
               label={tr(lang, 'ĐỘ CAO', 'ALTITUDE')}
