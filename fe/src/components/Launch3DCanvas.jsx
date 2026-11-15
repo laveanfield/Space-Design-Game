@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { decodeF32, decodeU8, playSoundAsset } from '../api/client';
+import { createLoopingSound, decodeF32, decodeU8, playSoundAsset } from '../api/client';
 import { useGame } from '../core/GameContext';
 import { tr, tx } from '../core/i18n';
 import { buildRocket, buildSatellite, loadInstruments, loadRocket, loadSatellite, loadSite } from '../three/modelLoader';
@@ -136,6 +136,8 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
     const vMax = Math.max(1, S.vel[S.n - 1]);
     const say = (name) => cbRef.current.onEvent?.(name);
     const sound = (file, vol = 0.35) => playSoundAsset(cbRef.current.audioOn, file, vol);
+    const engineRoarLoop = createLoopingSound('06-11-2026-engine_roar.wav', 0.34);
+    const upperEngineLoop = createLoopingSound('06-11-2026-upper_engine.wav', 0.24);
 
     // ---------- canh, camera, anh sang
     const scene = new THREE.Scene();
@@ -541,6 +543,10 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
       // ---------- lua dong co (drive() cua game): luc day th: dem nguoc tang dan tu luc danh lua, bay = 1
       const burning = (F.phase === 'ascent' && F.t <= tLast + 0.5) || (F.phase === 'countdown' && F.t > -1.2);
       const th = F.phase === 'countdown' ? smooth(-1.2, 0, F.t) : 1;
+      const engineAudioActive = burning && ctlRef.current.playing && cbRef.current.audioOn && F.phase !== 'boom' && F.phase !== 'deploy';
+      const inUpper = F.stageNow > 0 || F.altKm >= 40;
+      engineRoarLoop.setActive(engineAudioActive && !inUpper, 0.34 * th);
+      upperEngineLoop.setActive(engineAudioActive && inUpper, 0.24 * th);
       for (const p of plumes) {
         const mine = p.key === `s${F.stageNow}` || (p.key === 'b' && !F.done.has('BOOSTER_SEP')) || (p.key === 's0' && F.stageNow === 0);
         const attached = p.g.parent?.parent !== scene;
@@ -688,6 +694,8 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
 
     return () => {
       disposed = true;
+      engineRoarLoop.dispose();
+      upperEngineLoop.dispose();
       delete window.__launch3d;
       cancelAnimationFrame(rafId);
       io.disconnect(); ro.disconnect();

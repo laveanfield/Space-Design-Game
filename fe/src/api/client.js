@@ -96,15 +96,90 @@ export function beep(enabled, freq = 880, durationSec = 0.055, type = 'square', 
   }
 }
 
+const activeAudioRefs = new Set();
+
 export function playSoundAsset(enabled, filename, volume = 0.35) {
   if (!enabled || typeof window === 'undefined' || !filename) return;
   try {
     const audio = new Audio(`/sounds/${filename}`);
     audio.volume = volume;
-    audio.play().catch(() => {});
+    activeAudioRefs.add(audio);
+    const cleanup = () => activeAudioRefs.delete(audio);
+    audio.addEventListener('ended', cleanup, { once: true });
+    audio.addEventListener('error', cleanup, { once: true });
+    audio.play().catch(cleanup);
   } catch {
     // ignore playback errors
   }
+}
+
+/**
+ * Looping sound controller using shared Web Audio context (gapless loop + smooth gain fade).
+ */
+export function createLoopingSound(filename, baseVolume = 0.32) {
+  let disposed = false;
+  let buffer = null;
+  let source = null;
+  let gainNode = null;
+  let wantOn = false;
+  let targetVol = baseVolume;
+
+  const ensureStart = () => {
+    if (disposed || !buffer || source) return;
+    const ctx = getSharedAudioCtx();
+    if (!ctx) return;
+    gainNode = ctx.createGain();
+    gainNode.gain.value = 0.0001;
+    gainNode.connect(ctx.destination);
+    source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    source.connect(gainNode);
+    source.start();
+  };
+
+  if (typeof window !== 'undefined' && filename) {
+    fetch(`/sounds/${filename}`)
+      .then((r) => (r.ok ? r.arrayBuffer() : null))
+      .then((ab) => {
+        if (!ab || disposed) return null;
+        const ctx = getSharedAudioCtx();
+        return ctx ? ctx.decodeAudioData(ab) : null;
+      })
+      .then((decoded) => {
+        if (!decoded || disposed) return;
+        buffer = decoded;
+        if (wantOn) apply(true, targetVol);
+      })
+      .catch(() => {});
+  }
+
+  const apply = (on, vol = baseVolume) => {
+    wantOn = Boolean(on);
+    targetVol = vol;
+    if (disposed) return;
+    const ctx = getSharedAudioCtx();
+    if (!ctx) return;
+    if (wantOn && buffer && !source) ensureStart();
+    if (!gainNode) return;
+    const now = ctx.currentTime;
+    gainNode.gain.cancelScheduledValues(now);
+    gainNode.gain.setValueAtTime(Math.max(0.0001, gainNode.gain.value), now);
+    gainNode.gain.linearRampToValueAtTime(wantOn ? Math.max(0.0001, targetVol) : 0.0001, now + 0.18);
+  };
+
+  const dispose = () => {
+    disposed = true;
+    try {
+      if (source) source.stop();
+    } catch {
+      // ignore
+    }
+    source = null;
+    gainNode = null;
+  };
+
+  return { setActive: apply, dispose };
 }
 
 /**
