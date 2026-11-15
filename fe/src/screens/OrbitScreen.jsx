@@ -20,7 +20,7 @@ export default function OrbitScreen() {
 
   const handleTutorialFinishStep = useCallback(() => {
     if (tutorialGuided) {
-      setTutorialStep(2);
+      setTutorialStep(8);
       setTutorialOpen(true);
     }
   }, [tutorialGuided, setTutorialStep, setTutorialOpen]);
@@ -29,10 +29,10 @@ export default function OrbitScreen() {
     return (
       <div className="sandbox-end-wrap">
         <section className="panel sandbox-end-card">
-          <div className="sandbox-end-badge">✓ HOÀN THÀNH HƯỚNG DẪN SANDBOX</div>
-          <h2 className="sandbox-end-title">Kết thúc sandbox, quay về cốt truyện</h2>
+          <div className="sandbox-end-badge">SANDBOX WALKTHROUGH COMPLETE</div>
+          <h2 className="sandbox-end-title">Sandbox Complete — Return to Campaign</h2>
           <p className="sandbox-end-desc">
-            Nhấn nút Return bên dưới để quay về màn hình cốt truyện và chọn nhiệm vụ chính thức.
+            Click Return below to go back to the mission briefing screen and select a campaign mission.
           </p>
           <div className="sandbox-end-actions">
             <button
@@ -40,7 +40,7 @@ export default function OrbitScreen() {
               className="btn neon-btn sandbox-return-btn"
               onClick={completeTutorialToBrief}
             >
-              ↩ RETURN (QUAY VỀ CỐT TRUYỆN)
+              RETURN TO MISSIONS
             </button>
           </div>
         </section>

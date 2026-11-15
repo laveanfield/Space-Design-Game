@@ -10,6 +10,7 @@ import OrbitScreen from './screens/OrbitScreen';
 import ReviewScreen from './screens/ReviewScreen';
 import StoryScene from './story/StoryScene';
 import TutorialOverlay from './components/TutorialOverlay';
+import CrisisIntro from './components/CrisisIntro';
 
 /**
  * Screen Registry (State Pattern): anh xa phase -> man hinh doc lap.
@@ -41,7 +42,9 @@ function TerminalShell() {
     flightData,
     lifeData,
     outcome,
+    selectedMissionId,
     missionDetail,
+    scenario,
     effectiveBudget,
     effectiveDeadline,
     story,
@@ -56,6 +59,9 @@ function TerminalShell() {
     validityDoc,
     dialogRef,
     openValidityModal,
+    crisisIntroOpen,
+    completeCrisisIntro,
+    replayCrisisIntro,
   } = useGame();
 
   const ActiveScreen = SCREENS[phase] || BriefScreen;
@@ -100,30 +106,30 @@ function TerminalShell() {
         </nav>
 
         <div className="top-actions">
+          <button className="btn" onClick={replayCrisisIntro} title="View opening briefing and mission technical dossier">
+            REPLAY BRIEFING
+          </button>
           {tutorialMode && (
             <button
               className="btn neon-btn"
               onClick={completeTutorialToBrief}
-              title="Hoàn thành hoặc bỏ qua màn hướng dẫn để vào chọn Mission"
+              title="Complete or skip the tutorial and go to Mission Selection"
             >
-              ★ VÀO CHỌN MISSION [01]
+              GO TO MISSIONS [01]
             </button>
           )}
           <button
             className="btn warn"
             onClick={() => (tutorialOpen ? closeTutorial() : openTutorial())}
-            title="Bật/tắt Kỹ sư trưởng hướng dẫn góc phải"
+            title="Show or hide the Chief Engineer guide panel"
           >
-            {tutorialOpen ? 'ẨN KỸ SƯ' : '? HƯỚNG DẪN'}
+            {tutorialOpen ? 'HIDE GUIDE' : '? GUIDE'}
           </button>
           <button className="btn" onClick={() => setAudioOn((v) => !v)}>
             AUDIO: {audioOn ? 'ON' : 'OFF'}
           </button>
           <button className="btn" onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}>
             THEME: {theme === 'dark' ? 'WORKSHOP' : 'DAY'}
-          </button>
-          <button className="btn" onClick={openValidityModal}>
-            VALIDITY_DOC
           </button>
         </div>
       </header>
@@ -145,12 +151,23 @@ function TerminalShell() {
         <StoryScene lines={story.lines} ctx={story.ctx} header={storyHeader} audioOn={audioOn} onClose={closeStory} />
       )}
 
-      {!story && tutorialOpen && (
+      {!crisisIntroOpen && !story && tutorialOpen && (
         <TutorialOverlay
           phase={phase}
           stepIndex={tutorialStep}
           onStepChange={setTutorialStep}
           onClose={closeTutorial}
+        />
+      )}
+
+      {crisisIntroOpen && (
+        <CrisisIntro
+          missionId={selectedMissionId || missionDetail?.id || 'MP-SC01-FIRST-EYES'}
+          missionDetail={missionDetail}
+          scenario={scenario}
+          audioOn={audioOn}
+          onComplete={completeCrisisIntro}
+          onSkip={completeCrisisIntro}
         />
       )}
 

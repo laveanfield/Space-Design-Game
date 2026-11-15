@@ -64,7 +64,7 @@ export default function OpsSandboxScreen() {
             </div>
 
             <button className="btn warn" disabled={busy} onClick={() => finishOps()}>
-              END MISSION &amp; DEBRIEF →
+              END MISSION &amp; DEBRIEF
             </button>
           </div>
 
@@ -151,7 +151,7 @@ export default function OpsSandboxScreen() {
               ))}
               {(opsSnap.mode_hud.prompts || []).map((pr, idx) => (
                 <div key={idx} className="small" style={{ color: 'var(--warn)', marginTop: 3 }}>
-                  ▶ {pr}
+                  {pr}
                 </div>
               ))}
             </div>
@@ -253,7 +253,7 @@ export default function OpsSandboxScreen() {
           </div>
           <div className="row-wrap" style={{ marginTop: 14 }}>
             <button className="btn primary" onClick={() => setPhase('design')}>
-              ← BACK TO BUILD
+              BACK TO BUILD
             </button>
             <button className="btn" onClick={() => setPhase('brief')}>
               SWITCH MISSION

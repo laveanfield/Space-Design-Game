@@ -122,6 +122,10 @@ def test_ascent_placeholder_reaches_orbit():
         {"thrust_n": 2.6e4, "isp_s": 343, "propellant_kg": 2150, "dry_kg": 250}]}
     out = ascent.fly_ascent(lv, {"lat_deg": -39.26}, {"alt_km": 400, "inc_deg": 51.6}, 5.0)
     assert out["physics"] == "placeholder-analytic" and out["reaches_orbit"]
+    assert out["insertion"]["ok"] is True
+    assert out["insertion"]["perigee_km"] >= 395.0
     assert ascent.capacity_model_kg(lv, 400, 51.6, -39.26) > 100
     too_heavy = ascent.fly_ascent(lv, {"lat_deg": -39.26}, {"alt_km": 400, "inc_deg": 51.6}, 5000.0)
     assert not too_heavy["reaches_orbit"]
+    assert too_heavy["insertion"]["ok"] is False
+    assert too_heavy["insertion"]["perigee_km"] < 150.0

@@ -2,7 +2,7 @@
 import time
 import uuid
 
-BOARDS = {"score": "Điểm cao nhất", "speed": "Hoàn tất thiết kế nhanh nhất (đồng đội)", "frugal": "Tiết kiệm nhất"}
+BOARDS = {"score": "Highest Score", "speed": "Fastest Design Completion (Co-op)", "frugal": "Lowest Cost"}
 
 
 def make_record(player_id, display_name, mission_id, debrief, achievements, session_id, session_hash, r, room=None, now=None):

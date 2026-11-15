@@ -250,15 +250,23 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None, communications=N
             if communications is not None:
                 for source in communications["evidence"]:
                     if source["k"] == k:
-                        shot = dict(source, month=round(k * life_years, 1), delivered_k=None)
+                        shot = dict(
+                            source,
+                            month=round(k * life_years, 1),
+                            delivered_k=None,
+                            delivered_t_s=None,
+                            remaining_gb=source.get("size_gb", source.get("remaining_gb", 0.0)),
+                        )
                         evidence.append(shot)
                         ev.append({"code": "FIRE_CAPTURED", "level": "info", "text": _t(
                             f"Qua vùng quan sát {shot['target']}: chụp ảnh #{shot['n']}, lưu chờ truyền.",
                             f"Target access: image #{shot['n']} stored for downlink.")})
                 for shot in evidence:
                     source = communications["evidence"][shot["n"] - 1]
-                    if source["delivered_k"] == k:
+                    if source["delivered_k"] == k and source.get("remaining_gb", 0.0) <= 1e-9:
                         shot["delivered_k"] = k
+                        shot["delivered_t_s"] = source.get("delivered_t_s")
+                        shot["remaining_gb"] = 0.0
                         ev.append({"code": "IMAGE_DOWNLINKED", "level": "info", "text": _t(
                             f"Ảnh #{shot['n']} đã truyền trọn gói về {communications['station']['name']} trong cửa sổ liên lạc.",
                             f"Image #{shot['n']} completely downlinked during station contact.")})
@@ -292,19 +300,46 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None, communications=N
     review = [{"id": cid, "pass": bool(cons[cid]["pass"]), "title": _DOSSIER[cid][0]} for cid in _REVIEW + _BOSS if cid in cons]
     failed_review = [r["id"] for r in review if not r["pass"] and r["id"] in _REVIEW]
     boss_fail = [r["id"] for r in review if not r["pass"] and r["id"] in _BOSS]
-    usable_evidence = [s for s in evidence if s["delivered_k"] is not None and s["blur"] < BLUR_USABLE]
+    usable_evidence = [
+        s for s in evidence
+        if s["delivered_k"] is not None
+        and s.get("remaining_gb", 0.0) <= 1e-9
+        and s["blur"] < BLUR_USABLE
+    ]
+    orbit_ok = bool(cons.get("orbit_allowed", {}).get("pass", True))
+    science_ok = bool(cons.get("science", {}).get("pass", True))
+    comms_ok = (
+        communications is None
+        or (
+            communications["summary"]["delivered"] >= EVIDENCE_NEED
+            and communications["summary"]["sent_gb"] > 0
+            and len(communications["windows"]) > 0
+        )
+    )
     if imaging:
-        # Nhiem vu chup anh: du bang chung la DAT, ke ca khi ve tinh hong sau do
-        success = len(usable_evidence) >= EVIDENCE_NEED and (alive or not texts.get("must_survive"))
+        # Nhiem vu chup anh: phai dung quy dao nhiem vu, dat muc tieu khoa hoc, va gui tron goi du EVIDENCE_NEED anh ro net ve tram mat dat
+        success = (
+            orbit_ok
+            and science_ok
+            and comms_ok
+            and len(usable_evidence) >= EVIDENCE_NEED
+            and (alive or not texts.get("must_survive"))
+        )
         if success:
             dossier = _dossier(killer, cons.get(killer)) if killer else (_dossier(boss_fail[0], cons.get(boss_fail[0])) if boss_fail else None)
         elif killer:
             dossier = _dossier(killer, cons.get(killer), [{"label": "storm_dose_krad", "value": round(storm_dose, 3)}] if killer == "radiation" else [])
         else:
-            # song du vong doi ma van thieu bang chung: anh nhoe (chi huong) hoac khong gui ve kip (duong truyen)
+            # song du vong doi ma van thieu bang chung: sai quy dao, thieu khoa hoc, anh nhoe (chi huong) hoac khong gui ve kip (duong truyen)
             blurred = sum(1 for s in evidence if s["blur"] >= BLUR_USABLE)
-            stuck = sum(1 for s in evidence if s["delivered_k"] is None)
-            cid = "pointing" if blurred >= stuck and blurred > 0 else "data" if stuck > 0 else (failed_review[0] if failed_review else "science")
+            stuck = sum(1 for s in evidence if s["delivered_k"] is None or s.get("remaining_gb", 0.0) > 1e-9)
+            cid = (
+                "orbit_allowed" if not orbit_ok else
+                "science" if not science_ok else
+                "pointing" if blurred >= stuck and blurred > 0 else
+                "data" if stuck > 0 else
+                (failed_review[0] if failed_review else "science")
+            )
             dossier = _dossier(cid, cons.get(cid), [{"label": "evidence_usable", "value": len(usable_evidence)},
                                                      {"label": "evidence_blurred", "value": blurred}, {"label": "evidence_not_downlinked", "value": stuck}])
     else:
@@ -322,12 +357,22 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None, communications=N
         reasons = communications["diagnostics"]
         if reasons:
             dossier["cause"] = _t(" ".join(reasons), " ".join(reasons))
+        if evidence and not any(s["delivered_k"] is not None for s in evidence):
+            dossier["title"] = _t(
+                "QUAN SÁT THÀNH CÔNG, NHƯNG KHÔNG CÓ DOWNLINK",
+                "OBSERVATION SUCCEEDED, BUT NO DATA WAS DOWNLINKED")
+            dossier["cause"] = _t(
+                "Vệ tinh đã hoàn thành nhiệm vụ quan sát và lưu ảnh trên tàu, nhưng dữ liệu không thể truyền về Trái Đất trước khi mô phỏng nhiệm vụ kết thúc. Không có bằng chứng nào được chuyển đến đội cứu hộ. "
+                + " ".join(reasons),
+                "The satellite completed its observations and stored imagery on board, but could not transmit it to Earth before the mission simulation ended. No evidence reached responders. "
+                + " ".join(reasons))
         dossier["lesson"] = _t(
             "Chọn quỹ đạo đi qua mục tiêu và trạm thu. Giảm tốc độ tăng biên tín hiệu nhưng mất thêm thời gian truyền; tăng công suất rút pin nhanh hơn. Ảnh chỉ tính khi đã truyền trọn gói.",
             "Orbit must access the target and station. Lower bitrate improves link margin but increases airtime; higher transmit power drains the battery. Only fully delivered images count.")
         dossier["numbers"] += [{"label": "contact_min_7d", "value": round(communications["summary"]["contact_min"], 1)},
                                {"label": "usable_min_7d", "value": round(communications["summary"]["usable_min"], 1)},
-                               {"label": "pending_gb_7d", "value": communications["summary"]["buffer_gb"]}]
+                               {"label": "pending_gb_7d", "value": communications["summary"]["buffer_gb"]},
+                               {"label": "storage_capacity_gb", "value": communications["summary"]["storage_capacity_gb"]}]
     return {
         "schema_version": "lifetime/2", "steps_total": STEPS, "life_years": life_years, "steps": steps,
         "imaging": imaging, "evidence": evidence, "evidence_need": EVIDENCE_NEED if imaging else 0,

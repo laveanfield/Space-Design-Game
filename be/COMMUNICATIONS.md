@@ -28,8 +28,9 @@ backlog diagnostics.
 - Illustrative camera footprint: target elevation at least 45 degrees; one image
   per target per 24 hours. RGB needs solar elevation above 10 degrees at the target.
 - Each evidence packet represents an equal share of the daily payload budget across
-  the planned mission targets, at least 0.02 GB. Default storage is 8 GB. Full
-  storage rejects new images; queued packets persist.
+  the planned mission targets, at least 0.02 GB. Storage capacity comes from the
+  selected OBC's `storage_gb` catalog property. Full storage rejects new images;
+  queued packets persist.
 - The vendored `cubesat_link.evaluate_link` computes geometric visibility, free-space
   loss and a conditional budget. Gameplay sends the configured catalog bitrate
   times the ruleset efficiency only at margin >=3 dB and above the battery reserve.

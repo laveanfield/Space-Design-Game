@@ -2,11 +2,11 @@
 # Toa do la tam vung (lam tron), chi de minh hoa vi tri tren ban do; khong phai du lieu dam chay that.
 set: wildfire
 items:
-  - { id: FIRE-CALIFORNIA,  name: "Sierra Nevada, California",   lat_deg: 38.5,  lon_deg: -120.5, biome: "rừng lá kim" }
-  - { id: FIRE-AMAZON,      name: "Rondônia, Amazon",            lat_deg: -10.8, lon_deg: -63.0,  biome: "rừng mưa nhiệt đới" }
-  - { id: FIRE-NSW,         name: "New South Wales, Australia",  lat_deg: -33.0, lon_deg: 150.5,  biome: "rừng bạch đàn" }
-  - { id: FIRE-SIBERIA,     name: "Yakutia, Siberia",            lat_deg: 62.0,  lon_deg: 129.7,  biome: "rừng taiga" }
-  - { id: FIRE-KALIMANTAN,  name: "Kalimantan, Indonesia",       lat_deg: -1.7,  lon_deg: 113.9,  biome: "đất than bùn" }
-  - { id: FIRE-MEDITERRANEAN, name: "Evia, Greece",              lat_deg: 38.6,  lon_deg: 23.6,   biome: "cây bụi Địa Trung Hải" }
-  - { id: FIRE-CANADA,      name: "British Columbia, Canada",    lat_deg: 53.7,  lon_deg: -127.6, biome: "rừng phương Bắc" }
-  - { id: FIRE-UMINHTHUONG, name: "U Minh Thượng, Việt Nam",     lat_deg: 9.6,   lon_deg: 105.1,  biome: "rừng tràm trên than bùn" }
+  - { id: FIRE-CALIFORNIA,    name: "Sierra Nevada, California",   lat_deg: 38.5,  lon_deg: -120.5, biome: "conifer forest" }
+  - { id: FIRE-AMAZON,        name: "Rondonia, Amazon",            lat_deg: -10.8, lon_deg: -63.0,  biome: "tropical rainforest" }
+  - { id: FIRE-NSW,           name: "New South Wales, Australia",  lat_deg: -33.0, lon_deg: 150.5,  biome: "eucalyptus forest" }
+  - { id: FIRE-SIBERIA,       name: "Yakutia, Siberia",            lat_deg: 62.0,  lon_deg: 129.7,  biome: "boreal taiga" }
+  - { id: FIRE-KALIMANTAN,    name: "Kalimantan, Indonesia",       lat_deg: -1.7,  lon_deg: 113.9,  biome: "peatland forest" }
+  - { id: FIRE-MEDITERRANEAN, name: "Evia, Greece",                lat_deg: 38.6,  lon_deg: 23.6,   biome: "Mediterranean scrubland" }
+  - { id: FIRE-CANADA,        name: "British Columbia, Canada",    lat_deg: 53.7,  lon_deg: -127.6, biome: "boreal forest" }
+  - { id: FIRE-UMINHTHUONG,   name: "U Minh Thuong, Vietnam",      lat_deg: 9.6,   lon_deg: 105.1,  biome: "melaleuca peatland" }

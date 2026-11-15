@@ -586,13 +586,13 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
         OBC: {design?.obc || '-'} | ADCS: {design?.adcs || '-'} | INS: {(design?.instruments || []).length} | {source}
       </div>
       <div className="viewport-tools">
-        <button className={`btn small ${view === 'sat' ? 'primary' : ''}`} onClick={() => setView('sat')}>VỆ TINH</button>
-        <button className={`btn small ${view === 'rocket' ? 'primary' : ''}`} onClick={() => setView('rocket')}>TÊN LỬA</button>
+        <button className={`btn small ${view === 'sat' ? 'primary' : ''}`} onClick={() => setView('sat')}>SATELLITE</button>
+        <button className={`btn small ${view === 'rocket' ? 'primary' : ''}`} onClick={() => setView('rocket')}>LAUNCH VEHICLE</button>
         {view === 'sat' && (
-          <button className="btn small" onClick={() => setDeployed((d) => !d)}>{deployed ? 'GẬP CÁNH' : 'MỞ CÁNH / ĂNG-TEN'}</button>
+          <button className="btn small" onClick={() => setDeployed((d) => !d)}>{deployed ? 'STOW ARRAYS' : 'DEPLOY ARRAYS / ANTENNA'}</button>
         )}
       </div>
-      <div className="viewport-hint">Kéo để xoay • Cuộn để phóng to</div>
+      <div className="viewport-hint">Drag to rotate • Scroll to zoom</div>
     </div>
   );
 }

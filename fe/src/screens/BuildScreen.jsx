@@ -6,7 +6,7 @@ import MissionComms from '../components/MissionComms';
 import PartCard from '../components/PartCard';
 import TrajectoryScope from '../components/TrajectoryScope';
 import { DEV } from '../core/devFlag';
-import { SLOTS, getPartInsight, isSlotUnlocked } from '../core/gameMachine';
+import { SLOTS, isSlotUnlocked } from '../core/gameMachine';
 import { useGame } from '../core/GameContext';
 
 export default function BuildScreen() {
@@ -70,19 +70,18 @@ export default function BuildScreen() {
   const currentSlotMeta = SLOTS[currentSlotIdx] || SLOTS[0];
   const isLastSlot = currentSlotIdx >= SLOTS.length - 1;
 
-  // Tim linh kien dang duoc chon trong tab hien tai de hien thi Loi ich / Tac hai
+  // Tim linh kien dang duoc chon de hien ten trong thanh thao tac gon.
   const currentSelectedItem = slotEntries.find((item) => {
     if (activeSlot === 'instruments') return (design.instruments || []).includes(item.id);
     if (activeSlot === 'launch') return design.launch?.vehicle === item.id;
     return design[activeSlot] === item.id;
   });
-  const currentInsight = getPartInsight(activeSlot, currentSelectedItem);
 
   return (
     <div className="phase-stage">
       <div className="phase-header-plaques">
         <div className="rivet-plaque title">
-          {tutorialMode ? 'SANDBOX TUTORIAL // PHASE 1: THIẾT KẾ TỪNG THÀNH PHẦN (1–9)' : 'PHASE 1: BUILD MODE'}
+          {tutorialMode ? 'SANDBOX TUTORIAL // PHASE 1: SUBSYSTEM ASSEMBLY (1-9)' : 'PHASE 1: BUILD MODE'}
         </div>
         <div className="rivet-plaque">
           BUDGET: <strong>{tutorialMode ? 'SANDBOX ($999M)' : `$${effectiveBudget ?? scenario.budget_musd ?? '-'}M`}</strong>
@@ -93,14 +92,14 @@ export default function BuildScreen() {
       </div>
 
       <div className="design-grid">
-        {/* Left: Kho linh kien */}
+        {/* Left: Subsystem catalog */}
         <section className="panel" data-tutorial="build-slots">
           <h2 className="panel-title">
-            <span>LẮP RÁP TUẦN TỰ (BƯỚC {currentSlotIdx + 1}/9)</span>
+            <span>SEQUENTIAL ASSEMBLY (STEP {currentSlotIdx + 1}/9)</span>
             <span className="small muted">{design.orbit}</span>
           </h2>
 
-          {/* Thanh tien trinh 9 buoc */}
+          {/* 9-step unlock bar */}
           <div className="build-seq-bar nine-steps">
             {SLOTS.map((s, idx) => {
               const unlocked = isSlotUnlocked(s.id, buildStage);
@@ -118,7 +117,7 @@ export default function BuildScreen() {
                     selectSlot(s.id);
                   }}
                 >
-                  {unlocked ? s.label : `🔒${idx + 1}`}
+                  {unlocked ? s.label : `LOCK ${idx + 1}`}
                 </button>
               );
             })}
@@ -149,49 +148,34 @@ export default function BuildScreen() {
                     selectSlot(s.id);
                   }}
                 >
-                  {!unlocked ? `🔒 ${s.label}` : s.label}
+                  {!unlocked ? `LOCKED: ${s.label}` : s.label}
                 </button>
               );
             })}
           </div>
 
-          {/* Hop gioi thieu chi tiet vai tro thanh phan + nut TIEP THEO */}
-          <div className="slot-intro-box">
-            <div className="slot-intro-head">{currentSlotMeta.title}</div>
-            <div className="slot-intro-body">
-              {currentSlotMeta.shortDesc}{' '}
-              <span className="neon-green">{currentSlotMeta.highlight}</span>
-            </div>
-            {currentSelectedItem && currentInsight && (
-              <div className="slot-selected-summary">
-                <div className="small">
-                  <strong className="neon-green">ĐANG CHỌN: {currentSelectedItem.name || currentSelectedItem.id}</strong>
-                </div>
-                <div className="small">• <b>Dùng ở đâu:</b> {currentInsight.where}</div>
-                <div className="small ok-text">• <b>Lợi ích (+):</b> {currentInsight.pros}</div>
-                <div className="small warn-text">• <b>Tác hại (-):</b> {currentInsight.cons}</div>
-              </div>
-            )}
-            <div className="slot-intro-actions">
-              <span className="small muted">Click thử các lựa chọn bên dưới để so sánh thông số & 3D</span>
-              <button
-                type="button"
-                className="btn small neon-btn"
-                onClick={() => {
-                  beep(audioOn, 760, 0.04);
-                  if (isLastSlot) {
-                    confirmSlotAndAdvance();
-                    enterInspect();
-                  } else {
-                    confirmSlotAndAdvance();
-                  }
-                }}
-              >
-                {isLastSlot
-                  ? 'HOÀN TẤT 9 MỤC → SANG TÌM LỖI [03] →'
-                  : `TIẾP THEO: MỞ ${currentSlotMeta.nextLabel} →`}
-              </button>
-            </div>
+          <div className="build-compact-actions">
+            <span className="small">
+              <strong>{currentSlotMeta.label}</strong>
+              <span className="muted"> · {currentSelectedItem?.name || currentSelectedItem?.id || 'UNSELECTED'}</span>
+            </span>
+            <button
+              type="button"
+              className="btn small neon-btn"
+              onClick={() => {
+                beep(audioOn, 760, 0.04);
+                if (isLastSlot) {
+                  confirmSlotAndAdvance();
+                  enterInspect();
+                } else {
+                  confirmSlotAndAdvance();
+                }
+              }}
+            >
+              {isLastSlot
+                ? 'FINISH BUILD — GO TO 03.INSPECT'
+                : `NEXT: ${currentSlotMeta.nextLabel}`}
+            </button>
           </div>
 
           <div className="option-list">
@@ -212,7 +196,7 @@ export default function BuildScreen() {
               const warnText = noFit
                 ? `FAIRING MISMATCH: ${tx(fit.reason)}`
                 : wrongOrbit
-                  ? `NGOÀI QUỸ ĐẠO KHUYẾN NGHỊ`
+                  ? `OUTSIDE RECOMMENDED ORBITS`
                   : null;
 
               const pick = () => {
@@ -262,7 +246,7 @@ export default function BuildScreen() {
           {activeSlot === 'launch' && allSites.length > 0 && (
             <div style={{ marginTop: 10 }}>
               <div className="small muted" style={{ marginBottom: 4 }}>
-                BÃI PHÓNG TƯƠNG THÍCH (LAUNCH SITE)
+                COMPATIBLE LAUNCH SITES (LAUNCH SITE)
               </div>
               <div className="row-wrap">
                 {(compatibleSites.length > 0 ? compatibleSites : allSites).map((s) => (
@@ -316,12 +300,12 @@ export default function BuildScreen() {
 
           {currentFit && !currentFit.ok && (
             <div className="nofit-banner small">
-              ! CẢNH BÁO TÍCH HỢP: {tx(currentFit.reason)} (Vẫn cho phép phóng thử — dự kiến vỡ fairing tại Max-Q)
+              ⚠ INTEGRATION WARNING: {tx(currentFit.reason)} (Test launch allowed — fairing failure expected near Max-Q)
             </div>
           )}
 
           <div className="row-between" style={{ marginTop: 12 }}>
-            <span className="small muted">LAUNCH ANYTHING: MỌI CẤU HÌNH ĐỀU ĐƯỢC CHUYỂN QUA KIỂM ĐỊNH</span>
+            <span className="small muted">LAUNCH ANYTHING: ALL CONFIGURATIONS PROCEED TO INSPECTION</span>
             <button
               className="btn primary hazard hazard-cta"
               data-tutorial="build-next"

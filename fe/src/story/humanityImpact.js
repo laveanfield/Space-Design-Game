@@ -1,222 +1,222 @@
 /**
- * Storytelling cố định (không random) về hậu quả nhân loại & Trái Đất phải gánh chịu (hoặc được cứu giúp)
- * sau mỗi màn chơi trong 3 màn chiến dịch chính:
- * 1. MP-SC01-FIRST-EYES (Cháy rừng & sơ tán dân cư)
- * 2. MP-SC03-SPACE-WEATHER (Bão địa từ G5, sập lưới điện & hàng không vùng cực)
- * 3. MP-SC04-GHG (Rò rỉ khí Methane, hạn mặn & khủng hoảng mùa màng)
+ * Fixed mission narrative outcomes describing the human and planetary impact
+ * for the 3 campaign missions:
+ * 1. MP-SC01-FIRST-EYES (Wildfire monitoring & civilian evacuation)
+ * 2. MP-SC03-SPACE-WEATHER (G5 geomagnetic storm, polar aviation & power grid defense)
+ * 3. MP-SC04-GHG (Methane super-emitter detection & agricultural protection)
  */
 
 export const HUMANITY_STORIES = {
   'MP-SC01-FIRST-EYES': {
     missionKey: 'wildfire',
-    levelTag: 'STORY 01 // CHIẾN DỊCH CỨU HỘ RỪNG NHIỆT ĐỚI',
+    levelTag: 'STORY 01 // RAINFOREST WILDFIRE EMERGENCY CAMPAIGN',
     fail: {
-      badge: 'THẢM HỌA SINH THÁI & DÂN SINH',
-      headline: 'MÙ THÔNG TIN GIỮA MÙA LỬA ĐỎ: 142.000 HA RỪNG HÓA TRO TÀN',
+      badge: 'ECOLOGICAL & CIVILIAN DISASTER',
+      headline: 'BLIND IN THE FLAMES: 142,000 HECTARES OF FOREST LOST TO ASH',
       causeByFailure: {
-        data: 'Vệ tinh chụp được đám cháy nhưng ăng-ten UHF băng thông hẹp làm nghẽn toàn bộ dữ liệu trên quỹ đạo — không một bức ảnh tọa độ lửa nào kịp truyền về trạm mặt đất.',
-        power: 'Tấm pin mặt trời công suất thấp khiến vệ tinh sập nguồn (Brown-out) khi bay qua vùng tối đúng vào thời điểm đám cháy bùng phát.',
-        pointing: 'Hệ thống điều khiển tư thế (ADCS) thiếu bánh đà phản ứng làm ảnh chụp bị nhòe nặng, không thể xác định tọa độ tâm lửa.',
-        blur: 'Hệ thống điều khiển tư thế (ADCS) thiếu bánh đà phản ứng làm ảnh chụp bị nhòe nặng, không thể xác định tọa độ tâm lửa.',
-        radiation: 'Máy tính trên tàu (OBC) treo cứng do bức xạ, bỏ lỡ toàn bộ các lượt bay qua vùng rừng đang cháy.',
-        inspection_fault: 'Lỗi lắp ráp bị bỏ sót từ xưởng kiểm định khiến vệ tinh mất khả năng vận hành ngay khi vừa tách tầng.',
-        launch: 'Vệ tinh không thể lên tới quỹ đạo làm việc, để lại khoảng trống quan trắc hoàn toàn trên bầu trời suốt mùa khô.',
-        default: 'Vệ tinh không thể lên tới quỹ đạo làm việc, để lại khoảng trống quan trắc hoàn toàn trên bầu trời suốt mùa khô.',
+        data: 'The spacecraft photographed the fire corridor, but low-bandwidth UHF radio bottlenecked the data in orbit — not a single fire-front coordinate reached ground control in time.',
+        power: 'Under-sized solar generation caused a satellite brownout during orbital eclipse just as the fire front erupted.',
+        pointing: 'Attitude control lacked reaction wheels, leaving all thermal and optical frames blurred beyond usable fire localization.',
+        blur: 'Attitude control lacked reaction wheels, leaving all thermal and optical frames blurred beyond usable fire localization.',
+        radiation: 'Radiation latch-ups froze the onboard computer, missing every overpass across the active burn corridor.',
+        inspection_fault: 'An unfixed pre-flight hardware defect disabled the spacecraft immediately after fairing separation.',
+        launch: 'The spacecraft failed to enter its operational orbit, leaving emergency command blind throughout peak drought.',
+        default: 'The spacecraft failed to enter its operational orbit, leaving emergency command blind throughout peak drought.',
       },
       paragraphs: [
-        'Trong 72 giờ vàng đầu tiên của đợt hạn hán kỷ lục, Sở Chỉ huy Cứu hỏa Liên vùng chờ đợi tín hiệu cảnh báo nhiệt từ quỹ đạo nhưng màn hình trạm mặt đất chỉ toàn nhiễu trắng. Không có tọa độ điểm nóng sớm, đám cháy âm ỉ ở sườn Tây khu bảo tồn đã gặp gió phơn khô nóng và bùng lên thành siêu đám cháy vượt ngoài tầm khống chế.',
-        'Khi trực thăng tuần tra phát hiện bằng mắt thường thì bức tường lửa đã cao tới 40 mét. Lệnh sơ tán đưa ra quá muộn khiến hàng chục thị trấn ven rừng rơi vào hỗn loạn trong đêm khói đặc quánh.',
+        'Through the critical first 72 hours of a record drought, regional fire command waited for thermal coordinates from orbit while ground monitors showed only static. Without early hotspot localization, a smoldering blaze on the western ridge met dry downslope winds and exploded into an uncontrollable megafire.',
+        'By the time spotter helicopters sighted the glow through dense smoke, a 40-meter flame wall had already closed in. Evacuation orders went out late, throwing fourteen forest towns into chaotic midnight evacuations.',
       ],
       metrics: [
         {
-          label: 'THẢM RỪNG BỊ THIÊU RỤI',
-          value: '142.000 ha',
-          sub: 'Rừng nguyên sinh & hệ sinh thái cổ thụ mất trắng',
+          label: 'FOREST TIMBERLINE BURNED',
+          value: '142,000 ha',
+          sub: 'Old-growth canopy and watershed ecosystems destroyed',
         },
         {
-          label: 'CƯ DÂN PHẢI DI TẢN KHẨN CẤP',
-          value: '38.500 người',
-          sub: '14 thị trấn bị cô lập, 1.200 mái nhà cháy rụi',
+          label: 'CIVILIANS FORCED TO EVACUATE',
+          value: '38,500 people',
+          sub: '14 towns isolated and 1,200 homes damaged or destroyed',
         },
         {
-          label: 'KHÓI ĐỘC & CO₂ PHÁT TÁN',
-          value: '410 triệu tấn',
-          sub: 'Bụi mịn PM2.5 bao phủ hạ lưu suốt 21 ngày',
+          label: 'TOXIC SMOKE & CO2 RELEASED',
+          value: '410M tons',
+          sub: 'Dense PM2.5 haze blanketed downstream basins for 21 days',
         },
       ],
       moral:
-        'THÔNG ĐIỆP MÀN 1: Một vệ tinh chụp được ảnh nhưng không truyền nổi dữ liệu về mặt đất thì chỉ là nhân chứng câm trên bầu trời. Cắt xén vài trăm nghìn đô tiền ăng-ten và nguồn điện đã bắt nhân loại trả giá bằng cả một đại ngàn trăm tuổi.',
+        'LESSON 01: A satellite that captures imagery without returning it to Earth is only a silent witness in the sky. Cutting corners on downlink bandwidth and power cost an entire century-old forest.',
     },
     ok: {
-      badge: 'SỨ MỆNH BẢO VỆ TRÁI ĐẤT THÀNH CÔNG',
-      headline: '14 PHÚT VÀNG TỪ QUỸ ĐẠO: CỨU SỐNG 142.000 HA RỪNG NGUYÊN SINH',
+      badge: 'PLANETARY PROTECTION MISSION ACCOMPLISHED',
+      headline: '14 GOLDEN MINUTES FROM ORBIT: 142,000 HECTARES OF FOREST SAVED',
       causeBridge:
-        'Nhờ đường truyền S-Band tốc độ cao, nguồn điện ổn định và hệ thống bánh đà giữ hướng chuẩn xác, đủ 3 gói ảnh tọa độ đám cháy độ phân giải cao đã về tới Sở Chỉ huy ngay trong lượt bay đầu tiên.',
+        'With sufficient S-Band downlink throughput, positive power margin, and steady reaction-wheel pointing, 3 crisp fire-coordinate evidence frames reached emergency command on early passes.',
       paragraphs: [
-        'Chỉ 14 phút sau khi đám lửa đầu tiên bén vào thảm thực vật khô ở sườn Tây, vệ tinh đã khóa mục tiêu và truyền thẳng tọa độ nhiệt về Trung tâm Cứu hộ Mặt đất. Đội máy bay thả nước và lực lượng kiểm lâm lập tức khoanh vùng dập tắt ngọn lửa trước khi gió phơn kịp thổi bùng.',
-        'Toàn bộ hành lang rừng già và 14 thị trấn ven núi đã đi qua mùa khô khắc nghiệt nhất thập kỷ mà không mất một sinh mạng nào.',
+        'Just 14 minutes after ignition along the dry western slope, the spacecraft locked onto the thermal plume and downlinked verified coordinates to ground responders. Water-bomber crews and rangers contained the perimeter before downslope winds could spread the fire.',
+        'The entire mountain timber corridor and fourteen nearby communities weathered the harshest drought of the decade without a single casualty.',
       ],
       metrics: [
         {
-          label: 'THẢM RỪNG ĐƯỢC BẢO VỆ',
-          value: '142.000 ha',
-          sub: 'Dập tắt sớm 100% điểm nóng ngay từ vành đai ngoài',
+          label: 'OLD-GROWTH FOREST PROTECTED',
+          value: '142,000 ha',
+          sub: '100% of perimeter hotspots extinguished before breakout',
         },
         {
-          label: 'CƯ DÂN ĐƯỢC AN TOÀN',
-          value: '38.500 người',
-          sub: '14 thị trấn ven rừng không phải sơ tán trong đêm',
+          label: 'RESIDENTS KEPT SAFE',
+          value: '38,500 people',
+          sub: 'All 14 mountain towns remained safe without panic evacuation',
         },
         {
-          label: 'KHÍ THẢI ĐƯỢC NGĂN CHẶN',
-          value: '410 triệu tấn',
-          sub: 'Giữ nguyên lá phổi xanh cho toàn vùng hạ lưu',
+          label: 'EMISSIONS PREVENTED',
+          value: '410M tons CO2',
+          sub: 'Preserved regional air quality and clean watershed reserves',
         },
       ],
       moral:
-        'THÔNG ĐIỆP MÀN 1: Dữ liệu đúng lúc là ranh giới giữa một đốm lửa nhỏ và một thảm họa quốc gia. Khi kỹ sư bảo vệ được đường truyền từ quỹ đạo, hàng vạn sinh mạng dưới mặt đất được bình yên.',
+        'LESSON 01: Timely orbital data is the thin line between a brush spark and a national disaster. When engineers protect the full data chain from lens to ground dish, thousands of lives stay safe.',
     },
   },
 
   'MP-SC03-SPACE-WEATHER': {
     missionKey: 'space_weather',
-    levelTag: 'STORY 02 // PHÒNG TUYẾN BÃO ĐỊA TỪ BẮC BÁN CẦU',
+    levelTag: 'STORY 02 // NORTHERN HEMISPHERE GEOMAGNETIC SHIELD',
     fail: {
-      badge: 'THẢM HỌA HẠ TẦNG & HÀNG KHÔNG',
-      headline: 'ĐÊM ĐEN BẮC BÁN CẦU: BÃO TỪ G5 ĐÁNH SẬP LƯỚI ĐIỆN VÌ TRẠM GÁC CÂM LẶNG',
+      badge: 'GRID & AVIATION INFRASTRUCTURE CRISIS',
+      headline: 'NORTHERN BLACKOUT: G5 SOLAR STORM SHATTERS POWER GRIDS WITHOUT WARNING',
       causeByFailure: {
         radiation:
-          'Bộ máy tính trên tàu (OBC) không phải chuẩn chống bức xạ (Rad-Hard) đã bị hạt năng lượng cao trong vành đai Van Allen bắn thủng cổng logic (Latch-up), làm trạm gác chết lâm sàng trước khi bão Mặt Trời ập tới.',
-        power: 'Hệ thống nguồn và pin sụt áp giữa quỹ đạo tầm trung (MEO), làm ngắt mạch từ kế trước giờ G.',
+          'Commercial-grade avionics lacking radiation hardening suffered Van Allen proton latch-ups and locked up before the solar storm struck.',
+        power: 'Battery and array margin collapsed inside MEO eclipse transitions, silencing the magnetometer before storm arrival.',
         inspection_fault:
-          'Lỗi lắp ráp không được khắc phục tại phòng kiểm định khiến trạm gác mất liên lạc ngay sau khi tách khỏi tầng đẩy.',
-        launch: 'Trạm gác thời tiết không gian không thể duy trì hoạt động tại quỹ đạo MEO-20200, để mặc Trái Đất không có lá chắn cảnh báo sớm.',
-        default: 'Trạm gác thời tiết không gian không thể duy trì hoạt động tại quỹ đạo MEO-20200, để mặc Trái Đất không có lá chắn cảnh báo sớm.',
+          'An unresolved integration fault triggered total loss of telemetry shortly after orbital deployment.',
+        launch: 'The sentinel never stabilized in MEO-20200, leaving Earth without an early geomagnetic warning beacon.',
+        default: 'The sentinel never stabilized in MEO-20200, leaving Earth without an early geomagnetic warning beacon.',
       },
       paragraphs: [
-        'Khi khối vật chất nhật hoa (CME) khổng lồ lao về phía Trái Đất với vận tốc 2.100 km/s, nhân loại hoàn toàn không nhận được cảnh báo trước 18 giờ từ trạm gác MEO. Dòng điện cảm ứng địa từ (GIC) bất ngờ tràn vào hệ thống truyền tải điện cao thế trên khắp Bắc Bán Cầu.',
-        'Hàng loạt máy biến áp trung tâm phát nổ trong đêm tuyết trắng. Cùng lúc đó, tầng điện ly bị nhiễu loạn dữ dội làm đứt gãy toàn bộ liên lạc vô tuyến HF và tín hiệu dẫn đường GPS của hàng trăm máy bay dân dụng đang bay qua vùng cực.',
+        'As a massive Coronal Mass Ejection hurtled toward Earth at 2,100 km/s, ground operators never received the 18-hour MEO warning bulletin. Geomagnetically induced currents slammed unshielded high-voltage transmission corridors across high latitudes.',
+        'Major step-up transformers tripped and failed in freezing night air while severe ionospheric distortion severed polar HF radio and degraded GPS guidance for hundreds of commercial flights.',
       ],
       metrics: [
         {
-          label: 'HỘ DÂN MẤT ĐIỆN GIỮA MÙA ĐÔNG',
-          value: '6,4 triệu hộ',
-          sub: '14 trạm biến áp siêu cao áp cháy hỏng, 210 bệnh viện chạy máy phát',
+          label: 'WINTER HOUSEHOLDS WITHOUT POWER',
+          value: '6.4 million',
+          sub: '14 EHV substations damaged; 210 hospitals switched to backup generators',
         },
         {
-          label: 'CHUYẾN BAY MÙ LIÊN LẠC & GPS',
-          value: '340 chuyến',
-          sub: 'Mất sóng HF xuyên cực suốt 6 giờ, buộc hạ cánh khẩn cấp',
+          label: 'FLIGHTS HIT BY POLAR BLACKOUT',
+          value: '340 flights',
+          sub: '6-hour HF blackout forced emergency polar diversions',
         },
         {
-          label: 'THIỆT HẠI HẠ TẦNG & VỆ TINH LEO',
-          value: '4,8 tỷ USD',
-          sub: '18 vệ tinh viễn thông hỏng mạch vì không kịp vào Safe Mode',
+          label: 'GRID & LEO SATELLITE LOSSES',
+          value: '$4.8 billion',
+          sub: '18 commercial satellites damaged without safe-mode lead time',
         },
       ],
       moral:
-        'THÔNG ĐIỆP MÀN 2: Giữa vành đai bức xạ Van Allen, linh kiện giá rẻ không chỉ làm hỏng một dự án — nó tháo bỏ chiếc chuông báo động duy nhất của cả nền văn minh công nghệ trước cơn thịnh nộ của Mặt Trời.',
+        'LESSON 02: Deep inside the Van Allen belts, cheap unshielded electronics do not merely fail a budget sheet — they silence humanity’s only alarm bell before solar fury hits.',
     },
     ok: {
-      badge: 'LÁ CHẮN ĐỊA TỪ HOẠT ĐỘNG HOÀN HẢO',
-      headline: 'CẢNH BÁO TRƯỚC 18 GIỜ: 6,4 TRIỆU HỘ DÂN & 340 CHUYẾN BAY VƯỢT QUA BÃO TỪ G5',
+      badge: 'GEOMAGNETIC EARLY WARNING VERIFIED',
+      headline: '18-HOUR ADVANCE ALERT: 6.4M HOMES & 340 FLIGHTS SHIELDED FROM G5 STORM',
       causeBridge:
-        'Nhờ bộ xử lý chống bức xạ OBC-RADHARD và nguồn pin dung lượng lớn, từ kế trên quỹ đạo MEO-20200 đã hoạt động xuyên suốt cơn bão proton và gửi bản tin cảnh báo đỏ về Trái Đất đúng hạn.',
+        'Equipped with a radiation-hardened OBC-RADHARD computer and robust power reserves, the MEO-20200 magnetometer operated cleanly throughout the proton storm and delivered verified alerts on schedule.',
       paragraphs: [
-        'Ngay khi đám mây plasma từ Mặt Trời quét qua quỹ đạo 20.200 km, trạm gác đã giải mã chính xác cường độ từ trường liên hành tinh và phát lệnh báo động toàn cầu trước 18 giờ. Các trung tâm điều độ điện lực kịp thời phân tải và đóng rơ-le bảo vệ toàn bộ 14 lưới điện quốc gia.',
-        'Toàn bộ các hãng hàng không đã chuyển hướng 340 chuyến bay thương mại ra khỏi vùng cực trước khi bão từ chạm tầng điện ly, và 18 vệ tinh quỹ đạo thấp kịp gập cánh về chế độ an toàn.',
+        'As the solar plasma front swept across 20,200 km altitude, the sentinel resolved interplanetary magnetic polarity and transmitted red-alert bulletins 18 hours before Earth impact. Grid operators balanced loads and isolated vulnerable transformers in advance.',
+        'Airlines smoothly rerouted 340 transpolar flights clear of ionospheric blackout corridors while 18 low-orbiting satellites entered safe mode unscathed.',
       ],
       metrics: [
         {
-          label: 'LƯỚI ĐIỆN ĐƯỢC BẢO VỆ',
-          value: '6,4 triệu hộ',
-          sub: '0 trạm biến áp bị cháy, 210 bệnh viện duy trì điện lưới 100%',
+          label: 'POWER CUSTOMERS PROTECTED',
+          value: '6.4 million',
+          sub: 'Zero substation burnouts; 210 hospitals maintained continuous grid power',
         },
         {
-          label: 'CHUYẾN BAY CHUYỂN HƯỚNG AN TOÀN',
-          value: '340 chuyến',
-          sub: 'Không một máy bay nào bị kẹt trong vùng mất sóng vùng cực',
+          label: 'FLIGHTS SAFELY REROUTED',
+          value: '340 flights',
+          sub: 'Continuous communications maintained outside polar blackout zones',
         },
         {
-          label: 'TÀI SẢN CÔNG NGHỆ ĐƯỢC CỨU',
-          value: '4,8 tỷ USD',
-          sub: '18 vệ tinh viễn thông vào Safe Mode kịp thời',
+          label: 'INFRASTRUCTURE SAVED',
+          value: '$4.8 billion',
+          sub: '18 LEO spacecraft safely transitioned to protective mode',
         },
       ],
       moral:
-        'THÔNG ĐIỆP MÀN 2: Đầu tư cho linh kiện chống bức xạ chuẩn không gian (Flight Heritage) chính là mua bảo hiểm sinh mạng cho hàng triệu con người phụ thuộc vào điện lưới và bầu trời dưới mặt đất.',
+        'LESSON 02: Investing in radiation-hardened flight heritage is life insurance for modern civilization’s power grids and skies.',
     },
   },
 
   'MP-SC04-GHG': {
     missionKey: 'ghg',
-    levelTag: 'STORY 03 // HỒ SƠ KHÍ HẬU & AN NINH LƯƠNG THỰC TOÀN CẦU',
+    levelTag: 'STORY 03 // GLOBAL METHANE & FOOD SECURITY AUDIT',
     fail: {
-      badge: 'THẢM HỌA KHÍ HẬU & MÙA MÀNG',
-      headline: 'BÓNG MA KHÍ METHANE: VẾT RÒ RỈ VÔ HÌNH ĐẨY 850.000 NÔNG DÂN VÀO ĐẠI HẠN',
+      badge: 'CLIMATE & HARVEST DISASTER',
+      headline: 'INVISIBLE METHANE PLUMES PUSH 850,000 FARMERS INTO SEVERE DROUGHT',
       causeByFailure: {
         pointing:
-          'Quang phổ kế hồng ngoại đòi hỏi giữ hướng cực chuẩn nhưng bộ điều khiển tư thế (ADCS) thiếu độ chính xác làm vệt quét lệch hàng chục kilomet, biến toàn bộ dữ liệu phát thải thành nhiễu vô giá trị.',
-        blur: 'Quang phổ kế hồng ngoại đòi hỏi giữ hướng cực chuẩn nhưng bộ điều khiển tư thế (ADCS) thiếu độ chính xác làm vệt quét lệch hàng chục kilomet, biến toàn bộ dữ liệu phát thải thành nhiễu vô giá trị.',
-        power: 'Quang phổ kế công suất lớn rút cạn nguồn điện khi quét liên tục, làm vệ tinh sập nguồn ngay trên vùng công nghiệp trọng điểm.',
-        data: 'Khối lượng dữ liệu phổ khổng lồ bị ứ đọng trên tàu vì thiếu đường truyền quang học/băng thông cao, không thể gửi bản đồ phát thải về hội nghị khí hậu.',
+          'SWIR spectrometry requires arcsecond dwell precision; coarse ADCS jitter smeared scans by tens of kilometers, invalidating emissions attribution.',
+        blur: 'SWIR spectrometry requires arcsecond dwell precision; coarse ADCS jitter smeared scans by tens of kilometers, invalidating emissions attribution.',
+        power: 'High-draw spectrometer operations depleted battery reserves over target industrial basins.',
+        data: 'Massive spectral cubes piled up in onboard storage without a high-rate optical/X-band downlink to reach climate regulators.',
         inspection_fault:
-          'Lỗi lắp ráp bị bỏ sót từ khâu kiểm định làm lệch chuẩn ống kính quang phổ, khiến mọi dữ liệu đo khí nhà kính bị sai lệch hoàn toàn.',
-        launch: 'Sứ mệnh quan trắc khí nhà kính thất bại khiến hệ thống giám sát phát thải độc lập của nhân loại bị tê liệt.',
-        default: 'Sứ mệnh quan trắc khí nhà kính thất bại khiến hệ thống giám sát phát thải độc lập của nhân loại bị tê liệt.',
+          'Unresolved optical mirror misalignment skewed calibration across all greenhouse gas scans.',
+        launch: 'Failure to reach SSO-600 paralyzed independent orbital verification of industrial methane leaks.',
+        default: 'Failure to reach SSO-600 paralyzed independent orbital verification of industrial methane leaks.',
       },
       paragraphs: [
-        'Không có ảnh phổ định vị độ phân giải cao từ quỹ đạo đồng bộ Mặt Trời (SSO-600), các tổ hợp khai thác khí đốt và khu công nghiệp nặng tiếp tục xả trộm một lượng khổng lồ khí Methane (CH₄) không màu, không mùi vào bầu khí quyển mà không ai có bằng chứng pháp lý để buộc dừng lại.',
-        'Hiệu ứng nhà kính tăng vọt cục bộ trong 84 lần mạnh hơn CO₂ đã kích hoạt chuỗi nắng nóng cực đoan và xâm nhập mặn kỷ lục vào mùa vụ kế tiếp, biến những cánh đồng trù phú thành đất nứt nẻ.',
+        'Without sharp spectral evidence from Sun-Synchronous Orbit (SSO-600), major oilfields and industrial manifolds continued venting vast clouds of invisible Methane (CH4) unchecked.',
+        'Near-term warming spikes amplified regional drought and saltwater intrusion across lowland deltas during the following growing season.',
       ],
       metrics: [
         {
-          label: 'KHÍ METHANE RÒ RỈ VÔ HÌNH',
-          value: '1,8 triệu tấn',
-          sub: 'Gây hiệu ứng giữ nhiệt tương đương 150 triệu tấn CO₂ (32 triệu xe hơi/năm)',
+          label: 'UNREPORTED METHANE LEAKED',
+          value: '1.8M tons',
+          sub: '20-year warming impact equivalent to ~150M tons of CO2',
         },
         {
-          label: 'ĐỒNG BẰNG CANH TÁC HẠN MẶN',
-          value: '2,3 triệu ha',
-          sub: 'Đất nông nghiệp ven biển mất khả năng canh tác do nhiệt độ cực đoan',
+          label: 'CROPLAND LOST TO SALINITY',
+          value: '2.3M hectares',
+          sub: 'Coastal agricultural deltas parched by extreme heatwaves',
         },
         {
-          label: 'NÔNG DÂN MẤT TRẮNG MÙA VỤ',
-          value: '850.000 người',
-          sub: 'Khủng hoảng lương thực khu vực và đứt gãy chuỗi cung ứng',
+          label: 'FARMERS HIT BY CROP LOSS',
+          value: '850,000 people',
+          sub: 'Severe regional harvest shortfall and supply-chain strain',
         },
       ],
       moral:
-        'THÔNG ĐIỆP MÀN 3: Khí nhà kính vô hình trước mắt thường — nếu con mắt quang phổ trên quỹ đạo lệch đi chỉ một phần mười độ, những kẻ đầu độc bầu khí quyển sẽ thoát tội và người nông dân phải trả giá bằng những cánh đồng chết khát.',
+        'LESSON 03: Greenhouse leaks are invisible to the naked eye — if orbital optics miss by even tenths of a degree, accountability vanishes and farming communities pay the price.',
     },
     ok: {
-      badge: 'ĐỘT PHÁ MINH BẠCH KHÍ HẬU TOÀN CẦU',
-      headline: 'BẰNG CHỨNG THÉP TỪ QUỸ ĐẠO: KHÓA CHẶT 27 SIÊU NGUỒN RÒ RỈ KHÍ METHANE',
+      badge: 'GLOBAL CLIMATE TRANSPARENCY BREAKTHROUGH',
+      headline: 'PROOF FROM ORBIT: 27 METHANE SUPER-EMITTERS PINPOINTED & SEALED',
       causeBridge:
-        'Nhờ bộ điều khiển tư thế siêu chính xác ADCS-FINE, nguồn điện dồi dào và đường truyền quang học tốc độ cao, vệ tinh đã khóa mục tiêu ổn định suốt 20 giây mỗi lượt quét và gửi về bản đồ phổ sắc nét tới từng đường ống.',
+        'With fine star-tracker pointing (ADCS-FINE), positive solar power margin, and high-throughput downlink, the spectrometer held steady 20-second dwells and delivered unmistakable plume maps.',
       paragraphs: [
-        'Bản đồ phổ hồng ngoại từ độ cao 600 km đã chỉ đích danh 27 điểm siêu phát thải (Super-Emitters) đang âm thầm rò rỉ khí Methane trên khắp các lục địa. Với tọa độ sai số dưới 50 mét không thể chối cãi, Ủy ban Khí hậu Quốc tế đã buộc các tập đoàn năng lượng khóa van và hàn kín đường ống ngay trong tháng đầu tiên.',
-        'Lượng phát thải tương đương 150 triệu tấn CO₂ đã bị chặn đứng kịp thời, bảo vệ nguồn nước ngọt và sinh kế cho hàng triệu cư dân vùng đồng bằng nông nghiệp.',
+        'Precision SWIR maps from 600 km identified 27 industrial super-emitter leaks down to individual pipeline manifolds. Armed with sub-50m coordinates, regulators enforced rapid valve repairs within the first month.',
+        'Emissions equivalent to 150M tons of CO2 were halted in time to stabilize regional water tables and harvests.',
       ],
       metrics: [
         {
-          label: 'KHÍ METHANE BỊ KHÓA CHẶT',
-          value: '1,8 triệu tấn',
-          sub: 'Ngăn chặn tương đương 150 triệu tấn CO₂ đi vào khí quyển',
+          label: 'METHANE PLUMES SEALED',
+          value: '1.8M tons',
+          sub: 'Avoided ~150M tons CO2-equivalent atmospheric warming',
         },
         {
-          label: 'DIỆN TÍCH NÔNG NGHIỆP ĐƯỢC CỨU',
-          value: '2,3 triệu ha',
-          sub: 'Duy trì dữ liệu cảnh báo hạn mặn & cân bằng bức xạ nhiệt',
+          label: 'FARMLAND PRESERVED',
+          value: '2.3M hectares',
+          sub: 'Watershed salinity and drought exposure sharply curbed',
         },
         {
-          label: 'NÔNG DÂN GIỮ VỮNG SINH KẾ',
-          value: '850.000 người',
-          sub: '27 siêu nguồn phát thải buộc phải khắc phục dưới sự giám sát vệ tinh',
+          label: 'FARMING LIVELIHOODS SAVED',
+          value: '850,000 people',
+          sub: 'All 27 super-emitters capped under continuous orbital verification',
         },
       ],
       moral:
-        'THÔNG ĐIỆP MÀN 3: Độ chính xác phần nghìn độ của kỹ sư không gian trên quỹ đạo chính là thước đo công lý dưới mặt đất — buộc mọi nguồn phát thải phải bước ra ánh sáng để bảo vệ tương lai của nhân loại.',
+        'LESSON 03: Sub-arcsecond engineering discipline in orbit delivers measurable environmental justice on Earth.',
     },
   },
 };
@@ -229,7 +229,7 @@ function normalizeFailureKey(failureId, outcome) {
 }
 
 /**
- * Tra ve noi dung storytelling co dinh (khong random) gan voi man choi va ket qua ky thuat.
+ * Returns fixed mission storytelling content tied to mission ID and engineering outcome.
  */
 export function getHumanityImpact(missionId, { success = false, failureId = '', outcome = null } = {}) {
   const entry = HUMANITY_STORIES[missionId] || HUMANITY_STORIES['MP-SC01-FIRST-EYES'];

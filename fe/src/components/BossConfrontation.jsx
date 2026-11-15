@@ -47,23 +47,23 @@ function EvidenceIcon({ type }) {
 const EVIDENCE_CARDS = [
   {
     id: 'DOC-01',
-    code: 'BÁO CÁO LỖI',
+    code: 'FAILURE REPORT',
     sub: '[DOC-01]',
-    desc: 'Telemetry chứng minh linh kiện quá tải bức xạ / nguồn / quỹ đạo.',
+    desc: 'Telemetry proving components exceeded radiation, power, or orbital limits.',
     matches: ['radiation', 'power', 'lifetime', 'pointing', 'data', 'science'],
   },
   {
     id: 'DOC-02',
-    code: 'HÓA ĐƠN KHỐNG',
+    code: 'INFLATED INVOICE',
     sub: '[DOC-02]',
-    desc: 'Chứng từ trần ngân sách ép xưởng dùng linh kiện [CHEAP/UNVERIFIED].',
+    desc: 'Budget-cap voucher that forced the workshop onto [CHEAP/UNVERIFIED] hardware.',
     matches: ['radiation', 'power', 'cost', 'data'],
   },
   {
     id: 'DOC-03',
-    code: 'SỔ ĐEN CỦA SẾP',
+    code: 'DIRECTOR LEDGER',
     sub: '[DOC-03]',
-    desc: 'Chỉ thị ép tiến độ cắt ngắn thời gian đặt hàng & kiểm định tiền phóng.',
+    desc: 'Schedule directive compressing procurement lead time and pre-launch testing.',
     matches: ['schedule', 'lifetime', 'pointing', 'power'],
   },
 ];
@@ -91,8 +91,8 @@ export default function BossConfrontation({
       playSoundAsset(audioOn, '06-11-2026-chime.wav', 0.3);
       setReply({
         ok: true,
-        speaker: 'SẾP KẾ TOÁN',
-        text: 'Hồ sơ nghiệm thu đã đạt chuẩn! Không cần truy cứu thêm.',
+        speaker: 'FINANCE DIRECTOR',
+        text: 'Acceptance telemetry passed all requirements! No further inquiry needed.',
       });
       return;
     }
@@ -100,8 +100,8 @@ export default function BossConfrontation({
       playSoundAsset(audioOn, '08-11-2026-alarm.wav', 0.3);
       setReply({
         ok: false,
-        speaker: 'SẾP KẾ TOÁN',
-        text: 'TỪ CHỐI: Nhật ký tiền phóng cho thấy bạn đã bỏ sót lỗi lắp ráp ở Phase 2 (Inspection)!',
+        speaker: 'FINANCE DIRECTOR',
+        text: 'DENIED: Pre-flight logs show unfixed assembly defects from Phase 2 (Inspection)!',
       });
       return;
     }
@@ -109,8 +109,8 @@ export default function BossConfrontation({
       playSoundAsset(audioOn, '08-11-2026-data_glitch.wav', 0.3);
       setReply({
         ok: false,
-        speaker: 'SẾP KẾ TOÁN',
-        text: `Bằng chứng ${card?.code || selectedDoc} chưa khớp nguyên nhân gốc (${killer.toUpperCase() || 'UNKNOWN'}). Chọn chứng cứ khác!`,
+        speaker: 'FINANCE DIRECTOR',
+        text: `Evidence ${card?.code || selectedDoc} does not match root cause (${killer.toUpperCase() || 'UNKNOWN'}). Pick matching evidence!`,
       });
       return;
     }
@@ -120,20 +120,20 @@ export default function BossConfrontation({
     }
     setReply({
       ok: true,
-      speaker: 'SẾP KẾ TOÁN',
-      text: `Chứng cứ ${card.code} không thể chối cãi... Được rồi! Duyệt cấp thêm +$80M ngân sách, +18 tháng và +1 vạch uy tín!`,
+      speaker: 'FINANCE DIRECTOR',
+      text: `${card.code} proof is indisputable... Fine! Approving +$80M emergency budget, +18 months schedule, and +1 authorization credit!`,
     });
   };
 
   const bossLine = reply
     ? reply.text
     : canConfront
-      ? 'CÁI... CÁI GÌ?! ĐỂ TÔI XEM LẠI ĐÃ...'
-      : 'Lần này làm tốt đấy, tôi đang duyệt bảng kê!';
+      ? 'WAIT... HOLD ON! LET ME CHECK THOSE NUMBERS AGAIN...'
+      : 'Good job this time — signing off on the invoice now!';
 
   const engLine = canConfront
-    ? 'LỖI HỆ THỐNG THẾ NÀY, SẾP GIẢI THÍCH SAO?!'
-    : 'SỐ LIỆU ĐẠT CHUẨN 100%, MỜI SẾP KÝ NGHIỆM THU!';
+    ? 'WITH THIS TELEMETRY FAILURE, HOW DO YOU EXPLAIN THE BUDGET CUTS?'
+    : '100% MISSION TELEMETRY VERIFIED — READY FOR SIGN-OFF!';
 
   const unlockedPct = unlocked || budgetBonus > 0 ? 100 : canConfront ? 28 : 100;
 
@@ -141,7 +141,7 @@ export default function BossConfrontation({
     <div className="boss-confront-stage">
       <div className="boss-confront-banner">
         <div className="boss-banner-sub">BOSS CONFRONTATION</div>
-        <div className="boss-banner-main">CHẤT VẤN SẾP</div>
+        <div className="boss-banner-main">EXECUTIVE AUDIT</div>
       </div>
 
       <div className="boss-faceoff">
@@ -161,7 +161,7 @@ export default function BossConfrontation({
       </div>
 
       <div className="audit-drawer">
-        <div className="audit-drawer-title">CHỌN CHỨNG CỨ</div>
+        <div className="audit-drawer-title">SELECT EVIDENCE</div>
 
         <div className="audit-cards">
           {EVIDENCE_CARDS.map((card) => (
@@ -178,30 +178,30 @@ export default function BossConfrontation({
         </div>
 
         <div className="audit-unlock-bar">
-          <span className="small">NGÂN SÁCH ĐÃ MỞ KHÓA</span>
+          <span className="small">UNLOCKED BUDGET</span>
           <div className="unlock-gauge-row">
-            <div className="unlock-dial" aria-hidden="true">⚙</div>
+            <div className="unlock-dial" aria-hidden="true">BUDGET</div>
             <div className="gauge-bar unlock-track">
               <div className="gauge-fill" style={{ width: `${unlockedPct}%` }} />
             </div>
             <strong className="unlock-amount">
-              ${effectiveBudget || '-'}M | {effectiveDeadline || '-'} MO {unlocked || budgetBonus > 0 ? '🔓' : '🔒'}
+              ${effectiveBudget || '-'}M | {effectiveDeadline || '-'} MO {unlocked || budgetBonus > 0 ? '[UNLOCKED]' : '[LOCKED]'}
             </strong>
           </div>
         </div>
 
         <div className="row-between" style={{ marginTop: 10 }}>
           <button className="btn" onClick={onReturnBuild}>
-            RÚT LUI
+            STAND DOWN
           </button>
           <div className="row-wrap">
             {unlocked && (
               <button className="btn primary" onClick={onReturnBuild}>
-                ÁP DỤNG NGÂN SÁCH MỚI → VỀ XƯỞNG
+                APPLY NEW BUDGET &amp; RETURN TO BAY
               </button>
             )}
             <button className="btn warn hazard" disabled={unlocked} onClick={submitConfrontation}>
-              TẤN CÔNG
+              PRESENT PROOF
             </button>
           </div>
         </div>

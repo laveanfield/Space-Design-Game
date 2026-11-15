@@ -125,8 +125,8 @@ export default function PartCard({ slot, item, selected, warnText, budgetMusd, o
   const tip = [
     item.name,
     insight?.where || item.description_simple,
-    insight?.pros ? `+ Lợi ích: ${insight.pros}` : null,
-    insight?.cons ? `- Tác hại: ${insight.cons}` : null,
+    insight?.pros ? `+ Pros: ${insight.pros}` : null,
+    insight?.cons ? `- Cons: ${insight.cons}` : null,
     item.lead_time_months != null ? `Lead time: ${item.lead_time_months} mo` : null,
     warnText,
   ]
@@ -141,7 +141,7 @@ export default function PartCard({ slot, item, selected, warnText, budgetMusd, o
     >
       <div className={`part-card-ribbon ${tag.cls}`}>
         <span className="ribbon-label">[{tag.text}]</span>
-        {selected && <span className="part-selected-pill">✓ ĐANG CHỌN</span>}
+        {selected && <span className="part-selected-pill">SELECTED</span>}
       </div>
       <div className="part-card-main">
         <PartThumb slot={slot} id={item.id} />
@@ -160,19 +160,19 @@ export default function PartCard({ slot, item, selected, warnText, budgetMusd, o
               </span>
             ))}
           </div>
-          {warnText && <div className="part-nofit">! {warnText}</div>}
+          {warnText && <div className="part-nofit">⚠ {warnText}</div>}
         </div>
       </div>
       {selected && insight && (
         <div className="part-insight-drawer">
           <div className="insight-row where">
-            <strong>📍 DÙNG Ở ĐÂU:</strong> {insight.where}
+            <strong>WHERE USED:</strong> {insight.where}
           </div>
           <div className="insight-row pros">
-            <strong>✅ LỢI ÍCH:</strong> {insight.pros}
+            <strong>PROS (+):</strong> {insight.pros}
           </div>
           <div className="insight-row cons">
-            <strong>⚠️ TÁC HẠI / RỦI RO:</strong> {insight.cons}
+            <strong>⚠ RISKS / CONS (-):</strong> {insight.cons}
           </div>
         </div>
       )}

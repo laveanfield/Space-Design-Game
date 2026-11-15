@@ -23,21 +23,21 @@ DURATION = 7 * 86400.0
 def settings(design, stations):
     raw = design.get("communications") or {}
     if not isinstance(raw, dict):
-        raise EngineError("communications phải là một object")
+        raise EngineError("communications must be an object")
     default_station = "GS-GOLDSTONE" if any(s["id"] == "GS-GOLDSTONE" for s in stations) else stations[0]["id"]
     cfg = {"station_id": raw.get("station_id", default_station),
            "tx_scale": raw.get("tx_scale", 1.0), "rate_scale": raw.get("rate_scale", 1.0),
            "strategy": raw.get("strategy", "balanced"), "target_id": raw.get("target_id", "all")}
     if not isinstance(cfg["station_id"], str) or cfg["station_id"] not in {s["id"] for s in stations}:
-        raise EngineError("Trạm mặt đất không hợp lệ")
+        raise EngineError("Invalid ground station selection")
     for key, lo, hi in (("tx_scale", 0.25, 1.0), ("rate_scale", 0.1, 1.0)):
         val = cfg[key]
         if isinstance(val, bool) or not isinstance(val, (float, int)) or not math.isfinite(val) or not lo <= val <= hi:
-            raise EngineError(f"communications.{key} phải trong [{lo}, {hi}]")
+            raise EngineError(f"communications.{key} must be within [{lo}, {hi}]")
     if not isinstance(cfg["strategy"], str) or cfg["strategy"] not in ("balanced", "data_first", "save_power"):
-        raise EngineError("Chế độ liên lạc không hợp lệ")
+        raise EngineError("Invalid communications strategy")
     if not isinstance(cfg["target_id"], str):
-        raise EngineError("Mục tiêu quan sát không hợp lệ")
+        raise EngineError("Invalid observation target")
     return cfg
 
 
@@ -87,13 +87,15 @@ def simulate(design, items, metrics, ruleset, targets, *, duration_s=DURATION, e
     if cfg["target_id"] != "all":
         targets = [t for t in targets if t["id"] == cfg["target_id"]]
         if not targets:
-            raise EngineError("Mục tiêu quan sát không hợp lệ")
+            raise EngineError("Invalid observation target")
     ins = [i for i in items["instruments"] if i.get("science_category") == "Earth observation"]
     imaging = bool(ins)
     a = orbit.RE + metrics["orbit.altitude_km"] * 1000
     inc = items["orbit"]["inclination_deg"]
     comm = items["comm"]
-    cap = float(ruleset.get("buffer_capacity_gb", 8.))
+    # OBC storage is an actual build choice. The ruleset value remains only a
+    # compatibility fallback for older catalogs that do not expose storage_gb.
+    cap = float(items["obc"].get("storage_gb", ruleset.get("buffer_capacity_gb", 8.)))
     battery = items["battery"]["capacity_wh"]
     # The daily payload budget is distributed across the planned target acquisitions.
     # Keeping target_count before filtering means selecting one target does not inflate one frame to a full day.
@@ -146,7 +148,7 @@ def simulate(design, items, metrics, ruleset, targets, *, duration_s=DURATION, e
                 continue
             if sum(s["remaining_gb"] for s in queue) + size > cap:
                 lost += size
-                events.append({"t_s": t, "code": "BUFFER_FULL", "text": "Bộ nhớ đầy: bỏ lỡ ảnh mới, dữ liệu cũ vẫn chờ truyền."})
+                events.append({"t_s": t, "code": "BUFFER_FULL", "text": "Storage full: dropped new capture while older frames await downlink."})
                 continue
             shot = {"n": len(evidence)+1, "t_s": t, "k": min(12, int(t/duration_s*12)+1),
                     "month": round((int(t/duration_s*12)+1), 1),
@@ -161,7 +163,7 @@ def simulate(design, items, metrics, ruleset, targets, *, duration_s=DURATION, e
             energy = camera_load * h / 3600
             captured_wh += energy
             soc = max(0., soc - energy/battery)
-            events.append({"t_s": t, "code": "CAPTURE", "text": f"Chụp #{shot['n']} tại {target['name']}; lưu {size:.2f} GB, chờ trạm thu."})
+            events.append({"t_s": t, "code": "CAPTURE", "text": f"Captured #{shot['n']} at {target['name']}; buffered {size:.2f} GB awaiting downlink."})
         margin, fspl, range_km = None, None, None
         state, transmitting = "NO_PASS", False
         if visible:
@@ -198,7 +200,7 @@ def simulate(design, items, metrics, ruleset, targets, *, duration_s=DURATION, e
                                 shot.update(delivered_t_s=t+tx_seconds, delivered_k=min(12, int((t+tx_seconds)/duration_s*12)+1))
                                 queue.pop(0)
                                 if not shot.get("telemetry"):
-                                    events.append({"t_s": t+tx_seconds, "code": "DOWNLINK", "text": f"Ảnh #{shot['n']} đã về {station['name']}."})
+                                    events.append({"t_s": t+tx_seconds, "code": "DOWNLINK", "text": f"Frame #{shot['n']} delivered to {station['name']}."})
                     else:
                         state = "POWER_HOLD"
                         blocked_power += 1
@@ -229,29 +231,30 @@ def simulate(design, items, metrics, ruleset, targets, *, duration_s=DURATION, e
     delivered = [s for s in evidence if s["delivered_t_s"] is not None and s["blur"] < .35]
     reasons = []
     if imaging and not evidence:
-        reasons.append("TARGET_ACCESS: Không có ảnh dùng được; kiểm tra mặt phẳng quỹ đạo, vùng quan sát, ánh sáng và pin.")
+        reasons.append("TARGET_ACCESS: No usable captures collected; check orbit plane, target coverage, solar lighting, and battery.")
     if not windows:
-        reasons.append("NO_CONTACT: Quỹ đạo không đi qua trạm ở góc ngẩng tối thiểu; chọn trạm khác.")
+        reasons.append("NO_CONTACT: Orbit never rises above ground station minimum elevation; choose another ground station.")
     if blocked_margin:
-        reasons.append("LINK_MARGIN: Có thấy trạm nhưng tín hiệu yếu; giảm tốc độ để tăng biên tín hiệu hoặc tăng công suất trong giới hạn radio.")
+        reasons.append("LINK_MARGIN: Station came into view, but link margin stayed below threshold; lower downlink rate or raise TX power within hardware limits.")
     if blocked_power:
-        reasons.append("POWER_HOLD: Pin thấp nên phải bỏ cửa sổ truyền; tăng nguồn/pin hoặc giảm tải và công suất phát.")
+        reasons.append("POWER_HOLD: Low battery reserve forced skipped downlink windows; upgrade solar/battery or trim payload load.")
     if queue:
-        reasons.append("DATA_BACKLOG: Ảnh còn trong bộ nhớ; cần đủ thời gian liên lạc và tốc độ để gửi trọn gói.")
+        reasons.append("DATA_BACKLOG: Captured frames remain buffered onboard; total contact time and throughput were insufficient to drain the queue.")
     if lost:
-        reasons.append("BUFFER_FULL: Bộ nhớ đầy làm bỏ ảnh mới; tăng tốc độ truyền hoặc giảm lượng dữ liệu quan sát.")
+        reasons.append("BUFFER_FULL: Onboard storage overflowed and dropped incoming frames; raise downlink capacity or trim capture volume.")
     return {"schema_version": "mission-comms/1", "duration_s": duration_s, "dt_s": DT, "settings": cfg,
             "station": station, "targets": targets, "samples": samples, "windows": windows, "events": events,
             "evidence": evidence, "diagnostics": reasons,
             "summary": {"captured": len(evidence), "delivered": len(delivered), "pending": len(queue), "missed": missed,
+                        "storage_capacity_gb": round(cap, 4),
                         "sent_gb": round(sent_total, 4), "buffer_gb": round(sum(s["remaining_gb"] for s in queue), 4),
                         "lost_gb": round(lost, 4), "contact_min": contact_s/60, "usable_min": usable_s/60,
                         "min_soc": min_soc, "tx_energy_wh": tx_wh, "capture_energy_wh": captured_wh,
                         "power_holds": blocked_power, "weak_signal_steps": blocked_margin},
-            "assumptions": ["7 ngày vận hành đại diện, quỹ đạo tròn, Trái Đất cầu tự quay; lấy mẫu 60 giây, bỏ qua J2.",
-                            "12 đoạn vận hành được ghép với 12 mốc lão hóa; không ngoại suy cửa sổ thành lịch liên lạc cả năm.",
-                            "Mục tiêu vào vùng quan sát khi góc ngẩng ≥45°; tối đa 1 ảnh/mục tiêu/ngày; RGB cần Mặt Trời cao >10° tại mục tiêu.",
-                            "Ngân sách dữ liệu payload/ngày chia đều cho số mục tiêu dự kiến (mỗi gói tối thiểu 0,02 GB); bộ nhớ 8 GB mặc định, truyền FIFO.",
-                            "Gain thu 35 dBi cho RF hoặc 110 dBi cho optical; 300 K, Eb/N0 9,6 dB, margin ≥3 dB, cáp 2 dB, phân cực tròn khớp: giả định gameplay.",
-                            "Cửa sổ/tốc độ dùng đường hình học; tia khúc xạ P.834 được tính ở đỉnh mỗi lượt (0,1–12 GHz). Suy hao thời tiết giả định 0; ngoài dải dùng hình học.",
-                            "Thông lượng là tốc độ radio đã cấu hình × hiệu suất khi đủ margin, không phải thông lượng do ray tracer suy ra."]}
+            "assumptions": ["7-day representative simulation using circular orbit and rotating spherical Earth; 60s sampling, J2 perturbations omitted.",
+                            "12 operational segments map to 12 aging steps rather than extrapolating 7-day contact timing across a full year.",
+                            "Targets enter field of view above 45 deg elevation (max 1 shot/target/day); RGB imagers require >10 deg target sun elevation.",
+                            "Daily payload data budget divides evenly across planned targets (min 0.02 GB/packet); storage matches selected OBC and drains FIFO.",
+                            "Receive gain 35 dBi (RF) or 110 dBi (optical), 300K, Eb/N0 9.6 dB, >=3 dB margin, 2 dB cable loss, matched circular polarization: gameplay parameters.",
+                            "Geometric link mask schedules contacts; ITU-R P.834 atmospheric ray trace runs at pass peaks (0.1-12 GHz) with clear-sky weather assumptions.",
+                            "Effective throughput equals configured radio bitrate x downlink efficiency while margin holds, not a ray-tracer-inferred bitrate."]}

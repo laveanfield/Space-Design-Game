@@ -1,16 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { playSoundAsset } from '../api/client';
 import AccidentNewspaper from '../components/AccidentNewspaper';
-import HumanityImpactCard from '../components/HumanityImpactCard';
 import { BossPortrait, EngineerPortrait } from './Portraits';
 import { CAST, fill } from './14-11-2026-script';
 
 /**
- * StoryScene -- Cua so Terminal Comm-Link tuong tac:
- * Nguoi choi [BAN // ENG-01] truc tiep chon loi phan bien / de xuat voi Sep [DIR-01],
- * va chung kien Sep dong dau [TU CHOI PHE DUYET] bac bo de xuat ngay truoc gio phong / sau man choi.
+ * StoryScene -- Interactive Comm-Link terminal window:
+ * Player [YOU // ENG-01] responds to Executive Director [DIR-01]
+ * and sees management rejection stamps or post-flight debrief outcomes.
  */
-const TYPE_SPEED = 42; // ky tu / giay cho cam giac terminal nhanh nhay
+const TYPE_SPEED = 42;
 
 function hydrateLines(lines, ctx) {
   const c = ctx || {};
@@ -24,7 +23,7 @@ function hydrateLines(lines, ctx) {
           ...ch,
           tag: fill(ch.tag, c),
           text: fill(ch.text, c),
-          stamp: ch.stamp ? fill(ch.stamp, c) : 'TỪ CHỐI PHÊ DUYỆT // REQUEST DENIED',
+          stamp: ch.stamp ? fill(ch.stamp, c) : 'REQUEST DENIED // OVERRIDDEN',
           bossReply: fill(ch.bossReply, c),
           engNote: ch.engNote ? fill(ch.engNote, c) : '',
         }))
@@ -87,7 +86,6 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
       copy.splice(i + 1, 0, ...inserted);
       return copy;
     });
-    // Nhay thang sang cau bac bo cua Sep (i + 2) de cau ban vua chon hien ngay trong nhat ky phia tren
     setI((prevIdx) => prevIdx + 2);
   };
 
@@ -127,8 +125,6 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
   const speaking = line.who;
   const mood = ctx?.mood || {};
   const history = activeScript.slice(0, i);
-  // Phan duoi khung chat: 2 to bao (tai nan ten lua + hau qua nhan loai) thay cho khung "THONG DIEP HAU QUA" cu.
-  // Chi man phong that bai moi co ctx.accident; man tong ket (review_*) chi hien to bao hau qua.
   const showNews = Boolean(ctx?.showImpact);
   const accident = ctx?.accident || null;
 
@@ -148,14 +144,14 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
 
         <div className="term-comm-nodes">
           <div className={`term-node ${speaking === 'eng' || waitingChoice ? 'speaking eng' : ''}`}>
-            <span className="term-role-pill player">VAI CỦA BẠN // PLAYER</span>
+            <span className="term-role-pill player">YOUR ROLE // PLAYER</span>
             <EngineerPortrait mood={mood.eng || (speaking === 'eng' || waitingChoice ? 'calm' : 'worried')} />
             <div className="term-node-label">
-              [BẠN // ENG-01] KỸ SƯ TRƯỞNG
+              [YOU // ENG-01] LEAD ENGINEER
             </div>
           </div>
           <div className={`term-node ${speaking === 'boss' && !waitingChoice ? 'speaking boss' : ''}`}>
-            <span className="term-role-pill npc">BAN GIÁM ĐỐC // NPC</span>
+            <span className="term-role-pill npc">MANAGEMENT // NPC</span>
             <BossPortrait mood={line.stamp ? 'angry' : mood.boss || 'smug'} />
             <div className="term-node-label">
               [DIR-01] {CAST.boss.name}
@@ -166,14 +162,14 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
         <div ref={logRef} className="term-comm-log" onClick={waitingChoice ? undefined : next}>
           {history.map((h, idx) => (
             <div key={idx} className={`term-log-line muted ${h.who}`}>
-              <span className="term-tag">[{h.who === 'boss' ? 'DIR-01' : 'BẠN // ENG-01'}]</span>{' '}
+              <span className="term-tag">[{h.who === 'boss' ? 'DIR-01' : 'YOU // ENG-01'}]</span>{' '}
               {h.choiceTag && <span className="term-choice-echo">[{h.choiceTag}]</span>}{' '}
-              {h.stamp && <span className="term-reject-stamp">⛔ {h.stamp}</span>} {h.text}
+              {h.stamp && <span className="term-reject-stamp">⚠ {h.stamp}</span>} {h.text}
             </div>
           ))}
           <div className={`term-log-active ${speaking} ${line.isThought ? 'thought' : ''}`}>
-            <span className="term-tag">[{speaking === 'boss' ? 'DIR-01' : 'BẠN // ENG-01'}]:&gt;</span>{' '}
-            {line.stamp && <span className="term-reject-stamp">⛔ {line.stamp}</span>} {line.text.slice(0, typed)}
+            <span className="term-tag">[{speaking === 'boss' ? 'DIR-01' : 'YOU // ENG-01'}]:&gt;</span>{' '}
+            {line.stamp && <span className="term-reject-stamp">⚠ {line.stamp}</span>} {line.text.slice(0, typed)}
             <span className="story-caret">▍</span>
           </div>
         </div>
@@ -181,7 +177,7 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
         {waitingChoice && (
           <div className="term-choices-box">
             <div className="term-choices-title">
-              CHỌN LỜI PHẢN HỒI CỦA BẠN [BẠN // ENG-01] (Bấm phím 1-{line.choices.length} hoặc click):
+              SELECT YOUR RESPONSE [YOU // ENG-01] (Press 1-{line.choices.length} or click):
             </div>
             <div className="term-choices-list">
               {line.choices.map((ch, idx) => (
@@ -195,27 +191,17 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
                     <span className="term-choice-key">[{idx + 1}]</span>
                     <span className="term-choice-tag">{ch.tag}</span>
                   </span>
-                  <span className="term-choice-text">“{ch.text}”</span>
+                  <span className="term-choice-text">&ldquo;{ch.text}&rdquo;</span>
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {showNews && (
-          <div className={`story-news ${accident ? '' : 'single'}`}>
-            {accident && (
-              <div className="story-news-item">
-                <AccidentNewspaper info={accident} variant="compact" />
-              </div>
-            )}
+        {showNews && accident && (
+          <div className="story-news single">
             <div className="story-news-item">
-              <HumanityImpactCard
-                missionId={ctx?.mission}
-                success={Boolean(ctx?.success)}
-                failureId={ctx?.failureId || ''}
-                compact
-              />
+              <AccidentNewspaper info={accident} variant="compact" />
             </div>
           </div>
         )}
@@ -223,8 +209,8 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
         <div className="term-comm-footer">
           <span className="small muted">
             {waitingChoice
-              ? `CHỌN PHẢN HỒI [1-${line.choices.length}] ĐỂ NÓI VỚI SẾP • [ESC] BỎ QUA`
-              : `MSG ${i + 1}/${activeScript.length} • [ENTER/CLICK] TIẾP TỤC • [ESC] BỎ QUA`}
+              ? `CHOOSE RESPONSE [1-${line.choices.length}] TO REPLY TO DIRECTOR | [ESC] SKIP`
+              : `MSG ${i + 1}/${activeScript.length} | [ENTER/CLICK] CONTINUE | [ESC] SKIP`}
           </span>
           <div className="row-wrap">
             <button className="btn small" onClick={onClose}>
@@ -232,7 +218,7 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
             </button>
             <button className={`btn small ${waitingChoice ? '' : 'primary'}`} onClick={next}>
               {waitingChoice
-                ? '↑ CHỌN CÂU TRẢ LỜI Ở TRÊN'
+                ? 'SELECT RESPONSE ABOVE'
                 : i + 1 >= activeScript.length && typed >= line.text.length
                 ? 'ACKNOWLEDGE [DONE]'
                 : 'ACK / NEXT >>'}

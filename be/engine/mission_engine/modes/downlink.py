@@ -26,9 +26,9 @@ class Downlink:
 
     def hud(self, st, t):
         nxt = next((w for w in st["windows"] if w["t1"] >= t), None)
-        lines = [f"Đã hạ {st['downlinked_gb']:.3f} / {st['goal_gb']:.3f} GB"]
+        lines = [f"Downlinked {st['downlinked_gb']:.3f} / {st['goal_gb']:.3f} GB"]
         if nxt:
-            lines.append(f"Trạm {nxt['name']}: " + ("ĐANG TRONG TẦM" if nxt["t0"] <= t else f"sau {nxt['t0'] - t:,.0f} s"))
+            lines.append(f"Station {nxt['name']}: " + ("IN VIEW" if nxt["t0"] <= t else f"in {nxt['t0'] - t:,.0f} s"))
         return {"title": "DOWNLINK", "lines": lines, "prompts": [], "windows": st["windows"][:6]}
 
     def view_hint(self, st, t):

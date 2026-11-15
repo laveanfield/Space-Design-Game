@@ -149,7 +149,7 @@ export default function PadExplosionArt({ scene = 'pad-boom', seed = 7, classNam
       viewBox={box ? `${r1(box.x)} ${r1(box.y)} ${r1(box.w)} ${r1(box.h)}` : `0 0 ${W} ${H}`}
       preserveAspectRatio="xMidYMid slice"
       role="img"
-      aria-label={label || 'Tranh minh họa tên lửa nổ ở bệ phóng'}
+      aria-label={label || 'Illustration of launch pad vehicle anomaly'}
     >
       <defs>
         <linearGradient id={id('skyDawn')} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2={HZ}>

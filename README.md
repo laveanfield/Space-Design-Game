@@ -15,15 +15,18 @@ Tài liệu bàn giao phần **signal physics, năng lượng và truyền dữ 
 | Mô phỏng vận hành | Quỹ đạo ECI chuyển sang ECEF, trạm thu, mục tiêu quan sát, ngày/đêm, cửa sổ liên lạc trong 7 ngày đại diện | [mission_comms.py](be/engine/mission_engine/integrations/mission_comms.py) |
 | Pin và truyền tin | Tải nền, năng lượng chụp ảnh, tải phát, sạc khi có nắng và ngưỡng dự trữ cho radio | [mission_comms.py](be/engine/mission_engine/integrations/mission_comms.py) |
 | Store-and-forward | Gói ảnh xếp hàng FIFO, truyền dở được giữ lại, chỉ ghi nhận ảnh nhận đủ; bộ nhớ đầy từ chối ảnh mới | [mission_comms.py](be/engine/mission_engine/integrations/mission_comms.py) |
+| Bộ nhớ theo thiết kế | Dung lượng buffer lấy trực tiếp từ `storage_gb` của OBC người chơi chọn; OBC nhỏ có thể bỏ lỡ ảnh dù payload vẫn hoạt động | [mission_comms.py](be/engine/mission_engine/integrations/mission_comms.py), [catalog.json](be/build/catalog.json) |
 | Cấu hình thiết kế | Chọn trạm, mục tiêu, mức công suất phát, bitrate và chiến lược pin; thiết kế cũ thiếu cấu hình vẫn dùng mặc định | [models.py](be/engine/mission_engine/contract/models.py), [metrics.py](be/engine/mission_engine/rules/metrics.py) |
 | Campaign | Kết nối kết quả capture/downlink vào bằng chứng nhiệm vụ; giữ các rủi ro tuổi thọ, nguồn và bức xạ của campaign | [service.py](be/engine/mission_engine/service.py), [lifetime.py](be/engine/mission_engine/campaign/lifetime.py) |
 | Manual OPS | Dùng adapter RF, cấu hình trạm, tải phát và dự trữ pin trong session vận hành | [ops.py](be/engine/mission_engine/session/ops.py) |
-| UI | Cấu hình communications trong BUILD, vận hành tự động sau tách vệ tinh, giải thích hậu quả thiết kế, RF lab qua `?dev=1` | [MissionComms.jsx](fe/src/components/MissionComms.jsx), [RadioLinkLab.jsx](fe/src/components/RadioLinkLab.jsx), [App.jsx](fe/src/App.jsx) |
+| UI | Mở đầu khủng hoảng hư cấu, BUILD gọn, inspection theo payload → full stack, gravity turn, camera bám vệ tinh sau tách và chuỗi Observation → Storage → Communication → Evidence | [CrisisIntro.jsx](fe/src/components/CrisisIntro.jsx), [CampaignPanels.jsx](fe/src/components/CampaignPanels.jsx), [App.jsx](fe/src/App.jsx) |
 | Đồng hồ và bằng chứng | Đồng bộ playback với capture/contact/downlink; ảnh không được xuất hiện là đã nhận trước khi truyền xong hoặc sau điểm campaign đã thất bại | [missionPlayback.js](fe/src/components/missionPlayback.js), [CampaignPanels.jsx](fe/src/components/CampaignPanels.jsx), [EvidenceGallery.jsx](fe/src/components/EvidenceGallery.jsx) |
 
 [run_server.py](be/run_server.py) là **entry point chạy API**, không chứa toàn bộ signal physics và hiện không có thay đổi so với HEAD tại thời điểm kiểm tra. Chỉ chuyển file này sang branch khác sẽ không mang theo tính năng communications.
 
 Luồng người chơi hiện tại: **BUILD → Launch → tách vệ tinh thành công → tự động chụp/truyền trên quỹ đạo → Review → chỉnh thiết kế và thử lại**. Không yêu cầu thêm bước LINK_OPS hay nút chụp/truyền thủ công riêng.
+
+Mở đầu lần đầu dùng nhiệm vụ **“ĐÔI MẮT ĐẦU TIÊN NHÌN VỀ TRÁI ĐẤT”** và được lưu ở local storage để không tự lặp lại. Người chơi có thể xem lại bằng nút `↻ MỞ ĐẦU`. Khi vào INSPECT, camera mở ở PAYLOAD FOCUS để căn trục quang học; trục gương không render trong FULL STACK. LAUNCH và ORBIT luôn khởi tạo ở `x1`, sau đó cho phép `x1, x2, x5, x10, x30, x100`.
 
 ## 2. Quy tắc vật lý và giới hạn hiện tại
 
@@ -60,7 +63,7 @@ Nếu các đại lượng khác giữ nguyên, công thức trong adapter cho t
 | RGB | Mặt Trời cao >10° tại mục tiêu | Không dùng RGB để chụp một mục tiêu đang tối |
 | Vùng quan sát minh họa | Góc ngẩng từ mục tiêu ≥45° | Chưa phải footprint từ thông số camera thực |
 | Nhịp chụp | Tối đa 1 ảnh/mục tiêu/24 giờ | Lượt bị bỏ cũng có thể làm phải đợi đến chu kỳ tiếp theo theo logic hiện tại |
-| Bộ nhớ | Mặc định 8 GB | Gói ảnh đại diện tối thiểu 0,02 GB; ngân sách dữ liệu payload/ngày được chia đều cho số mục tiêu dự kiến |
+| Bộ nhớ | Theo `storage_gb` của OBC đã chọn | Gói ảnh đại diện tối thiểu 0,02 GB; ngân sách dữ liệu payload/ngày được chia đều cho số mục tiêu dự kiến |
 | Ảnh dùng được | Đã truyền trọn gói và `blur < 0.35` | Nhận được ảnh không đồng nghĩa ảnh có ích |
 
 Các ngưỡng này là **tham số của game**, không phải tiêu chuẩn chung cho mọi CubeSat. Dự trữ radio không ngăn tải nền tiếp tục làm cạn pin.

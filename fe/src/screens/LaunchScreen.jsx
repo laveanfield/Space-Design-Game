@@ -1,5 +1,4 @@
 import React from 'react';
-import { LaunchPadLive } from '../anatomy/LaunchPadFigure';
 import AccidentNewspaper, { buildAccidentInfo } from '../components/AccidentNewspaper';
 import { Dossier } from '../components/CampaignPanels';
 import HumanityImpactCard from '../components/HumanityImpactCard';
@@ -34,11 +33,11 @@ export default function LaunchScreen() {
     return (
       <div className="sandbox-end-wrap">
         <section className="panel sandbox-end-card">
-          <div className="sandbox-end-badge">✓ KẾT THÚC HƯỚNG DẪN SANDBOX</div>
-          <h2 className="sandbox-end-title">Kết thúc sandbox, quay về cốt truyện</h2>
+          <div className="sandbox-end-badge">SANDBOX WALKTHROUGH COMPLETE</div>
+          <h2 className="sandbox-end-title">Sandbox Complete — Return to Campaign</h2>
           <div className="sandbox-end-actions">
             <button type="button" className="btn neon-btn sandbox-return-btn" onClick={completeTutorialToBrief}>
-              ↩ RETURN (QUAY VỀ CỐT TRUYỆN)
+              RETURN TO MISSIONS
             </button>
           </div>
         </section>
@@ -90,7 +89,6 @@ export default function LaunchScreen() {
       </section>
 
       <section className="panel" data-tutorial="launch-sequencer">
-        <LaunchPadLive key={launchSeq} fired={launchFired} />
 
         <h2 className="panel-title" style={{ marginTop: 10 }}>
           <span>ASCENT SEQUENCER</span>
@@ -110,7 +108,7 @@ export default function LaunchScreen() {
 
         {!launchResult && (
           <div className="small muted" style={{ marginTop: 10 }}>
-            ĐANG PHÓNG. Không thể chỉnh sửa thiết kế trong lúc tên lửa rời bệ.
+            LAUNCH IN PROGRESS. Design cannot be modified after ignition.
           </div>
         )}
 
@@ -118,36 +116,28 @@ export default function LaunchScreen() {
           <>
             <div className="halt-banner">⚠ CRITICAL LAUNCH FAILURE</div>
             <Dossier dossier={launchResult.failure} />
-            <div style={{ marginTop: 10 }}>
-              <HumanityImpactCard
-                missionId={selectedMissionId}
-                success={false}
-                failureId={launchResult.failure?.kind || 'launch'}
-                compact
-              />
-            </div>
           </>
         )}
         {launchResult?.success && (
           <div className="ok-banner">
-            ĐÃ VÀO QUỸ ĐẠO. Bắt đầu theo dõi vận hành 12 tháng để kiểm chứng độ bền hệ thống.
+            ORBIT REACHED. Begin 12-month orbital operations to verify mission delivery.
           </div>
         )}
 
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {launchResult?.success && (
             <button className="btn primary hazard hazard-cta" data-tutorial="launch-next" disabled={busy} onClick={startLife}>
-              [ THEO DÕI 12 MỐC QUỸ ĐẠO [05] → ]
+              ENTER 12-EPOCH ORBIT OPS [05]
             </button>
           )}
           {launchResult && !launchResult.success && reputation > 0 && (
             <button className="btn primary" onClick={() => setPhase('design')}>
-              ← VỀ XƯỞNG SỬA THIẾT KẾ (CÒN {reputation}/{REP_MAX} VẠCH UY TÍN)
+              RETURN TO BUILD BAY ({reputation}/{REP_MAX} CREDITS LEFT)
             </button>
           )}
           {launchResult && !launchResult.success && reputation <= 0 && (
             <button className="btn warn" onClick={() => loadMission(selectedMissionId)}>
-              DỰ ÁN BỊ HỦY — NHẬN LẠI NHIỆM VỤ TỪ ĐẦU
+              PROGRAM CANCELED — RESTART MISSION
             </button>
           )}
         </div>

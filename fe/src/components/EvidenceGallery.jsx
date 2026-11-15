@@ -166,19 +166,19 @@ function Photo({ shot, shown, thermal, res, gb, onOpen }) {
   const state = !shown ? 'pending' : blurred ? 'bad' : 'ok';
   return (
     <button className={`evidence-card ${state}`} disabled={!shown} onClick={onOpen}
-            title={`${shot.target} · tháng ${shot.month}${shot.seu ? ' · SEU' : ''}`}>
+            title={`${shot.target} · month ${shot.month}${shot.seu ? ' · SEU' : ''}`}>
       {shown ? <ShotCanvas shot={shot} thermal={thermal} res={res} w={200} h={132} />
-             : <div className="evidence-pending"><span className="ev-spin" />⇣</div>}
+             : <div className="evidence-pending"><span className="ev-spin" />TX</div>}
       <div className="evidence-cap">
-        <span className={`ev-dot ${state}`}>{state === 'ok' ? '✔' : state === 'bad' ? '✕' : '…'}</span>
+        <span className={`ev-dot ${state}`}>{state === 'ok' ? 'OK' : state === 'bad' ? 'BLUR' : '...'}</span>
         <span>#{shot.n}</span>
-        {gb != null && <span className="ev-gb">💾 {fmtSize(gb)}</span>}
+        {gb != null && <span className="ev-gb">{fmtSize(gb)}</span>}
       </div>
     </button>
   );
 }
 
-/** step: moc dang hien (1..12). Chi hien anh da chup toi moc nay; anh hien khi delivered_k <= step. */
+/** step: current milestone (1..12). Show captured frames up to this step; reveal photo once delivered_k <= step. */
 export default function EvidenceGallery({ evidence, need, step, sensorName, imaging, altKm }) {
   const [open, setOpen] = useState(null);
   const thermal = /thermal|hồng ngoại|infrared/i.test(sensorName || imaging?.name || '');
@@ -191,31 +191,31 @@ export default function EvidenceGallery({ evidence, need, step, sensorName, imag
   return (
     <div className="evidence">
       <div className="evidence-head">
-        <span>{imaging?.theme === 'space_weather' ? '📡' : '📷'} {sensorName || imaging?.name}</span>
-        <span className="ev-meter" title="ảnh rõ đã về / ảnh cần">
+        <span>{sensorName || imaging?.name}</span>
+        <span className="ev-meter" title="Delivered usable frames / required evidence">
           {Array.from({ length: need }, (_, i) => <i key={i} className={i < usable ? 'on' : ''} />)}
           <b className={usable >= need ? 'ok-text' : ''}>{usable}/{need}</b>
         </span>
       </div>
-      {usable >= need && <div className="ok-banner" style={{ margin: '0 0 8px 0' }}>✔ ĐỦ BẰNG CHỨNG</div>}
+      {usable >= need && <div className="ok-banner" style={{ margin: '0 0 8px 0' }}>EVIDENCE QUOTA MET</div>}
       <div className="evidence-grid">
-        {taken.length === 0 && <div className="small muted">{{ methane: 'CH₄', space_weather: '☀' }[evidence[0]?.theme] || '🔥'} —</div>}
+        {taken.length === 0 && <div className="small muted">{{ methane: 'CH4', space_weather: 'SW' }[evidence[0]?.theme] || 'IR'} —</div>}
         {taken.map((s) => (
           <Photo key={s.n} shot={{ ...s, sensor }} shown={isShown(s)} thermal={thermal} res={res} gb={gb} onOpen={() => setOpen(s)} />
         ))}
       </div>
-      <div className="small muted" style={{ marginTop: 4 }}>ảnh minh họa · dung lượng ≈ GB/ngày ÷ số vòng/ngày</div>
+      <div className="small muted" style={{ marginTop: 4 }}>Representative imagery · frame size approx. GB/day divided by orbits/day</div>
       {open && (
         <div className="evidence-lightbox" onClick={() => setOpen(null)}>
           <div className="evidence-big" onClick={(e) => e.stopPropagation()}>
             <ShotCanvas shot={{ ...open, sensor }} thermal={thermal} res={res} w={640} h={422} />
             <div className="evidence-big-cap">
               <b>#{open.n} {open.target}</b>
-              <span>tháng {open.month}</span>
-              {gb != null && <span>💾 {fmtSize(gb)}</span>}
-              <span className={open.blur >= BLUR_USABLE ? 'err-text' : 'ok-text'}>{open.blur >= BLUR_USABLE ? '✕ nhòe' : '✔ rõ'}</span>
-              {open.seu && <span className="err-text">☢ SEU</span>}
-              <button className="btn" onClick={() => setOpen(null)}>✕</button>
+              <span>month {open.month}</span>
+              {gb != null && <span>{fmtSize(gb)}</span>}
+              <span className={open.blur >= BLUR_USABLE ? 'err-text' : 'ok-text'}>{open.blur >= BLUR_USABLE ? 'BLURRED' : 'CLEAR'}</span>
+              {open.seu && <span className="err-text">⚠ SEU</span>}
+              <button className="btn" onClick={() => setOpen(null)}>CLOSE</button>
             </div>
           </div>
         </div>

@@ -15,12 +15,21 @@ function pathOf(flight) {
   const s = flight.series;
   const alt = decodeF32(s.alt_km);
   const vel = decodeF32(s.v_inertial_ms);
+  const downrange = s.downrange_km ? decodeF32(s.downrange_km) : null;
+  const gammaDeg = s.gamma_deg ? decodeF32(s.gamma_deg) : null;
   const vMax = Math.max(1, vel[s.n - 1]);
   const pts = [];
   let range = 0;
   for (let i = 0; i < s.n; i++) {
-    const pitch = ((80 * Math.PI) / 180) * smooth(0.03, 0.92, vel[i] / vMax);
-    range += (vel[i] * Math.sin(pitch) * s.dt_s) / 1000;
+    if (downrange && downrange.length === s.n) {
+      range = downrange[i];
+    } else if (gammaDeg && gammaDeg.length === s.n) {
+      const gammaRad = (gammaDeg[i] * Math.PI) / 180;
+      range += (vel[i] * Math.cos(gammaRad) * s.dt_s) / 1000;
+    } else {
+      const pitch = ((85 * Math.PI) / 180) * smooth(0.03, 0.92, vel[i] / vMax);
+      range += (vel[i] * Math.sin(pitch) * s.dt_s) / 1000;
+    }
     pts.push({ t: i * s.dt_s, x: range, y: alt[i] });
   }
   const end = pts[pts.length - 1] || { t: 0, x: 0, y: 0 };
@@ -47,10 +56,10 @@ function pathOf(flight) {
     const p = pts[idx];
     const tag =
       flight.failure.kind === 'structural_maxq'
-        ? '✕ MAX-Q BREAKUP'
+        ? 'FAIL: MAX-Q BREAKUP'
         : flight.failure.kind === 'wrong_plane'
-          ? '✕ PLANE ERR'
-          : '✕ IMPACT / DV SHORT';
+          ? 'FAIL: PLANE ERR'
+          : 'FAIL: IMPACT / DV SHORT';
     failMark = { x: p.x, y: p.y, tag };
   }
 
@@ -104,7 +113,7 @@ export default function TrajectoryScope({ flight, runs = 0, updating = false }) 
         g.fillText(`${y.toFixed(0)}`, 4, Y(y) + 3);
       }
       g.fillText('km', 4, pad.t - 2);
-      g.fillText(`DOWNRANGE → ${xMax.toFixed(0)} km`, W - pad.r - 134, H - 6);
+      g.fillText(`DOWNRANGE: ${xMax.toFixed(0)} km`, W - pad.r - 134, H - 6);
       g.setLineDash([4, 4]);
       g.beginPath();
       g.moveTo(pad.l, Y(100));

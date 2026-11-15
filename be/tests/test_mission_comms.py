@@ -8,8 +8,9 @@ from fastapi.testclient import TestClient
 
 from mission_engine.service import Engine
 from mission_engine.api.app import create_app
-from mission_engine.integrations.mission_comms import game_link, ecef_position, EARTH
+from mission_engine.integrations.mission_comms import game_link, ecef_position, simulate, EARTH
 from mission_engine.kernels import orbit
+from mission_engine.rules import metrics
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -64,7 +65,8 @@ def test_store_forward_conserves_data_and_delivers_only_in_contact(operations):
             assert any(w["start_s"] <= shot["delivered_t_s"] <= w["end_s"] for w in windows)
     assert sum(s["size_gb"] for s in shots) == pytest.approx(
         operations["summary"]["sent_gb"] + operations["summary"]["buffer_gb"], abs=.0002)
-    assert all(0 <= s["soc"] <= 1 and 0 <= s["buffer_gb"] <= 8 for s in operations["samples"])
+    assert operations["summary"]["storage_capacity_gb"] == 32
+    assert all(0 <= s["soc"] <= 1 and 0 <= s["buffer_gb"] <= operations["summary"]["storage_capacity_gb"] for s in operations["samples"])
     assert all(s["margin_db"] >= 3 for s in operations["samples"] if s["state"] == "TRANSMITTING")
     assert all(s["state"] != "TRANSMITTING" for s in operations["samples"] if s["el_deg"] < operations["station"]["min_elevation_deg"])
     assert any(w["ray"]["neutral_ray"]["status"] == "computed" for w in windows)
@@ -82,6 +84,7 @@ def test_unreachable_station_never_delivers_or_banks_contact_credit(engine, desi
     life = engine.lifetime(d, "MP-SC01-FIRST-EYES")
     assert not life["outcome"]["success"]
     assert life["dossier"]["id"] == "data"
+    assert "Không có bằng chứng nào" in life["dossier"]["cause"]["vi"]
 
 
 def test_unreachable_target_is_not_photographed(engine, design):
@@ -90,6 +93,27 @@ def test_unreachable_target_is_not_photographed(engine, design):
     result = engine.communications(d, "MP-SC01-FIRST-EYES")
     assert not result["evidence"]
     assert any("TARGET_ACCESS" in reason for reason in result["diagnostics"])
+
+
+def test_selected_obc_storage_limits_capture(engine, design):
+    d = deepcopy(design)
+    resolved = metrics.resolve(d, engine.catalog)
+    resolved["stations"] = [{"id": "TEST", "name": "TEST", "lat_deg": 0., "lon_deg": 0., "min_elevation_deg": 0.}]
+    resolved["obc"] = {**resolved["obc"], "storage_gb": .01}
+    d["communications"] = {"station_id": "TEST"}
+    mission = engine.mission("MP-SC01-FIRST-EYES")
+    computed = metrics.compute(d, resolved, mission, mission.ruleset)
+    target = {"id": "TEST-TARGET", "name": "TEST TARGET", "lat_deg": 0., "lon_deg": 0.}
+    result = simulate(d, resolved, computed, mission.ruleset, [target], duration_s=60.)
+    assert result["summary"]["storage_capacity_gb"] == .01
+    assert result["summary"]["captured"] == 0
+    assert result["summary"]["lost_gb"] > 0
+    assert any("BUFFER_FULL" in reason for reason in result["diagnostics"])
+
+
+def test_manual_ops_uses_selected_obc_storage(engine, design):
+    session = engine.ops_open(design, "MP-SC01-FIRST-EYES")
+    assert session.cap_gb == 32
 
 
 def test_invalid_configuration_is_client_error():

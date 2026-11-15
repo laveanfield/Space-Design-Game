@@ -1,5 +1,6 @@
 import React from 'react';
 import { getHumanityImpact } from '../story/humanityImpact';
+import { canShowOrbitalTimes } from './missionPlayback';
 
 function MissionImpactArt({ missionKey, success }) {
   if (missionKey === 'space_weather') {
@@ -126,10 +127,10 @@ function MissionImpactArt({ missionKey, success }) {
   );
 }
 
-/** Ngay thang tren dau bao (theo dong ho may nguoi choi). */
+/** Edition date displayed on newspaper masthead (player local clock). */
 function editionDate() {
   try {
-    return new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+    return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: '2-digit', year: 'numeric' });
   } catch {
     return '';
   }
@@ -141,9 +142,21 @@ function editionDate() {
  * khung "nhung con so" va trich dan noi bat. Ten bao "The Orbital Times" la HU CAU (khong dung ten / logo
  * cua to bao that nao). Noi dung cau chuyen giu nguyen tu story/humanityImpact.js.
  */
-export default function HumanityImpactCard({ missionId, success, failureId, outcome, compact = false }) {
-  const story = getHumanityImpact(missionId, { success, failureId, outcome });
-  const toneClass = story.success ? 'ok' : 'fail';
+export default function HumanityImpactCard({
+  missionId,
+  success,
+  failureId,
+  outcome,
+  lifeData,
+  launchResult,
+  flightData,
+  compact = false,
+}) {
+  if (!canShowOrbitalTimes({ missionId, success, outcome, lifeData, launchResult, flightData })) {
+    return null;
+  }
+  const story = getHumanityImpact(missionId, { success: true, failureId, outcome });
+  const toneClass = 'ok';
   const paragraphs = compact ? story.paragraphs.slice(0, 1) : story.paragraphs;
 
   return (
@@ -151,32 +164,32 @@ export default function HumanityImpactCard({ missionId, success, failureId, outc
       <header className="news-masthead">
         {!compact && (
           <div className="news-ears">
-            <span>ẤN BẢN TRÁI ĐẤT</span>
-            <span>“Mọi tin tức đều bắt đầu từ quỹ đạo”</span>
+            <span>PLANETARY EDITION</span>
+            <span>&ldquo;Every headline begins in orbit&rdquo;</span>
           </div>
         )}
         <h2 className="news-name">The Orbital Times</h2>
         <div className="news-dateline">
           <span>{story.levelTag}</span>
           <span>{editionDate()}</span>
-          <span>ẤN BẢN MINH HỌA</span>
+          <span>ILLUSTRATED EDITION</span>
         </div>
       </header>
 
       <div className="news-breaking">
-        <b>{story.success ? 'TIN NÓNG' : 'TIN KHẨN'}</b>
+        <b>{story.success ? 'BREAKING NEWS' : 'URGENT BULLETIN'}</b>
         <span>{story.badge}</span>
       </div>
 
       <h1 className="news-headline">{story.headline}</h1>
       {story.causeBridge && <p className="news-deck">{story.causeBridge}</p>}
-      <div className="news-byline">Bản tin Không gian &amp; Trái Đất · Trạm điều hành mặt đất</div>
+      <div className="news-byline">Earth &amp; Space Desk | Ground Operations Terminal</div>
 
       <div className="news-body">
         <div className="news-main">
           <figure className="news-photo">
             <img src={`/mission_art/${missionId}.jpg`} alt="" draggable={false} />
-            <figcaption>Ảnh minh họa vùng nhiệm vụ nhìn từ quỹ đạo.</figcaption>
+            <figcaption>Orbital illustration of the verified mission region.</figcaption>
           </figure>
           <div className="news-columns">
             {paragraphs.map((p, idx) => (
@@ -187,7 +200,7 @@ export default function HumanityImpactCard({ missionId, success, failureId, outc
           </div>
         </div>
         <aside className="news-sidebar">
-          <div className="news-sidebar-title">NHỮNG CON SỐ</div>
+          <div className="news-sidebar-title">KEY METRICS</div>
           {story.metrics.map((m) => (
             <div key={m.label} className="news-figure">
               <div className="news-figure-value">{m.value}</div>
@@ -204,7 +217,7 @@ export default function HumanityImpactCard({ missionId, success, failureId, outc
       </div>
 
       {!compact && <blockquote className="news-pullquote">{story.moral}</blockquote>}
-      <footer className="news-foot">Bài báo và số liệu là minh họa cho câu chuyện trong trò chơi, không phải thống kê thật.</footer>
+      <footer className="news-foot">This article and its figures are fictionalized in-game scenario illustrations, not real-world news statistics.</footer>
     </article>
   );
 }

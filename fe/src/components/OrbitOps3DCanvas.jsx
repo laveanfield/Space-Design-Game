@@ -264,7 +264,7 @@ export default function OrbitOps3DCanvas({ snapshot, design, catalog }) {
         <br />
         LINK: {linkState} ({station}) {snapshot?.power?.eclipse ? '• ECLIPSE' : '• SUNLIT'}
       </div>
-      <div className="viewport-hint">Drag to rotate • Scroll to zoom • ánh đèn & mây: minh họa</div>
+      <div className="viewport-hint">Drag to rotate • Scroll to zoom • lights &amp; clouds: illustrative</div>
     </div>
   );
 }
