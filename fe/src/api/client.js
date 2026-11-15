@@ -65,25 +65,32 @@ export function decodeU8(encoded) {
 
 let sharedAudioCtx = null;
 
+export function getSharedAudioCtx() {
+  if (typeof window === 'undefined') return null;
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+  if (!sharedAudioCtx) sharedAudioCtx = new AudioCtx();
+  if (sharedAudioCtx.state === 'suspended') {
+    sharedAudioCtx.resume().catch(() => {});
+  }
+  return sharedAudioCtx;
+}
+
 export function beep(enabled, freq = 880, durationSec = 0.055, type = 'square', gain = 0.035) {
   if (!enabled || typeof window === 'undefined') return;
   try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    if (!sharedAudioCtx) sharedAudioCtx = new AudioCtx();
-    if (sharedAudioCtx.state === 'suspended') {
-      sharedAudioCtx.resume().catch(() => {});
-    }
-    const osc = sharedAudioCtx.createOscillator();
-    const g = sharedAudioCtx.createGain();
+    const ctx = getSharedAudioCtx();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
     osc.type = type;
     osc.frequency.value = freq;
-    g.gain.setValueAtTime(gain, sharedAudioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, sharedAudioCtx.currentTime + durationSec);
+    g.gain.setValueAtTime(gain, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationSec);
     osc.connect(g);
-    g.connect(sharedAudioCtx.destination);
+    g.connect(ctx.destination);
     osc.start();
-    osc.stop(sharedAudioCtx.currentTime + durationSec);
+    osc.stop(ctx.currentTime + durationSec);
   } catch {
     // Audio playback can fail cleanly if blocked by browser autoplay policy
   }

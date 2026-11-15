@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { GameProvider, useGame } from './core/GameContext';
 import { tr } from './core/i18n';
 import { PHASES, canEnterPhase } from './core/gameMachine';
+import { playSoundAsset } from './api/client';
+import { initAmbientThemeUnlock, setAmbientDuck, setAmbientEnabled } from './api/ambientTheme';
 import BriefScreen from './screens/BriefScreen';
 import BuildScreen from './screens/BuildScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -83,6 +85,14 @@ function TerminalShell() {
 
   const ActiveScreen = SCREENS[phase] || HomeScreen;
 
+  useEffect(() => initAmbientThemeUnlock(), []);
+  useEffect(() => {
+    setAmbientEnabled(audioOn);
+  }, [audioOn]);
+  useEffect(() => {
+    setAmbientDuck(phase === 'launch' || Boolean(story));
+  }, [phase, story]);
+
   const currentTitle =
     (lang === 'en'
       ? missionDetail?.meta?.title?.en || missionDetail?.meta?.title?.vi
@@ -124,7 +134,10 @@ function TerminalShell() {
                 key={p.id}
                 className={`step-btn ${phase === p.id ? 'active' : ''}`}
                 disabled={!allowed}
-                onClick={() => navigatePhase(p.id)}
+                onClick={() => {
+                  playSoundAsset(audioOn, '08-11-2026-relay_click.wav', 0.14);
+                  navigatePhase(p.id);
+                }}
               >
                 {PHASE_NAMES[p.id]?.[lang] || p.label}
               </button>
@@ -167,7 +180,16 @@ function TerminalShell() {
           >
             {tutorialOpen ? tr(lang, 'ẨN KỸ SƯ', 'HIDE GUIDE') : `? ${tr(lang, 'HƯỚNG DẪN', 'GUIDE')}`}
           </button>
-          <button className="btn top-action-btn" onClick={() => setAudioOn((v) => !v)}>
+          <button
+            className="btn top-action-btn"
+            onClick={() => {
+              setAudioOn((v) => {
+                const next = !v;
+                if (next) playSoundAsset(true, '06-11-2026-click.wav', 0.2);
+                return next;
+              });
+            }}
+          >
             AUDIO: {audioOn ? tr(lang, 'BẬT', 'ON') : tr(lang, 'TẮT', 'OFF')}
           </button>
           <button className="btn top-action-btn" onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}>
