@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from 'react';
+import { useGame } from '../core/GameContext';
+import { tr } from '../core/i18n';
 
 /**
  * OrbitEventLog -- "may tinh cu" hien cac su kien tren quy dao (thay cho danh sach chu nho cu).
@@ -8,11 +10,16 @@ import React, { useEffect, useRef } from 'react';
  * `lines` la danh sach THEO THU TU THOI GIAN [{ k, month, level: 'info'|'warn'|'crit', text, code }]: da dich san sang hien.
  */
 
-const TAG = { info: 'INFO', warn: 'CANH BAO', crit: 'NGUY CAP' };
 const pad2 = (n) => String(n).padStart(2, '0');
 const fmtMonth = (m) => (Number.isInteger(Number(m)) ? pad2(m) : Number(m).toFixed(1)); // thang tren quy dao
 
 export default function OrbitEventLog({ lines, status, dead, total }) {
+  const { lang } = useGame();
+  const TAG = {
+    info: 'INFO',
+    warn: tr(lang, 'CANH BAO', 'ALERT'),
+    crit: tr(lang, 'NGUY CAP', 'CRITICAL'),
+  };
   const scrollRef = useRef(null);
   const worst = lines.some((l) => l.level === 'crit') ? 'crit' : lines.some((l) => l.level === 'warn') ? 'warn' : 'info';
   const latest = lines.length ? lines[lines.length - 1].level : 'info';
