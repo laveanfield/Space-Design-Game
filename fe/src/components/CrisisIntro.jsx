@@ -15,8 +15,8 @@ export const MISSION_BRIEFING_SPECS = {
       en: 'Wildfire Emergency Reconnaissance Satellite',
     },
     context: {
-      vi: 'Một tổ hợp cháy rừng mô phỏng quy mô lớn đang càn quét qua các hành lang rừng rộng lớn. Khói dày đặc và địa hình hiểm trở đã làm tê liệt các trạm quan sát mặt đất và máy bay trinh sát. Bộ Chỉ huy Khẩn cấp cần ảnh vệ tinh từ quỹ đạo Trái Đất thấp để lập bản đồ các mặt trận lửa và điều phối lực lượng cứu hộ.',
-      en: 'A massive complex of simulated wildfires is sweeping across wide forest corridors. Thick smoke plumes and rugged terrain have paralyzed ground lookout stations and aerial reconnaissance. Emergency Command needs orbital imagery from low Earth orbit to map fire fronts and dispatch rescue crews.',
+      vi: 'Một tổ hợp cháy rừng quy mô lớn chưa từng có đang bùng phát và càn quét dữ dội qua các hành lang rừng trọng yếu. Khói dày đặc và địa hình hiểm trở đã làm tê liệt hoàn toàn các trạm quan sát mặt đất lẫn máy bay trinh sát. Bộ Chỉ huy Khẩn cấp cần ảnh vệ tinh từ quỹ đạo Trái Đất thấp ngay lập tức để lập bản đồ các mặt trận lửa và điều phối lực lượng cứu hộ.',
+      en: 'An unprecedented, massive wildfire complex is erupting across wide forest corridors. Thick smoke plumes and rugged terrain have completely paralyzed ground lookout stations and aerial reconnaissance. Emergency Command urgently needs orbital imagery from low Earth orbit to map fire fronts and dispatch rescue crews.',
     },
     targetOrbit: {
       vi: 'Quỹ đạo Trái Đất Thấp LEO 400 km (ORB-LEO-400) hoặc Quỹ đạo Đồng bộ Mặt Trời SSO 550 km (ORB-SSO-550)',
@@ -456,7 +456,7 @@ export default function CrisisIntro({
             <header className="paper-masthead">
               <div className="paper-ears">
                 <span>{tr(lang, 'ẤN BẢN KHẨN CẤP BUỔI SÁNG', 'MORNING EMERGENCY EDITION')}</span>
-                <span>{tr(lang, 'KỊCH BẢN MÔ PHỎNG TRONG GAME', 'FICTIONAL IN-GAME SCENARIO')}</span>
+                <span>{tr(lang, 'BÁO ĐỘNG ĐỎ TOÀN CẦU', 'GLOBAL RED ALERT')}</span>
                 <span>{tr(lang, 'CÔNG ĐIỆN NỘI BỘ', 'INTERNAL DISPATCH')}</span>
               </div>
               <div className="paper-title">{tr(lang, 'NHẬT BÁO TOÀN CẦU', 'THE GLOBAL CHRONICLE')}</div>
@@ -518,8 +518,8 @@ export default function CrisisIntro({
                 <p className="paper-dropcap">
                   {tr(
                     lang,
-                    'Trong 72 giờ qua, gió nóng khô đã thổi bùng đợt cháy rừng mô phỏng lớn nhất được ghi nhận trong ba thế kỷ. Các trạm thời tiết khu vực và trạm tiếp sóng liên lạc từ xa đã mất tín hiệu trên cả ba vùng ven biển.',
-                    'Over the past 72 hours, dry hot winds have fanned the largest simulated wildfire outbreak recorded in three centuries. Regional weather stations and remote communication relays have gone silent across three coastal zones.'
+                    'Trong 72 giờ qua, gió nóng khô đã thổi bùng đợt cháy rừng tàn khốc nhất được ghi nhận trong ba thế kỷ. Các trạm thời tiết khu vực và trạm tiếp sóng liên lạc từ xa đã mất tín hiệu trên cả ba vùng ven biển.',
+                    'Over the past 72 hours, dry hot winds have fanned the largest, most devastating wildfire outbreak recorded in three centuries. Regional weather stations and remote communication relays have gone silent across three coastal zones.'
                   )}
                 </p>
               </div>
@@ -571,8 +571,8 @@ export default function CrisisIntro({
                 <p className="paper-disclaimer">
                   {tr(
                     lang,
-                    '* Lưu ý: Tờ báo và sự kiện khẩn cấp hư cấu trong game được tạo cho mô phỏng thiết kế nhiệm vụ NASA Space Apps Challenge.',
-                    '* Note: Fictional in-game newspaper and emergency event created for the NASA Space Apps Challenge mission design simulation.'
+                    'Bản tin đặc biệt — Mọi trung tâm điều hành quỹ đạo được lệnh trực chiến 24/7 cho tới khi khống chế hoàn toàn các mặt trận lửa.',
+                    'Special Bulletin — All orbital operations centers are placed on 24/7 emergency standby until all fire fronts are contained.'
                   )}
                 </p>
               </div>
