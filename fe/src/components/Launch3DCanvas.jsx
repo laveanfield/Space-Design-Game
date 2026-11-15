@@ -219,7 +219,7 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
     scene.add(stack);
     const fx = new THREE.Group();
     scene.add(fx);
-    let rig = null, satRig = null, adapterMount = null, padDetail = null, H = 20, R = 1, mount = 1.5, kf = 0.6;
+    let rig = null, satRig = null, adapterMount = null, padDetail = null, H = 20, R = 1, mount = 1.5, kf = 0.6, sceneReady = false;
     const plumes = []; // {mesh, stage|booster index}
     const debris = []; // {obj, v, w, ttl}
     const sparks = makeParticles(320, { color: 0xffb060, size: 2.2, additive: true });
@@ -241,10 +241,11 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
     };
 
     (async () => {
-      const [rocketModel, satModel, insModels] = await Promise.all([
+      const [rocketModel, satModel, insModels, site] = await Promise.all([
         loadRocket(design?.launch?.vehicle),
         loadSatellite(design?.bus, design?.comm),
         loadInstruments(design?.instruments),
+        loadSite(design?.launch?.site, design?.launch?.vehicle),
       ]);
       if (disposed) return;
       if (rocketModel) {
@@ -265,8 +266,6 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
       stack.add(rig.root);
       kf = 0.55 + (0.45 * R) / 2.7;
       // Bai phong THAT cua game Ursina (thap, can noi, bon, nha xuong, bo bien...) neu da bake; khong thi dung khu phong du phong
-      const site = await loadSite(design?.launch?.site, design?.launch?.vehicle);
-      if (disposed) return;
       if (site) {
         ground.remove(complex); ground.remove(padSlab);
         ground.add(site.group);
@@ -275,6 +274,8 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
         ground.add(padDetail.group);
         tower = { arms: site.arms, armSign: 1 };
         mount = site.info.pad.rocket_y;
+        ground.position.set(0, -mount, 0);
+        scene.updateMatrixWorld(true);
         rig.extras.forEach((x) => ground.attach(x));
       } else {
         tower = buildServiceTower(H, R);
@@ -312,6 +313,7 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
         }
       }
       cam.dist = H * 2.7;
+      sceneReady = true;
     })();
 
     // ---------- camera: keo de xoay, cuon de phong to
@@ -406,7 +408,7 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
       // gioi han 0.2 s: may yeu (it khung hinh) van chay dung toc do that, khong bi "quay cham"
       const real = Math.min(0.2, (now - last) / 1000);
       last = now;
-      if (!visible || document.hidden || !rig) return;
+      if (!visible || document.hidden || !sceneReady) return;
       advance(real);
     };
     // Mot buoc mo phong + ve, dai `real` giay. Tach rieng de co the chay thu tung buoc (window.__launch3d).
@@ -680,8 +682,8 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
       cam,
       camera,
       get satRig() { return satRig; },
-      ready: () => Boolean(rig),
-      advance: (seconds, fps = 30) => { if (!rig) return 0; const t0 = performance.now(); const n = Math.round(seconds * fps); for (let i = 0; i < n; i++) advance(1 / fps); return (performance.now() - t0) / Math.max(1, n); },
+      ready: () => sceneReady,
+      advance: (seconds, fps = 30) => { if (!sceneReady) return 0; const t0 = performance.now(); const n = Math.round(seconds * fps); for (let i = 0; i < n; i++) advance(1 / fps); return (performance.now() - t0) / Math.max(1, n); },
     };
 
     return () => {
