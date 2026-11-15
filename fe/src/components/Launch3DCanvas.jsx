@@ -1,9 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { decodeF32, decodeU8, playSoundAsset } from '../api/client';
+import { useGame } from '../core/GameContext';
+import { tr, tx } from '../core/i18n';
 import { buildRocket, buildSatellite, loadInstruments, loadRocket, loadSatellite, loadSite } from '../three/modelLoader';
+import { mountSatelliteOnAdapter } from '../three/payloadAdapter';
+import { buildPadDetail } from '../three/padDetail';
 import { buildLaunchComplex, buildServiceTower } from '../three/environments';
 import { Puffs, drivePlume, emitLaunchSmoke, padFires, plumeGroup } from '../three/launchFx';
+import { createEarth, makeGroundTrack } from '../three/earthFx';
 
 /**
  * Launch3DCanvas -- canh phong 3D: ten lua THAT bay theo du lieu /fly cua backend.
@@ -82,7 +87,8 @@ function makeParticles(count, { color, size, additive, opacity = 1 }) {
   };
 }
 
-export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd }) {
+export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, onEnd, tutorialPaused = false, onResumeFromTutorial }) {
+  const { lang } = useGame();
   const containerRef = useRef(null);
   const hudRef = useRef({});
   const ctlRef = useRef({ warp: 12, playing: true });
@@ -92,8 +98,9 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
   const [playing, setPlaying] = useState(true);
   const [banner, setBanner] = useState(null);
   const [flash, setFlash] = useState(false);
+  const effectivePlaying = playing && !tutorialPaused;
   ctlRef.current.warp = warp;
-  ctlRef.current.playing = playing;
+  ctlRef.current.playing = effectivePlaying;
 
   useEffect(() => {
     const el = containerRef.current;
@@ -133,12 +140,31 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
     scene.add(ground);
     scene.fog = new THREE.Fog(SKY_DAY.clone(), 1500, 6000);
 
-    // ---------- Trai Dat cong + sao (hien dan khi len cao)
-    const earthMat = new THREE.MeshLambertMaterial({ color: 0x2b5f8f });
-    const earth = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R, 64, 48), earthMat);
+    // ---------- Trai Dat THAT (shader ngay/dem + may + den thanh pho, xem three/earthFx.js) + sao, hien dan khi len cao
+    const earthFx = createEarth({ radius: EARTH_R, widthSegments: 192, heightSegments: 128, renderer });
+    const earth = earthFx.mesh;
     earth.visible = false;
     scene.add(earth);
-    new THREE.TextureLoader().load('/earth_bluemarble.jpg', (tex) => { if (disposed) return tex.dispose(); tex.colorSpace = THREE.SRGBColorSpace; earthMat.map = tex; earthMat.color.set(0xffffff); earthMat.needsUpdate = true; });
+    // Duong bay tren mat dat: Trai Dat quay dung duoi ve tinh, bai phong that o luc dau, Mat Troi dat sao cho luc tach ve tinh
+    // dang o gan duong giao thoi ngay/dem (thay ca phia ngay lan phia dem co den thanh pho).
+    const track = makeGroundTrack(geo || {});
+    const Re = 6371; // km
+    const rangeS = new Float32Array(S.n); // goc quet tren mat dat (rad) tich luy theo tung mau cua duong bay
+    for (let i = 1; i < S.n; i++) {
+      const dh = ((S.alt[i] - S.alt[i - 1]) * 1000) / S.dt;
+      const v = (S.vel[i] + S.vel[i - 1]) / 2;
+      const vh = Math.sqrt(Math.max(0, v * v - dh * dh));
+      rangeS[i] = rangeS[i - 1] + (vh / ((Re + (S.alt[i] + S.alt[i - 1]) / 2) * 1000)) * S.dt;
+    }
+    const rangeAt = (t) => { const x = Math.max(0, Math.min(S.n - 1.0001, t / S.dt)); const i = Math.floor(x); return lerp(rangeS[i], rangeS[i + 1], x - i); };
+    // Moi chuyen bay tach ve tinh o mot THOI DIEM KHAC NHAU trong ngay (theo hazard seed % 3):
+    //   0 (mac dinh, seed 42) ban ngay: Mat Troi 32 do, be mat tuoi sang
+    //   1 hoang hon: Mat Troi 8 do, thay ca ngay lan dem o duong giao thoi
+    //   2 ban dem: Mat Troi -12 do, be mat toi voi den thanh pho, ve tinh van duoc chieu sang tu phia chan troi
+    const seedNo = Math.abs(Math.round(Number(flight.meta?.seed ?? design?.seed ?? 0))) % 3;
+    const sunElev = [32, 8, -12][(seedNo + 0) % 3];
+    const sunEarth = track.sunDirection(rangeAt(Math.min(tSep, S.tEnd)), sunElev, 35); // Mat Troi (he Trai Dat) luc tach ve tinh
+    const sunW = new THREE.Vector3();
     const starPos = new Float32Array(700 * 3);
     for (let i = 0; i < 700; i++) { const v = new THREE.Vector3().randomDirection().multiplyScalar(18000); if (v.y < -2000) v.y *= -1; starPos.set([v.x, v.y, v.z], i * 3); }
     const starGeo = new THREE.BufferGeometry();
@@ -151,7 +177,7 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
     scene.add(stack);
     const fx = new THREE.Group();
     scene.add(fx);
-    let rig = null, satRig = null, H = 20, R = 1, mount = 1.5, kf = 0.6;
+    let rig = null, satRig = null, adapterMount = null, padDetail = null, H = 20, R = 1, mount = 1.5, kf = 0.6;
     const plumes = []; // {mesh, stage|booster index}
     const debris = []; // {obj, v, w, ttl}
     const sparks = makeParticles(320, { color: 0xffb060, size: 2.2, additive: true });
@@ -202,6 +228,9 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
       if (site) {
         ground.remove(complex); ground.remove(padSlab);
         ground.add(site.group);
+        // lop chi tiet them: 4 cot thu loi giàn khung, cong ong xa be tong + doc bac thang, den pha, day ong, chan be xanh, chu tren thap
+        padDetail = buildPadDetail({ pad: site.info.pad, H, R, vehicleName: rig.info.name });
+        ground.add(padDetail.group);
         tower = { arms: site.arms, armSign: 1 };
         mount = site.info.pad.rocket_y;
         rig.extras.forEach((x) => ground.attach(x));
@@ -229,12 +258,16 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
         // thay khoi tai trong chung bang ve tinh THAT (ti le that) nam trong fairing
         satRig = buildSatellite(satModel, { withAdapter: false, design, insModels });
         satRig.inner.rotation.set(0, 0, 0);
-        const lo = rig.payload.userData.lo;
-        const carrier = new THREE.Group();
-        carrier.position.set(0, 0, lo[2] + 0.05);
-        carrier.add(satRig.inner);
-        rig.payload.clear();
-        rig.payload.add(carrier);
+        // ve tinh nam tren DOAN CHOP NOI (payload adapter) o dinh tang tren cung; chop lui cung tang khi tach ve tinh
+        adapterMount = mountSatelliteOnAdapter(rig, satRig);
+        if (!adapterMount) {
+          const lo = rig.payload.userData.lo;
+          const carrier = new THREE.Group();
+          carrier.position.set(0, 0, lo[2] + 0.05);
+          carrier.add(satRig.inner);
+          rig.payload.clear();
+          rig.payload.add(carrier);
+        }
       }
       cam.dist = H * 2.7;
     })();
@@ -404,10 +437,25 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
         F.after += real;
         // tang tren lui lai, camera ap sat ve tinh, canh pin / ang-ten bung ra
         const top = rig.stages[rig.stages.length - 1];
-        if (top?.parent === rig.inner) top.position.z -= real * 0.9;
-        F.deploy = smooth(1.2, 4.6, F.after);
+        // 0 - 2 s: vong tach con khoa, camera ap sat khung ve tinh + chop + dinh tang. 2 s: bu long no (tia lua nho),
+        // 4 lo xo day ve tinh ra, tang tren + chop lui ve, roi canh pin / ang-ten bung ra
+        if (F.after > 2.0) {
+          if (!F.clampFired) {
+            F.clampFired = true;
+            if (adapterMount) {
+              const at = adapterMount.ringWorld();
+              const size = Math.max(0.04, adapterMount.height * 0.08);
+              sparks.mat.size = size;
+              for (let i = 0; i < 46; i++) sparks.spawn(at, new THREE.Vector3().randomDirection().multiplyScalar(rand(0.4, 2.2) * Math.max(0.6, adapterMount.height)), rand(0.4, 1.2));
+            }
+            sound('06-11-2026-stage_sep.wav', 0.3);
+          }
+          if (top?.parent === rig.inner) top.position.z -= real * 0.9;
+          if (adapterMount) adapterMount.carrier.position.z += real * 0.12 * smooth(2.0, 2.6, F.after);
+        }
+        F.deploy = smooth(2.8, 6.2, F.after);
         satRig?.setDeploy(F.deploy);
-        if (F.after > 6.2) finish(true);
+        if (F.after > 8.2) finish(true);
       } else if (F.phase === 'boom') {
         F.after += real;
         if (F.after > (failure?.explode ? 5.2 : 3.2)) finish(false);
@@ -419,8 +467,19 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
       ground.position.set(-Math.min(F.downrange, 30000), -altM - mount, 0);
       ground.visible = altM < 9000;
       earth.visible = altM > 2500;
-      earth.position.set(0, -(EARTH_R + Math.max(40, F.altKm * 6)), 0);
-      earth.rotation.z += (F.vel * Math.sin(F.pitch) * dt) / (EARTH_R * 160);
+      // Dat Trai Dat sao cho goc chan troi chim xuong (dip) DUNG nhu that o do cao nay:
+      //   dip = acos(Re / (Re + h)), Re = 6371 km  ->  200 km: 14.2 do, 400 km: 19.8 do.
+      // Canh dung EARTH_R don vi, nen khoang cach tam = EARTH_R / cos(dip). Ban cu dat qua sau (alt*6)
+      // nen chan troi nam ngoai khung hinh, len quy dao chi thay nen den.
+      const dip = Math.acos(6371 / (6371 + Math.max(1, F.altKm)));
+      earth.position.set(0, -Math.max(EARTH_R + 40, EARTH_R / Math.cos(dip)), 0);
+      if (earth.visible) {
+        // Trai Dat quay duoi ve tinh theo duong bay that; Mat Troi dung yen trong he Trai Dat -> ngay/dem troi qua khi bay
+        const theta = rangeAt(F.t) + (F.phase === 'deploy' ? (F.after * 7560) / ((Re + F.altKm) * 1000) : 0);
+        track.orientation(theta, earth.quaternion);
+        sunW.copy(sunEarth).applyQuaternion(earth.quaternion);
+        earthFx.update({ sun: sunW, time: performance.now() / 1000, atmosphere: smooth(20, 90, F.altKm) });
+      }
       const sky = F.altKm < 40 ? SKY_DAY.clone().lerp(SKY_HIGH, F.altKm / 40) : SKY_HIGH.clone().lerp(SKY_SPACE, clamp01((F.altKm - 40) / 60));
       scene.background.copy(sky);
       scene.fog.color.copy(sky);
@@ -478,13 +537,47 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
       // ---------- camera
       const centre = stack.localToWorld(tmp.set(0, H * 0.5, 0)).clone();
       let wantDist = cam.dist;
+      const spaceK = smooth(60, 160, F.altKm);
+      if (spaceK > 0 && F.phase !== 'deploy' && rig) {
+        // Ngoai khong gian chi con tang tren (rat nho so voi ca ten lua luc o be): camera ap sat phan con gan
+        // tren than (vo tang / fairing / tai trong, bo qua ngon lua) de nhin ro ten lua tren nen Trai Dat.
+        const box = new THREE.Box3();
+        for (const g of [...rig.stages, ...rig.boosters, ...rig.fairing, rig.payload]) {
+          const hull = g && g.parent === rig.inner ? g.children.find((c) => c.isMesh) : null;
+          if (hull) box.expandByObject(hull);
+        }
+        if (!box.isEmpty()) {
+          const sz = box.getSize(new THREE.Vector3()).length();
+          centre.lerp(box.getCenter(new THREE.Vector3()), spaceK);
+          wantDist = lerp(cam.dist, Math.max(3, sz * 2.4), spaceK);
+        }
+      }
       if (F.phase === 'deploy' && satRig) {
+        // khung hinh: luc con gan -> ve tinh + doan chop noi + dinh tang tren (giong anh tham khao); sau khi tach -> bao ca tang dang lui ra
         satRig.inner.getWorldPosition(centre);
-        const size = Math.max(...satRig.info.dims) * 5;
-        wantDist = lerp(cam.dist, Math.max(1.4, size), smooth(0.2, 2.6, F.after));
-        cam.yaw += real * 0.25;
+        const top = rig.stages[rig.stages.length - 1];
+        const hAd = adapterMount ? adapterMount.height : 0;
+        const rS = adapterMount ? adapterMount.rBase : 1;
+        const back = top && top.parent === rig.inner ? Math.max(0, -top.position.z) : 0; // quang tang tren da lui (m)
+        let want = Math.max(2.6, Math.max(...satRig.info.dims) * 5.6, hAd * 4.4 + rS * 2.4);
+        want += back * 1.7;
+        if (adapterMount) {
+          const mid = adapterMount.ringWorld(new THREE.Vector3());
+          centre.lerp(mid, 0.72);                                  // tam khung nam gan vong tach: thay ca chop lan ve tinh
+          centre.addScaledVector(axisOf(), -back * 0.5);          // theo tang tren khi no lui ve phia sau
+        }
+        wantDist = lerp(cam.dist, want, smooth(0.0, 1.6, F.after));
+          cam.yaw += real * 0.05;
       }
       cam.focus.lerp(centre, clamp01(real * (F.phase === 'deploy' ? 2.5 : 8)));
+      // Len quy dao thap (LEO): may anh nhin xuong gan bang goc chan troi chim (dip) -> chan troi nam hoi duoi
+      // tam anh, Trai Dat cong chiem ~40 % khung duoi, ten lua / ve tinh noi tren nen Trai Dat va khong gian
+      // (giong anh minh hoa tach tang tren quy dao). Nguoi choi van keo chuot doi goc duoc.
+      const pitchSpace = Math.acos(6371 / (6371 + Math.max(1, F.altKm))) - 0.07;
+      if (spaceK > 0 && !cam.dragging) {
+        cam.pitch += (pitchSpace - cam.pitch) * clamp01(real * 0.9) * spaceK;
+        cam.yaw += (0.22 - cam.yaw) * clamp01(real * 0.9) * spaceK; // nhin ve tinh o canh ben, phia co Mat Troi (vat duoc chieu sang)
+      }
       const d = wantDist;
       camera.position.set(cam.focus.x + d * Math.cos(cam.pitch) * Math.sin(cam.yaw), cam.focus.y + d * Math.sin(cam.pitch), cam.focus.z + d * Math.cos(cam.pitch) * Math.cos(cam.yaw));
       if (F.phase === 'countdown' || altM < 400) camera.position.y = Math.max(camera.position.y, 2 - altM - mount);
@@ -493,7 +586,11 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
         cam.shake *= Math.exp(-real * 1.6);
       }
       camera.lookAt(cam.focus);
-      sun.position.copy(camera.position).add(tmp.set(-30, 60, 40));
+      // nghieng khung hinh ~17 do khi o ngoai khong gian: duong chan troi cheo, ten lua bay cheo qua Trai Dat
+      if (spaceK > 0) camera.rotateZ(-0.3 * spaceK);
+      // anh sang vat the: duoi thap khi o be phong (den "gan may anh"), khi len khong gian chuyen dan sang huong Mat Troi THAT
+      tmp.copy(camera.position).add(new THREE.Vector3(-30, 60, 40)).normalize();
+      sun.position.copy(tmp).lerp(sunW, spaceK).normalize().multiplyScalar(100);
       renderer.render(scene, camera);
 
       // ---------- HUD: ghi thang vao DOM
@@ -511,6 +608,9 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
     // Cong cu thu nghiem: tua nhanh `seconds` giay that theo tung khung 1/30 s, khong phu thuoc requestAnimationFrame
     window.__launch3d = {
       state: F,
+      cam,
+      camera,
+      get satRig() { return satRig; },
       ready: () => Boolean(rig),
       advance: (seconds, fps = 30) => { if (!rig) return 0; const t0 = performance.now(); const n = Math.round(seconds * fps); for (let i = 0; i < n; i++) advance(1 / fps); return (performance.now() - t0) / Math.max(1, n); },
     };
@@ -522,8 +622,9 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
       io.disconnect(); ro.disconnect();
       dom.removeEventListener('pointerdown', onDown); window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); dom.removeEventListener('wheel', onWheel);
       ground.traverse((o) => o.geometry?.dispose());
-      [padSlab, earth].forEach((m) => { m.geometry.dispose(); m.material.dispose(); });
-      earthMat.map?.dispose();
+      padSlab.geometry.dispose(); padSlab.material.dispose();
+      padDetail?.dispose();
+      earthFx.dispose();
       starGeo.dispose(); starMat.dispose();
       renderer.dispose();
     };
@@ -540,21 +641,46 @@ export default function Launch3DCanvas({ flight, design, audioOn, onEvent, onEnd
         <div className="hud-cell"><span className="hud-label">VEL</span><span className="hud-val" ref={setHud('vel')}>0 km/s</span><div className="hud-bar"><div ref={setHud('velBar')} /></div></div>
         <div className="hud-cell"><span className="hud-label">STAGE</span><span className="hud-val" ref={setHud('stage')}>S1</span></div>
       </div>
+      {tutorialPaused && !banner && (
+        <div className="launch-banner ok">
+          {tr(
+            lang,
+            '⏸ ĐANG TẠM DỪNG ĐỂ ĐỌC HƯỚNG DẪN — XEM XONG BẤM [BẮT ĐẦU PHÓNG ▶]',
+            '⏸ PAUSED FOR TUTORIAL — CLICK [START LAUNCH ▶] WHEN READY'
+          )}
+        </div>
+      )}
       {banner && (
-        <div className={`launch-banner ${banner.kind}`}>{banner.kind === 'fail' ? '⚠ ' : ''}{banner.title?.vi || banner.title?.en}</div>
+        <div className={`launch-banner ${banner.kind}`}>{banner.kind === 'fail' ? '⚠ ' : ''}{tx(banner.title, lang)}</div>
       )}
       <div className="viewport-tools">
-        <button className="btn small" onClick={() => setPlaying((p) => !p)}>{playing ? 'TẠM DỪNG' : 'TIẾP TỤC'}</button>
+        <button
+          className={`btn small ${tutorialPaused ? 'neon-btn' : ''}`}
+          onClick={() => {
+            if (tutorialPaused) {
+              setPlaying(true);
+              onResumeFromTutorial?.();
+            } else {
+              setPlaying((p) => !p);
+            }
+          }}
+        >
+          {effectivePlaying ? tr(lang, 'TẠM DỪNG', 'PAUSE') : tr(lang, '▶ BẮT ĐẦU / TIẾP TỤC', '▶ START / RESUME')}
+        </button>
         {[4, 12, 30].map((w) => (
           <button key={w} className={`btn small ${warp === w ? 'primary' : ''}`} onClick={() => setWarp(w)}>{w}x</button>
         ))}
         {!banner && (
-          <button className="btn small danger" onClick={() => ctlRef.current.abort?.()} title="Hủy phóng: mất 1 vạch uy tín">
-            ✕ HỦY PHÓNG
+          <button
+            className="btn small danger"
+            onClick={() => ctlRef.current.abort?.()}
+            title={tr(lang, 'Hủy phóng: mất 1 vạch uy tín', 'Abort launch: deducts 1 authority pip')}
+          >
+            ✕ {tr(lang, 'HỦY PHÓNG', 'ABORT LAUNCH')}
           </button>
         )}
       </div>
-      <div className="viewport-hint">Kéo để xoay camera • Cuộn để phóng to</div>
+      <div className="viewport-hint">{tr(lang, 'Kéo để xoay camera • Cuộn để phóng to', 'Drag to rotate camera • Scroll to zoom')}</div>
     </div>
   );
 }

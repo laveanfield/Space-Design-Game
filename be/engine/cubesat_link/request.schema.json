@@ -1,0 +1,1096 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cubesat-link request 1.0",
+  "$defs": {
+    "earth": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "model": {
+              "const": "WGS84"
+            }
+          },
+          "required": [
+            "model"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "model": {
+              "const": "sphere"
+            },
+            "radius_m": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "model",
+            "radius_m"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "station": {
+      "type": "object",
+      "properties": {
+        "lat_deg": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon_deg": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "altitude_m": {
+          "type": "number",
+          "minimum": 0
+        },
+        "min_elevation_deg": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 90
+        }
+      },
+      "required": [
+        "lat_deg",
+        "lon_deg",
+        "altitude_m"
+      ],
+      "additionalProperties": false
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "position_m": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "frame": {
+          "const": "ECEF"
+        },
+        "epoch_utc": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "position_m",
+        "frame",
+        "epoch_utc"
+      ],
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "epoch_utc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applicability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "units": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minProperties": 1
+        },
+        "temporal_kind": {
+          "enum": [
+            "observation",
+            "reference",
+            "synthetic"
+          ]
+        }
+      },
+      "required": [
+        "source",
+        "version",
+        "epoch_utc",
+        "applicability",
+        "units",
+        "temporal_kind"
+      ],
+      "additionalProperties": false
+    },
+    "profile": {
+      "type": "object",
+      "properties": {
+        "height_m": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 2
+        },
+        "refractive_index": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 1
+          },
+          "minItems": 2
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "frequency_range_hz": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "gamma_db_per_km": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 2
+        },
+        "gas_frequency_hz": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "gas_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "outside": {
+          "enum": [
+            "vacuum_above_top",
+            "unavailable"
+          ]
+        }
+      },
+      "required": [
+        "height_m",
+        "refractive_index",
+        "source",
+        "frequency_range_hz",
+        "outside"
+      ],
+      "additionalProperties": false
+    },
+    "neutral": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "p834_reference"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "table"
+            },
+            "profile": {
+              "$ref": "#/$defs/profile"
+            },
+            "metadata": {
+              "$ref": "#/$defs/metadata"
+            }
+          },
+          "required": [
+            "kind",
+            "profile",
+            "metadata"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "binding": {
+      "type": "object",
+      "properties": {
+        "station": {
+          "$ref": "#/$defs/station"
+        },
+        "state": {
+          "$ref": "#/$defs/state"
+        },
+        "earth": {
+          "$ref": "#/$defs/earth"
+        },
+        "path_kind": {
+          "enum": [
+            "straight",
+            "spherical_refracted"
+          ]
+        },
+        "path_length_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "station",
+        "state",
+        "earth",
+        "path_kind",
+        "path_length_m"
+      ],
+      "additionalProperties": false
+    },
+    "electron_path": {
+      "type": "object",
+      "properties": {
+        "distance_m": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 2
+        },
+        "density_per_m3": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 2
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "b_parallel_t": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2
+        }
+      },
+      "required": [
+        "distance_m",
+        "density_per_m3",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "tec": {
+      "type": "object",
+      "properties": {
+        "electrons_per_m2": {
+          "type": "number",
+          "minimum": 0
+        },
+        "path_length_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ne_b_integral": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "electrons_per_m2",
+        "path_length_m",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "electrons": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "path"
+            },
+            "data": {
+              "$ref": "#/$defs/electron_path"
+            },
+            "metadata": {
+              "$ref": "#/$defs/metadata"
+            },
+            "binding": {
+              "$ref": "#/$defs/binding"
+            }
+          },
+          "required": [
+            "kind",
+            "data",
+            "metadata",
+            "binding"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "tec"
+            },
+            "data": {
+              "$ref": "#/$defs/tec"
+            },
+            "metadata": {
+              "$ref": "#/$defs/metadata"
+            },
+            "binding": {
+              "$ref": "#/$defs/binding"
+            }
+          },
+          "required": [
+            "kind",
+            "data",
+            "metadata",
+            "binding"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "effect": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "null"
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1
+            },
+            "status": {
+              "const": "not_computable"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "value",
+            "unit",
+            "status",
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1
+            },
+            "status": {
+              "enum": [
+                "computed",
+                "assumed"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "value",
+            "unit",
+            "status",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "losses": {
+      "type": "object",
+      "properties": {
+        "free_space": {
+          "$ref": "#/$defs/effect"
+        },
+        "gas": {
+          "$ref": "#/$defs/effect"
+        },
+        "rain": {
+          "$ref": "#/$defs/effect"
+        },
+        "cloud": {
+          "$ref": "#/$defs/effect"
+        },
+        "neutral_scintillation": {
+          "$ref": "#/$defs/effect"
+        },
+        "ionospheric_scintillation": {
+          "$ref": "#/$defs/effect"
+        },
+        "ionospheric_absorption": {
+          "$ref": "#/$defs/effect"
+        },
+        "beam_spreading": {
+          "$ref": "#/$defs/effect"
+        },
+        "polarization": {
+          "$ref": "#/$defs/effect"
+        }
+      },
+      "required": [
+        "free_space",
+        "gas",
+        "rain",
+        "cloud",
+        "neutral_scintillation",
+        "ionospheric_scintillation",
+        "ionospheric_absorption",
+        "beam_spreading",
+        "polarization"
+      ],
+      "additionalProperties": false
+    },
+    "supplied_losses": {
+      "type": "object",
+      "properties": {
+        "gas": {
+          "$ref": "#/$defs/effect"
+        },
+        "rain": {
+          "$ref": "#/$defs/effect"
+        },
+        "cloud": {
+          "$ref": "#/$defs/effect"
+        },
+        "neutral_scintillation": {
+          "$ref": "#/$defs/effect"
+        },
+        "ionospheric_scintillation": {
+          "$ref": "#/$defs/effect"
+        },
+        "ionospheric_absorption": {
+          "$ref": "#/$defs/effect"
+        },
+        "beam_spreading": {
+          "$ref": "#/$defs/effect"
+        },
+        "polarization": {
+          "$ref": "#/$defs/effect"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "radio": {
+      "type": "object",
+      "properties": {
+        "tx_power_dbm": {
+          "type": "number"
+        },
+        "tx_gain_dbi": {
+          "type": "number"
+        },
+        "rx_gain_dbi": {
+          "type": "number"
+        },
+        "receiver_threshold_dbm": {
+          "type": "number"
+        },
+        "tx_pointing_loss_db": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rx_pointing_loss_db": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cable_loss_db": {
+          "type": "number",
+          "minimum": 0
+        },
+        "required_margin_db": {
+          "type": "number",
+          "minimum": 0
+        },
+        "receiver_mode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "antenna_basis": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "tx_power_dbm",
+        "tx_gain_dbi",
+        "rx_gain_dbi",
+        "receiver_threshold_dbm",
+        "tx_pointing_loss_db",
+        "rx_pointing_loss_db",
+        "cable_loss_db",
+        "receiver_mode",
+        "antenna_basis"
+      ],
+      "additionalProperties": false
+    },
+    "polarization": {
+      "type": "object",
+      "properties": {
+        "tx": {
+          "enum": [
+            "linear",
+            "circular"
+          ]
+        },
+        "rx": {
+          "enum": [
+            "linear",
+            "circular"
+          ]
+        },
+        "alignment_rad": {
+          "type": "number"
+        },
+        "circular_match": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "tx",
+        "rx"
+      ],
+      "additionalProperties": false
+    },
+    "geometry": {
+      "type": "object",
+      "properties": {
+        "slant_range_m": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "azimuth_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "elevation_deg": {
+          "type": "number"
+        },
+        "earth_occulted": {
+          "type": "boolean"
+        },
+        "above_mask": {
+          "type": "boolean"
+        },
+        "geometric_visible": {
+          "type": "boolean"
+        },
+        "earth_model": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "slant_range_m",
+        "azimuth_deg",
+        "elevation_deg",
+        "earth_occulted",
+        "above_mask",
+        "geometric_visible",
+        "earth_model"
+      ],
+      "additionalProperties": false
+    },
+    "ray": {
+      "type": "object",
+      "properties": {
+        "apparent_elevation_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "path_length_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "excess_path_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "bending_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "max_central_angle_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "endpoint_residual_rad": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "refractivity_excess_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "geometric_excess_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "total_excess_m": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "computed",
+            "not_computable"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gas_loss": {
+          "$ref": "#/$defs/effect"
+        },
+        "ground_clear": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "apparent_elevation_deg",
+        "path_length_m",
+        "excess_path_m",
+        "bending_deg",
+        "max_central_angle_deg",
+        "endpoint_residual_rad",
+        "refractivity_excess_m",
+        "geometric_excess_m",
+        "total_excess_m",
+        "status",
+        "reason",
+        "gas_loss",
+        "ground_clear"
+      ],
+      "additionalProperties": false
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "received_power_dbm": {
+          "$ref": "#/$defs/effect"
+        },
+        "margin_db": {
+          "$ref": "#/$defs/effect"
+        },
+        "meets_required_margin": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "hardware_db": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "throughput_bps": {
+          "$ref": "#/$defs/effect"
+        },
+        "radio_assumptions": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "received_power_dbm",
+        "margin_db",
+        "meets_required_margin",
+        "hardware_db",
+        "throughput_bps",
+        "radio_assumptions"
+      ],
+      "additionalProperties": false
+    },
+    "provider_record": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "epoch_utc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applicability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "units": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minProperties": 1
+        },
+        "temporal_kind": {
+          "enum": [
+            "observation",
+            "reference",
+            "synthetic"
+          ]
+        },
+        "status": {
+          "enum": [
+            "computed",
+            "not_computable"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "source",
+        "version",
+        "epoch_utc",
+        "applicability",
+        "units",
+        "temporal_kind",
+        "status",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "link_result": {
+      "type": "object",
+      "properties": {
+        "geometry": {
+          "$ref": "#/$defs/geometry"
+        },
+        "neutral_ray": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/ray"
+            }
+          ]
+        },
+        "refracted_visible": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "path_available": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "path_basis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "losses_db": {
+          "$ref": "#/$defs/losses"
+        },
+        "ionosphere": {
+          "type": "object",
+          "properties": {
+            "slant_tec": {
+              "$ref": "#/$defs/effect"
+            },
+            "group_delay": {
+              "$ref": "#/$defs/effect"
+            },
+            "phase_path": {
+              "$ref": "#/$defs/effect"
+            },
+            "phase_advance": {
+              "$ref": "#/$defs/effect"
+            },
+            "faraday_rotation": {
+              "$ref": "#/$defs/effect"
+            },
+            "scintillation": {
+              "$ref": "#/$defs/effect"
+            },
+            "absorption": {
+              "$ref": "#/$defs/effect"
+            },
+            "ray_deflection": {
+              "$ref": "#/$defs/effect"
+            }
+          },
+          "required": [
+            "slant_tec",
+            "group_delay",
+            "phase_path",
+            "phase_advance",
+            "faraday_rotation",
+            "scintillation",
+            "absorption",
+            "ray_deflection"
+          ],
+          "additionalProperties": false
+        },
+        "neutral_excess_delay_s": {
+          "$ref": "#/$defs/effect"
+        },
+        "budget": {
+          "$ref": "#/$defs/budget"
+        },
+        "providers": {
+          "type": "object",
+          "properties": {},
+          "required": [],
+          "additionalProperties": {
+            "$ref": "#/$defs/provider_record"
+          }
+        }
+      },
+      "required": [
+        "geometry",
+        "neutral_ray",
+        "refracted_visible",
+        "path_available",
+        "path_basis",
+        "losses_db",
+        "ionosphere",
+        "neutral_excess_delay_s",
+        "budget",
+        "providers"
+      ],
+      "additionalProperties": false
+    },
+    "window": {
+      "type": "object",
+      "properties": {
+        "start_utc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "end_utc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start_clipped": {
+          "type": "boolean"
+        },
+        "end_clipped": {
+          "type": "boolean"
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "start_utc",
+        "end_utc",
+        "start_clipped",
+        "end_clipped",
+        "method"
+      ],
+      "additionalProperties": false
+    },
+    "window_result": {
+      "type": "object",
+      "properties": {
+        "windows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/window"
+          },
+          "minItems": 0
+        },
+        "mode": {
+          "const": "geometric"
+        },
+        "earth": {
+          "$ref": "#/$defs/earth"
+        }
+      },
+      "required": [
+        "windows",
+        "mode",
+        "earth"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "earth": {
+          "$ref": "#/$defs/earth"
+        },
+        "station": {
+          "$ref": "#/$defs/station"
+        },
+        "operation": {
+          "const": "evaluate_link"
+        },
+        "state": {
+          "$ref": "#/$defs/state"
+        },
+        "frequency_hz": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "vacuum": {
+          "type": "boolean"
+        },
+        "radio": {
+          "$ref": "#/$defs/radio"
+        },
+        "polarization": {
+          "$ref": "#/$defs/polarization"
+        },
+        "neutral": {
+          "$ref": "#/$defs/neutral"
+        },
+        "electrons": {
+          "$ref": "#/$defs/electrons"
+        },
+        "supplied_losses": {
+          "$ref": "#/$defs/supplied_losses"
+        }
+      },
+      "required": [
+        "schema_version",
+        "earth",
+        "station",
+        "operation",
+        "state",
+        "frequency_hz"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "earth": {
+          "$ref": "#/$defs/earth"
+        },
+        "station": {
+          "$ref": "#/$defs/station"
+        },
+        "operation": {
+          "const": "contact_windows"
+        },
+        "states": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/state"
+          },
+          "minItems": 2
+        },
+        "max_gap_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "mode": {
+          "const": "geometric"
+        }
+      },
+      "required": [
+        "schema_version",
+        "earth",
+        "station",
+        "operation",
+        "states"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

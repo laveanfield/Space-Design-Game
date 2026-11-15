@@ -12,9 +12,38 @@ from pathlib import Path
 
 import yaml
 
-FIRE_TARGETS = Path(__file__).resolve().parents[3] / "data" / "geo" / "targets" / "wildfire.yaml"
-EVIDENCE_NEED = 3          # so anh dam chay DUNG DUOC (ve toi mat dat, khong nhoe) can de nhiem vu duoc cong nhan
-FIRE_CHANCE = 0.65         # [estimate] xac suat moi moc co mot dam chay lon trong vung ve tinh di qua
+TARGETS_DIR = Path(__file__).resolve().parents[3] / "data" / "geo" / "targets"
+FIRE_TARGETS = TARGETS_DIR / "wildfire.yaml"
+EVIDENCE_NEED = 3          # so anh DUNG DUOC (ve toi mat dat, khong nhoe) can de nhiem vu duoc cong nhan
+FIRE_CHANCE = 0.65         # [estimate] xac suat moi moc co mot muc tieu (dam chay / chum khi) trong dai quet ve tinh
+
+# Moi nhiem vu chup anh co mot BO MUC TIEU rieng (mission yaml: gameplay.params.evidence_set).
+# Chi khac nhau o file toa do va loi thoai; luat cham diem (EVIDENCE_NEED, nhoe, SEU, duong truyen) giu nguyen.
+# "categories": nhom science_category cua thiet bi tao ra bang chung (Earth observation = may anh; Space physics = tu ke / may do hat).
+EVIDENCE_SETS = {
+    "wildfire": {
+        "file": FIRE_TARGETS,
+        "categories": ("Earth observation",),
+        "seen": ("Phát hiện cháy rừng tại {name}: đã tự động chụp ảnh #{n}.", "Wildfire detected at {name}: image #{n} captured automatically."),
+        "missed": ("Cháy rừng tại {name} nhưng máy tính đang khởi động lại: bỏ lỡ lần chụp.", "Wildfire at {name} but the computer was rebooting: pass missed."),
+        "ok": ("Đã có đủ {need} ảnh bằng chứng cháy rừng rõ nét về tới mặt đất.", "{need} clear wildfire evidence images have reached the ground."),
+    },
+    "space_weather": {
+        "file": TARGETS_DIR / "15-11-2026-space_weather_events.yaml",
+        "categories": ("Space physics",),
+        "must_survive": True,     # nhiem vu "song sot qua bao": du khung ma ve tinh chet vi buc xa van TRUOT (khac nhiem vu chup anh thuong)
+        "seen": ("Ghi được khung quan trắc bão Mặt Trời #{n}: {name}.", "Space weather frame #{n} recorded: {name}."),
+        "missed": ("Có biến động bão ({name}) nhưng máy tính đang khởi động lại: bỏ lỡ khung ghi.", "Storm activity ({name}) but the computer was rebooting: frame missed."),
+        "ok": ("Đã có đủ {need} khung quan trắc bão rõ nét về tới mặt đất.", "{need} clear space weather frames have reached the ground."),
+    },
+    "methane": {
+        "file": TARGETS_DIR / "14-11-2026-methane_sites.yaml",
+        "categories": ("Earth observation",),
+        "seen": ("Phát hiện chùm khí methane tại {name}: đã tự động chụp phổ #{n}.", "Methane plume detected at {name}: spectral image #{n} captured automatically."),
+        "missed": ("Chùm methane tại {name} nhưng máy tính đang khởi động lại: bỏ lỡ lần chụp.", "Methane plume at {name} but the computer was rebooting: pass missed."),
+        "ok": ("Đã có đủ {need} ảnh phổ chùm khí methane rõ nét về tới mặt đất.", "{need} clear methane plume images have reached the ground."),
+    },
+}
 SEU_MISS = 0.4             # [estimate] khi may tinh dang reset vi SEU: xac suat bo lo lan chup
 BLUR_USABLE = 0.35         # anh nhoe hon muc nay thi khong dung lam bang chung duoc
 STEPS = 12                # 12 moc thoi gian trai deu tren tuoi tho yeu cau cua de (1 nam -> moi moc = 1 thang)
@@ -114,15 +143,17 @@ def _dossier(cid, con, extra=None):
             "lesson": lesson, "numbers": numbers + (extra or [])}
 
 
-def _fire_targets():
+def _fire_targets(theme="wildfire"):
+    """Doc danh sach muc tieu cua bo bang chung (mac dinh: cac vung hay chay rung)."""
+    path = EVIDENCE_SETS.get(theme, EVIDENCE_SETS["wildfire"])["file"]
     try:
-        with open(FIRE_TARGETS, encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             return yaml.safe_load(fh)["items"]
     except OSError:
         return [{"id": "FIRE-X", "name": "Forest", "lat_deg": 0.0, "lon_deg": 0.0, "biome": "rừng"}]
 
 
-def simulate_lifetime(report, life_years, seed=0, imaging=None):
+def simulate_lifetime(report, life_years, seed=0, imaging=None, communications=None):
     """Chay 12 moc tren quy dao tu bao cao evaluate(). Tat dinh theo seed (bao Mat Troi, dam chay).
 
     imaging: None neu ve tinh khong co thiet bi chup anh mat dat; nguoc lai {"sensor": kind, "name": ten thiet bi}.
@@ -135,7 +166,13 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
     storm_step = rng.randint(3, 10)
     storm_dose = m["radiation.dose_krad"] * rng.uniform(*STORM_DOSE)
     fire_rng = random.Random(int(seed) * 104729 + 7)
-    fires = _fire_targets()
+    theme = (imaging or {}).get("theme", "wildfire")
+    if theme not in EVIDENCE_SETS:
+        theme = "wildfire"
+    texts = EVIDENCE_SETS[theme]
+    fires = _fire_targets(theme)
+    ids = set((imaging or {}).get("ids") or [(imaging or {}).get("id")])
+    fires = [t for t in fires if not t.get("instruments") or ids & set(t["instruments"])] or fires   # vd. tu ke chi ghi tu pho
     evidence, credit, passed_at = [], 0.0, None
     link_ratio = min(1.0, m["data.downlink_gb_per_day"] / max(m["data.generated_gb_per_day"], 1e-9))
 
@@ -144,6 +181,8 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
     alt0 = m["orbit.altitude_km"]
     decay_steps = STEPS * m["lifetime.years"] / max(life_years, 1e-6)          # so moc cho toi khi roi han
     gen_day, down_day = m["data.generated_gb_per_day"], m["data.downlink_gb_per_day"]
+    if communications and imaging:
+        down_day = communications["summary"]["sent_gb"] / (communications["duration_s"] / 86400.)
     blur = 0.0
     pc = cons.get("pointing")
     if pc and not pc["pass"]:
@@ -193,27 +232,51 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
             if blur > 0:
                 ev.append({"code": "BLUR", "level": "warn", "text": _t("Đội mặt đất báo dữ liệu nhận về bị nhòe.", "Ground team reports the received data is smeared.")})
             # --- dam chay rung: ve tinh tu dong chup khi bay qua (chi ve tinh co thiet bi chup anh)
-            if imaging and fire_rng.random() < FIRE_CHANCE:
+            if imaging and communications is None and fire_rng.random() < FIRE_CHANCE:
                 tgt = fire_rng.choice(fires)
                 missed = seu and fire_rng.random() < SEU_MISS
                 if missed:
-                    ev.append({"code": "FIRE_MISSED", "level": "warn", "text": _t(f"Cháy rừng tại {tgt['name']} nhưng máy tính đang khởi động lại: bỏ lỡ lần chụp.", f"Wildfire at {tgt['name']} but the computer was rebooting: pass missed.")})
+                    vi, en = texts["missed"]
+                    ev.append({"code": "FIRE_MISSED", "level": "warn", "text": _t(vi.format(name=tgt["name"]), en.format(name=tgt["name"]))})
                 else:
                     shot = {"n": len(evidence) + 1, "k": k, "month": round(k * life_years, 1), "target": tgt["name"], "target_id": tgt["id"],
-                            "lat": tgt["lat_deg"], "lon": tgt["lon_deg"], "biome": tgt.get("biome", ""), "sensor": imaging["sensor"],
+                            "lat": tgt.get("lat_deg"), "lon": tgt.get("lon_deg"), "biome": tgt.get("biome", ""), "kind": tgt.get("kind", ""),
+                            "theme": theme, "sensor": imaging["sensor"],
                             "blur": round(blur, 2), "seu": bool(seu), "delivered_k": None, "seed": fire_rng.randint(0, 10 ** 6)}
                     evidence.append(shot)
-                    ev.append({"code": "FIRE_CAPTURED", "level": "info", "text": _t(f"Phát hiện cháy rừng tại {tgt['name']}: đã tự động chụp ảnh #{shot['n']}.", f"Wildfire detected at {tgt['name']}: image #{shot['n']} captured automatically.")})
+                    vi, en = texts["seen"]
+                    ev.append({"code": "FIRE_CAPTURED", "level": "info", "text": _t(vi.format(name=tgt["name"], n=shot["n"]), en.format(name=tgt["name"], n=shot["n"]))})
             # --- anh trong bo nho duoc gui dan ve theo nang luc duong truyen
-            credit += link_ratio
-            for shot in evidence:
-                if shot["delivered_k"] is None and credit >= 1.0 - 1e-9:
-                    shot["delivered_k"] = k
-                    credit -= 1.0
+            if communications is not None:
+                for source in communications["evidence"]:
+                    if source["k"] == k:
+                        shot = dict(source, month=round(k * life_years, 1), delivered_k=None)
+                        evidence.append(shot)
+                        ev.append({"code": "FIRE_CAPTURED", "level": "info", "text": _t(
+                            f"Qua vùng quan sát {shot['target']}: chụp ảnh #{shot['n']}, lưu chờ truyền.",
+                            f"Target access: image #{shot['n']} stored for downlink.")})
+                for shot in evidence:
+                    source = communications["evidence"][shot["n"] - 1]
+                    if source["delivered_k"] == k:
+                        shot["delivered_k"] = k
+                        ev.append({"code": "IMAGE_DOWNLINKED", "level": "info", "text": _t(
+                            f"Ảnh #{shot['n']} đã truyền trọn gói về {communications['station']['name']} trong cửa sổ liên lạc.",
+                            f"Image #{shot['n']} completely downlinked during station contact.")})
+                if k == 1:
+                    for reason in communications["diagnostics"]:
+                        ev.append({"code": "RF_DIAGNOSTIC", "level": "warn", "text": _t(reason, reason)})
+            else:
+                # Capacity before capture is not banked as credit for future images.
+                credit = credit + link_ratio if any(s["delivered_k"] is None for s in evidence) else 0.
+                for shot in evidence:
+                    if shot["delivered_k"] is None and credit >= 1.0 - 1e-9:
+                        shot["delivered_k"] = k
+                        credit -= 1.0
             usable_now = [s for s in evidence if s["delivered_k"] is not None and s["blur"] < BLUR_USABLE]
             if imaging and passed_at is None and len(usable_now) >= EVIDENCE_NEED:
                 passed_at = k
-                ev.append({"code": "EVIDENCE_OK", "level": "info", "text": _t(f"Đã có đủ {EVIDENCE_NEED} ảnh bằng chứng cháy rừng rõ nét về tới mặt đất.", f"{EVIDENCE_NEED} clear wildfire evidence images have reached the ground.")})
+                vi, en = texts["ok"]
+                ev.append({"code": "EVIDENCE_OK", "level": "info", "text": _t(vi.format(need=EVIDENCE_NEED), en.format(need=EVIDENCE_NEED))})
             if not ev:
                 ev.append({"code": "NOMINAL", "level": "info", "text": _t("Mọi hệ thống hoạt động, dữ liệu về đều.", "All systems nominal, data flowing.")})
         steps.append({"k": k, "month": round(k * life_years, 1), "alive": killer is None, "soc": round(soc, 3),
@@ -232,7 +295,7 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
     usable_evidence = [s for s in evidence if s["delivered_k"] is not None and s["blur"] < BLUR_USABLE]
     if imaging:
         # Nhiem vu chup anh: du bang chung la DAT, ke ca khi ve tinh hong sau do
-        success = len(usable_evidence) >= EVIDENCE_NEED
+        success = len(usable_evidence) >= EVIDENCE_NEED and (alive or not texts.get("must_survive"))
         if success:
             dossier = _dossier(killer, cons.get(killer)) if killer else (_dossier(boss_fail[0], cons.get(boss_fail[0])) if boss_fail else None)
         elif killer:
@@ -255,9 +318,20 @@ def simulate_lifetime(report, life_years, seed=0, imaging=None):
             dossier = _dossier(boss_fail[0], cons.get(boss_fail[0]))
         else:
             dossier = None
+    if communications and dossier and dossier["id"] in ("data", "science"):
+        reasons = communications["diagnostics"]
+        if reasons:
+            dossier["cause"] = _t(" ".join(reasons), " ".join(reasons))
+        dossier["lesson"] = _t(
+            "Chọn quỹ đạo đi qua mục tiêu và trạm thu. Giảm tốc độ tăng biên tín hiệu nhưng mất thêm thời gian truyền; tăng công suất rút pin nhanh hơn. Ảnh chỉ tính khi đã truyền trọn gói.",
+            "Orbit must access the target and station. Lower bitrate improves link margin but increases airtime; higher transmit power drains the battery. Only fully delivered images count.")
+        dossier["numbers"] += [{"label": "contact_min_7d", "value": round(communications["summary"]["contact_min"], 1)},
+                               {"label": "usable_min_7d", "value": round(communications["summary"]["usable_min"], 1)},
+                               {"label": "pending_gb_7d", "value": communications["summary"]["buffer_gb"]}]
     return {
         "schema_version": "lifetime/2", "steps_total": STEPS, "life_years": life_years, "steps": steps,
         "imaging": imaging, "evidence": evidence, "evidence_need": EVIDENCE_NEED if imaging else 0,
+        "communications": communications,
         "outcome": {"alive": alive, "survived_steps": len(steps) if alive else len(steps) - 1, "killer": killer,
                     "success": success, "boss_fail": boss_fail, "review_fail": failed_review, "review": review,
                     "generated_gb": round(generated, 3), "delivered_gb": round(delivered, 3), "usable_gb": round(usable, 3),

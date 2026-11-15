@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { useGame } from '../core/GameContext';
+import { tr } from '../core/i18n';
 import { buildRocket, buildSatellite, loadInstruments, loadRocket, loadSatellite } from '../three/modelLoader';
+import { addAdapterBelow } from '../three/payloadAdapter';
 import { buildHangarEnv, buildIntegrationHall } from '../three/environments';
 
 const BUS_DIMS = {
@@ -297,6 +300,7 @@ function fitOf(object) {
  * Chi dung lai khi bus/comm/vehicle doi; khong dung lai moi lan /evaluate tra ve.
  */
 export default function Hangar3DCanvas({ design, catalog, theme }) {
+  const { lang } = useGame();
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const stageRef = useRef({
@@ -550,7 +554,12 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
           loadSatellite(busId, commId),
           loadInstruments(design?.instruments),
         ]);
-        if (model) return place(buildSatellite(model, { withAdapter: true, design, insModels }), null, 'MODEL THAT');
+        if (model) {
+          // ve tinh dung tren DOAN CHOP NOI (payload adapter) nhu luc gan len tang tren cua ten lua
+          const satRig = buildSatellite(model, { withAdapter: false, design, insModels });
+          addAdapterBelow(satRig);
+          return place(satRig, null, 'MODEL THAT');
+        }
       }
       return place(null, buildSatelliteGroup(design, catalog, null), 'MODEL DU PHONG');
     })();
@@ -567,6 +576,13 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
     }
   }, [deployed, view, source, busId, commId, powerId, batteryId, obcId, adcsId, instrumentsKey]);
 
+  const sourceLabel =
+    source === 'MODEL THAT'
+      ? tr(lang, 'MÔ HÌNH CHUẨN', 'CAD MODEL')
+      : source
+        ? tr(lang, 'MÔ HÌNH DỰ PHÒNG', 'FALLBACK MODEL')
+        : '';
+
   const busDims = BUS_DIMS[design?.bus] || null;
   return (
     <div className="viewport-box">
@@ -577,16 +593,22 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
         <br />
         PWR: {design?.power || '-'} | COM: {design?.comm || '-'} | BAT: {design?.battery || '-'}
         <br />
-        OBC: {design?.obc || '-'} | ADCS: {design?.adcs || '-'} | INS: {(design?.instruments || []).length} | {source}
+        OBC: {design?.obc || '-'} | ADCS: {design?.adcs || '-'} | INS: {(design?.instruments || []).length} | {sourceLabel}
       </div>
       <div className="viewport-tools">
-        <button className={`btn small ${view === 'sat' ? 'primary' : ''}`} onClick={() => setView('sat')}>VỆ TINH</button>
-        <button className={`btn small ${view === 'rocket' ? 'primary' : ''}`} onClick={() => setView('rocket')}>TÊN LỬA</button>
+        <button className={`btn small ${view === 'sat' ? 'primary' : ''}`} onClick={() => setView('sat')}>
+          {tr(lang, 'VỆ TINH', 'SATELLITE')}
+        </button>
+        <button className={`btn small ${view === 'rocket' ? 'primary' : ''}`} onClick={() => setView('rocket')}>
+          {tr(lang, 'TÊN LỬA', 'ROCKET')}
+        </button>
         {view === 'sat' && (
-          <button className="btn small" onClick={() => setDeployed((d) => !d)}>{deployed ? 'GẬP CÁNH' : 'MỞ CÁNH / ĂNG-TEN'}</button>
+          <button className="btn small" onClick={() => setDeployed((d) => !d)}>
+            {deployed ? tr(lang, 'GẬP CÁNH', 'STOW WINGS') : tr(lang, 'MỞ CÁNH / ĂNG-TEN', 'DEPLOY WINGS')}
+          </button>
         )}
       </div>
-      <div className="viewport-hint">Kéo để xoay • Cuộn để phóng to</div>
+      <div className="viewport-hint">{tr(lang, 'Kéo để xoay • Cuộn để phóng to', 'Drag to rotate • Scroll to zoom')}</div>
     </div>
   );
 }

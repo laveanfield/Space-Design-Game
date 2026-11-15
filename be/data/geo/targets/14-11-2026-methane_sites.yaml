@@ -1,0 +1,13 @@
+# Vung hay co chum khi methane lon (gieng dau khi, mo than, bai rac) -- muc tieu chup PHO lam bang chung
+# cho nhiem vu MP-SC04-GHG. Toa do la TAM VUNG lam tron, chi de minh hoa vi tri tren ban do;
+# KHONG phai du lieu phat hien ro ri that. kind quyet dinh kieu anh minh hoa (be/tools/14-11-2026-render_imagery.py).
+set: methane
+items:
+  - { id: CH4-PERMIAN,     name: "Permian Basin, Texas (Mỹ)",          lat_deg: 31.9,  lon_deg: -102.0, kind: oil_gas }
+  - { id: CH4-TURKMEN,     name: "Bờ biển Caspi, Turkmenistan",        lat_deg: 39.5,  lon_deg: 53.8,   kind: oil_gas }
+  - { id: CH4-ALGERIA,     name: "Hassi Messaoud, Algeria",            lat_deg: 31.7,  lon_deg: 6.1,    kind: oil_gas }
+  - { id: CH4-KUZBASS,     name: "Kuzbass, Siberia (Nga)",             lat_deg: 54.0,  lon_deg: 87.0,   kind: coal }
+  - { id: CH4-SHANXI,      name: "Sơn Tây (Shanxi), Trung Quốc",       lat_deg: 37.8,  lon_deg: 112.5,  kind: coal }
+  - { id: CH4-BOWEN,       name: "Bowen Basin, Queensland (Úc)",       lat_deg: -22.5, lon_deg: 148.5,  kind: coal }
+  - { id: CH4-BUENOSAIRES, name: "Bãi rác ngoại ô Buenos Aires",       lat_deg: -34.6, lon_deg: -58.6,  kind: landfill }
+  - { id: CH4-DELHI,       name: "Bãi rác Ghazipur, Delhi (Ấn Độ)",    lat_deg: 28.6,  lon_deg: 77.3,   kind: landfill }

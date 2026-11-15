@@ -2,6 +2,7 @@
 import math
 from ..kernels import orbit as korbit, power, link, radiation, cost, ascent
 from ..errors import CatalogIdMissing
+from ..integrations.mission_comms import settings
 
 
 def resolve(design, catalog):
@@ -15,6 +16,7 @@ def resolve(design, catalog):
         "battery": g("batteries", design["battery"]), "comm": g("comms", design["comm"]),
         "obc": g("avionics", design["obc"]), "adcs": g("avionics", design["adcs"]),
         "lv": g("launch_vehicles", lv["vehicle"]), "site": g("launch_sites", lv["site"]),
+        "stations": catalog.rows("ground_stations"),
     }
 
 
@@ -35,6 +37,7 @@ def capacity(policy, lv, orbit, site):
 
 def compute(design, it, mission, rs):
     m, orbit, ins = {}, it["orbit"], it["instruments"]
+    radio_config = settings(design, it["stations"])
     parts = all_parts(it)
     tuning = design.get("tuning") or {}
     alt_offset_km = float(tuning.get("altitude_offset_km", 0.0))
@@ -58,7 +61,7 @@ def compute(design, it, mission, rs):
     ecl = max(0.05, min(0.48, orbit["eclipse_fraction"] - 0.0002 * alt_offset_km))
     T = korbit.period(korbit.RE + alt_km * 1e3)
     duty = rs["duty"]
-    load = it["obc"]["power_w"] + it["adcs"]["power_w"] * duty["adcs"] + it["comm"]["power_w"] * duty["comm"] \
+    load = it["obc"]["power_w"] + it["adcs"]["power_w"] * duty["adcs"] + it["comm"]["power_w"] * (.4 + .6 * radio_config["tx_scale"]) * duty["comm"] \
         + sum(i["power_operating_w"] for i in ins) * duty["instrument"] * duty_scale
     eh = power.eclipse_hours(T, ecl)
     sun_factor = 0.25 if "BODY" in it["power"]["id"] else rs["sun_factor"]
@@ -70,7 +73,7 @@ def compute(design, it, mission, rs):
 
     # du lieu
     m["data.generated_gb_per_day"] = sum(i["data_generated_gb_per_day"] for i in ins) * duty_scale
-    m["comm.downlink_mbps"], m["orbit.contact_min"] = it["comm"]["downlink_mbps"], orbit["ground_contact_min_per_day"]
+    m["comm.downlink_mbps"], m["orbit.contact_min"] = it["comm"]["downlink_mbps"] * radio_config["rate_scale"], orbit["ground_contact_min_per_day"]
     m["data.downlink_gb_per_day"] = link.downlink_gb_per_day(m["comm.downlink_mbps"], m["orbit.contact_min"], rs["downlink_efficiency"])
 
     # chi huong

@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useGame } from '../core/GameContext';
+import { tr } from '../core/i18n';
 
 /**
  * EvidenceGallery -- anh dam chay rung ve tinh TU DONG chup (du lieu tu /campaign/lifetime).
@@ -33,8 +35,18 @@ export function gbPerShot(gbPerDay, altKm) {
   return gbPerDay ? gbPerDay / orbitsPerDay(altKm) : null;
 }
 
+/** Dung luong dang chu de doc: 2.68 GB / 21 MB / 400 KB. */
+export function fmtSize(gb) {
+  if (gb == null) return '';
+  if (gb >= 1) return `${gb.toFixed(2)} GB`;
+  if (gb >= 0.001) return `${(gb * 1024).toFixed(0)} MB`;
+  return `${(gb * 1024 * 1024).toFixed(0)} KB`;
+}
+
 /** Do phan giai tuong doi theo luong du lieu cam bien (minh hoa: cam bien sinh nhieu GB -> anh nhieu diem anh). */
-function resOf(gbPerDay) {
+function resOf(gbPerDay, theme) {
+  // khung du lieu cua tu ke / may do hat vi nhieu it GB/ngay theo ban chat, khong phai vi chat luong kem -> giu nguyen do phan giai
+  if (theme === 'space_weather') return 1;
   if (!gbPerDay) return 0.5;
   return Math.max(0.22, Math.min(1, 0.3 + 0.35 * Math.log10(1 + gbPerDay * 3)));
 }
@@ -53,7 +65,12 @@ function loadImg(src) {
 }
 
 function srcOf(shot, thermal) {
-  return `/imagery/fire_${shot.target_id}_${Math.abs(shot.seed || 0) % VARIANTS}${thermal ? '_ir' : ''}.jpg`;
+  const v = Math.abs(shot.seed || 0) % VARIANTS;
+  // nhiem vu khi nha kinh: anh pho chum khi methane (khong co ban hong ngoai nhiet)
+  if (shot.theme === 'methane') return `/imagery/ch4_${shot.target_id}_${v}.jpg`;
+  // nhiem vu bao Mat Troi: khung quan trac cua tu ke / may do hat (do thi, ban do vanh dai buc xa, cuc quang)
+  if (shot.theme === 'space_weather') return `/imagery/sw_${shot.target_id}_${v}.jpg`;
+  return `/imagery/fire_${shot.target_id}_${v}${thermal ? '_ir' : ''}.jpg`;
 }
 
 /** Ve anh len canvas roi lam xau theo tinh trang ve tinh. */
@@ -62,9 +79,10 @@ function paint(cv, im, shot, res) {
   const r = rng(shot.seed || 1);
   const blur = shot.blur || 0;
   // 1) cat mot khung ngau nhien (moi lan chup lech vi tri mot chut) va thu nho theo do phan giai
-  const cw = im.width * 0.72, ch = im.height * 0.72;
+  const whole = shot.theme === 'space_weather';       // do thi / ban do co truc, nhan: giu nguyen ca khung, khong cat
+  const cw = whole ? im.width : im.width * 0.72, ch = whole ? im.height : im.height * 0.72;
   // dam chay nam gan giua anh goc -> chi lech quanh tam de khong cat mat tuyen lua
-  const sx = (im.width - cw) * (0.5 + (r() - 0.5) * 0.6), sy = (im.height - ch) * (0.5 + (r() - 0.5) * 0.6);
+  const sx = whole ? 0 : (im.width - cw) * (0.5 + (r() - 0.5) * 0.6), sy = whole ? 0 : (im.height - ch) * (0.5 + (r() - 0.5) * 0.6);
   const tw = Math.max(16, Math.round(W * res)), th = Math.max(10, Math.round(H * res));
   const tmp = document.createElement('canvas');
   tmp.width = tw; tmp.height = th;
@@ -116,6 +134,7 @@ function paint(cv, im, shot, res) {
   g.putImageData(img, 0, 0);
   // 5) khung ngam + toa do (giong anh tram mat dat)
   const k = W / 200;
+  if (shot.theme === 'space_weather') return finishLabel(g, shot, W, H, k);
   g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = Math.max(1, k * 0.8);
   const cx = W / 2, cy = H / 2, q = 14 * k;
   g.beginPath();
@@ -123,7 +142,15 @@ function paint(cv, im, shot, res) {
   g.stroke();
   const fk = Math.min(k, 1.5);
   g.font = `${Math.round(9 * fk)}px monospace`; g.fillStyle = 'rgba(255,255,255,0.9)';
-  g.fillText(`${shot.lat.toFixed(2)}°, ${shot.lon.toFixed(2)}°`, 5 * fk, H - 6 * fk);
+  const hasGeo = Number.isFinite(shot.lat) && Number.isFinite(shot.lon);
+  if (hasGeo) g.fillText(`${shot.lat.toFixed(2)}°, ${shot.lon.toFixed(2)}°`, 5 * fk, H - 6 * fk);
+  else g.fillText(shot.target_id, 5 * fk, 14 * fk);   // khung bao Mat Troi khong co toa do dia ly: ghi ma khung
+}
+
+function finishLabel(g, shot, W, H, k) {
+  const fk = Math.min(k, 1.5);
+  g.font = `${Math.round(9 * fk)}px monospace`; g.fillStyle = 'rgba(255,255,255,0.9)';
+  g.fillText(shot.target_id, 5 * fk, 14 * fk);
 }
 
 function ShotCanvas({ shot, thermal, res, w, h }) {
@@ -136,18 +163,18 @@ function ShotCanvas({ shot, thermal, res, w, h }) {
   return <canvas ref={ref} width={w} height={h} />;
 }
 
-function Photo({ shot, shown, thermal, res, gb, onOpen }) {
+function Photo({ shot, shown, thermal, res, gb, lang = 'vi', onOpen }) {
   const blurred = shot.blur >= BLUR_USABLE;
   const state = !shown ? 'pending' : blurred ? 'bad' : 'ok';
   return (
     <button className={`evidence-card ${state}`} disabled={!shown} onClick={onOpen}
-            title={`${shot.target} · tháng ${shot.month}${shot.seu ? ' · SEU' : ''}`}>
+            title={`${shot.target} · ${tr(lang, 'tháng', 'month')} ${shot.month}${shot.seu ? ' · SEU' : ''}`}>
       {shown ? <ShotCanvas shot={shot} thermal={thermal} res={res} w={200} h={132} />
              : <div className="evidence-pending"><span className="ev-spin" />⇣</div>}
       <div className="evidence-cap">
         <span className={`ev-dot ${state}`}>{state === 'ok' ? '✔' : state === 'bad' ? '✕' : '…'}</span>
         <span>#{shot.n}</span>
-        {gb != null && <span className="ev-gb">💾 {gb < 0.1 ? gb.toFixed(3) : gb.toFixed(2)} GB</span>}
+        {gb != null && <span className="ev-gb">💾 {fmtSize(gb)}</span>}
       </div>
     </button>
   );
@@ -155,9 +182,10 @@ function Photo({ shot, shown, thermal, res, gb, onOpen }) {
 
 /** step: moc dang hien (1..12). Chi hien anh da chup toi moc nay; anh hien khi delivered_k <= step. */
 export default function EvidenceGallery({ evidence, need, step, sensorName, imaging, altKm }) {
+  const { lang } = useGame();
   const [open, setOpen] = useState(null);
   const thermal = /thermal|hồng ngoại|infrared/i.test(sensorName || imaging?.name || '');
-  const res = resOf(imaging?.gb_per_day);
+  const res = resOf(imaging?.gb_per_day, imaging?.theme);
   const gb = gbPerShot(imaging?.gb_per_day, altKm);
   const taken = evidence.filter((s) => s.k <= step);
   const isShown = (s) => s.delivered_k != null && s.delivered_k <= step;
@@ -166,29 +194,29 @@ export default function EvidenceGallery({ evidence, need, step, sensorName, imag
   return (
     <div className="evidence">
       <div className="evidence-head">
-        <span>📷 {sensorName || imaging?.name}</span>
-        <span className="ev-meter" title="ảnh rõ đã về / ảnh cần">
+        <span>{imaging?.theme === 'space_weather' ? '📡' : '📷'} {sensorName || imaging?.name}</span>
+        <span className="ev-meter" title={tr(lang, 'ảnh rõ đã về / ảnh cần', 'usable photos downlinked / required')}>
           {Array.from({ length: need }, (_, i) => <i key={i} className={i < usable ? 'on' : ''} />)}
           <b className={usable >= need ? 'ok-text' : ''}>{usable}/{need}</b>
         </span>
       </div>
-      {usable >= need && <div className="ok-banner" style={{ margin: '0 0 8px 0' }}>✔ ĐỦ BẰNG CHỨNG</div>}
+      {usable >= need && <div className="ok-banner" style={{ margin: '0 0 8px 0' }}>✔ {tr(lang, 'ĐỦ BẰNG CHỨNG', 'EVIDENCE COMPLETE')}</div>}
       <div className="evidence-grid">
-        {taken.length === 0 && <div className="small muted">🔥 —</div>}
+        {taken.length === 0 && <div className="small muted">{{ methane: 'CH₄', space_weather: '☀' }[evidence[0]?.theme] || '🔥'} —</div>}
         {taken.map((s) => (
-          <Photo key={s.n} shot={{ ...s, sensor }} shown={isShown(s)} thermal={thermal} res={res} gb={gb} onOpen={() => setOpen(s)} />
+          <Photo key={s.n} shot={{ ...s, sensor }} shown={isShown(s)} thermal={thermal} res={res} gb={gb} lang={lang} onOpen={() => setOpen(s)} />
         ))}
       </div>
-      <div className="small muted" style={{ marginTop: 4 }}>ảnh minh họa · dung lượng ≈ GB/ngày ÷ số vòng/ngày</div>
+      <div className="small muted" style={{ marginTop: 4 }}>{tr(lang, 'ảnh minh họa · dung lượng ≈ GB/ngày ÷ số vòng/ngày', 'simulated imagery · size ≈ GB/day ÷ orbits/day')}</div>
       {open && (
         <div className="evidence-lightbox" onClick={() => setOpen(null)}>
           <div className="evidence-big" onClick={(e) => e.stopPropagation()}>
             <ShotCanvas shot={{ ...open, sensor }} thermal={thermal} res={res} w={640} h={422} />
             <div className="evidence-big-cap">
               <b>#{open.n} {open.target}</b>
-              <span>tháng {open.month}</span>
-              {gb != null && <span>💾 {gb.toFixed(3)} GB</span>}
-              <span className={open.blur >= BLUR_USABLE ? 'err-text' : 'ok-text'}>{open.blur >= BLUR_USABLE ? '✕ nhòe' : '✔ rõ'}</span>
+              <span>{tr(lang, 'tháng', 'month')} {open.month}</span>
+              {gb != null && <span>💾 {fmtSize(gb)}</span>}
+              <span className={open.blur >= BLUR_USABLE ? 'err-text' : 'ok-text'}>{open.blur >= BLUR_USABLE ? `✕ ${tr(lang, 'nhòe', 'blurred')}` : `✔ ${tr(lang, 'rõ', 'sharp')}`}</span>
               {open.seu && <span className="err-text">☢ SEU</span>}
               <button className="btn" onClick={() => setOpen(null)}>✕</button>
             </div>

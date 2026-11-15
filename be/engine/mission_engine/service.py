@@ -11,7 +11,11 @@ from .rules.advisor import advise as _advise
 from .flight import fly as _fly
 from .session.ops import OpsSession
 from .campaign import simulate_lifetime as _lifetime
+from .campaign.lifetime import EVIDENCE_SETS
 from .campaign.accommodation import matrix as _accommodation_matrix
+from .integrations import mission_comms
+from .rules import metrics
+from .campaign.lifetime import _fire_targets
 
 
 class Engine:
@@ -59,13 +63,32 @@ class Engine:
         mission = self._m(design, mission_id)
         report = _evaluate(design, mission, self.catalog, False)
         imaging = None
-        for iid in design.get("instruments", []):
-            ins = self.catalog.get("instruments", iid)
-            if ins.get("science_category") == "Earth observation":       # thiet bi chup anh mat dat -> tu dong chup dam chay
+        # Bo anh bang chung do CHINH NHIEM VU quyet dinh (mission yaml: gameplay.params.evidence_set = wildfire | methane).
+        # Nhiem vu khong khai bao (vd. tram gac bao Mat Troi: chi do tu truong) thi khong co anh bang chung nao,
+        # du nguoi choi co lap may anh. Truoc day thieu khai bao bi roi ve "chay rung" nen hien sai anh.
+        theme = mission.gameplay.get("params", {}).get("evidence_set")
+        if theme in EVIDENCE_SETS:
+            cats = EVIDENCE_SETS[theme]["categories"]       # thiet bi nao tao ra bang chung cho nhiem vu nay
+            hits = [(iid, self.catalog.get("instruments", iid)) for iid in design.get("instruments", [])]
+            hits = [(iid, ins) for iid, ins in hits if ins.get("science_category") in cats]
+            if hits:
+                iid, ins = hits[0]
                 imaging = {"sensor": ins.get("kind", "imager_rgb"), "name": ins.get("name", iid), "id": iid,
-                           "gb_per_day": ins.get("data_generated_gb_per_day")}       # de fe uoc luong dung luong moi anh
-                break
-        return _lifetime(report, mission.life_years, design.get("seed", 0) if seed is None else seed, imaging)
+                           "ids": [h[0] for h in hits],
+                           "gb_per_day": ins.get("data_generated_gb_per_day"),   # de fe uoc luong dung luong moi khung
+                           "theme": theme}
+        # Signal physics hien chi mo phong muc tieu dia ly. Space-weather la cac khung do tai cho,
+        # khong co lat/lon de dua vao bai toan footprint va tram mat dat nay.
+        communications = self.communications(design, mission_id) if imaging and theme != "space_weather" else None
+        return _lifetime(report, mission.life_years, design.get("seed", 0) if seed is None else seed, imaging, communications)
+
+    def communications(self, design, mission_id=None):
+        mission = self._m(design, mission_id)
+        it = metrics.resolve(design, self.catalog)
+        m = metrics.compute(design, it, mission, mission.ruleset)
+        theme = mission.gameplay.get("params", {}).get("evidence_set", "wildfire")
+        targets = [t for t in _fire_targets(theme) if "lat_deg" in t and "lon_deg" in t]
+        return mission_comms.simulate(design, it, m, mission.ruleset, targets, evidence_theme=theme)
 
     def accommodation(self):
         """Bang ten lua x (bus, ang-ten) -> lap duoc khong + ly do (campaign/accommodation.py)."""

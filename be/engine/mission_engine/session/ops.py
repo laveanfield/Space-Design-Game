@@ -12,8 +12,8 @@ from ..mission.pack import load_yaml
 from ..modes.resolver import resolve_mode
 from ..modes import registry
 from .hashing import result_hash
+from ..integrations.mission_comms import settings, game_link, ecef_position
 
-GS_GAIN_DBI = 35.0
 PULSE_S = {"coarse": 1.0, "med": 0.3, "fine": 0.05}
 RESET_S, SUB_DT = 6.0, 5.0
 Z_BODY = np.array([0.0, 0.0, 1.0])               # truc an-ten (boresight) tren than ve tinh
@@ -26,7 +26,7 @@ class OpsSession:
         self.rep, self.results, self.cons, self.m, self.flt = _evaluate(design, mission, catalog)
         self.it = it = metrics.resolve(design, catalog)
         orb = it["orbit"]
-        self.a, self.inc, self.alt0 = korbit.RE + orb["altitude_km"] * 1e3, orb["inclination_deg"], orb["altitude_km"]
+        self.a, self.inc, self.alt0 = korbit.RE + self.m["orbit.altitude_km"] * 1e3, orb["inclination_deg"], self.m["orbit.altitude_km"]
         self.sat_fn = lambda t: geometry.sat_eci(t, self.a, self.inc)
         size, mass = it["bus"].get("size_m", 0.3), self.m["mass.dry_kg"]
         self.I = np.full(3, max(mass * size ** 2 / 6.0, 1e-4))
@@ -38,7 +38,8 @@ class OpsSession:
         self.faults = {f["id"]: f for f in self.flt}
         self.dose, self.reset_until, self.events = 0.0, -1.0, []
         self.stations, self.targets = catalog.rows("ground_stations"), catalog.rows("targets")
-        self.station = self.stations[0]
+        self.radio_config = settings(design, self.stations)
+        self.station = next(s for s in self.stations if s["id"] == self.radio_config["station_id"])
         rules = resolver_rules if resolver_rules is not None else self._rules()
         self.mode_id, self.overlays, self.warnings = resolve_mode(rules, mission, it, self.m)
         self.mode = registry.create(self.mode_id)
@@ -111,8 +112,8 @@ class OpsSession:
         self.q, self.w = attitude.step_rk4(self.q, self.w, self.I, np.zeros(3), h)
         # dien
         ecl = geometry.in_eclipse(r, geometry.SUN_HAT)
-        gen = 0.0 if ecl else it["power"]["generation_w"] * rs["sun_factor"]
-        self.soc = power.soc_step(self.soc, gen, self.m["power.load_w"], h, self.cap_wh)
+        sun_factor = .25 if "BODY" in it["power"]["id"] else rs["sun_factor"]
+        gen = 0.0 if ecl else it["power"]["generation_w"] * sun_factor
         # lien lac
         axis = attitude.rotate(self.q, Z_BODY)
         ref = to_st if in_view else -r
@@ -120,14 +121,24 @@ class OpsSession:
         lk = {"station": stn["name"], "el_deg": round(el, 2), "state": "NO_PASS", "margin_db": None, "rate_mbps": 0.0}
         if in_view:
             c = it["comm"]
-            mg = link.margin_db(c["tx_power_w"], c["antenna_gain_dbi"], GS_GAIN_DBI, float(np.linalg.norm(to_st)),
-                                link.BAND_HZ.get(c.get("band", "S"), 2.2e9), max(c["downlink_mbps"], 1e-6) * 1e6, theta_deg=err)
-            lk.update(margin_db=round(mg, 2), state=link.state(mg, rs["link"]["lock_db"], rs["link"]["marginal_db"]),
-                      rate_mbps=c["downlink_mbps"])
+            solved = game_link(c, stn, ecef_position(r, t), self.radio_config, err, trace=True)
+            mg = solved.budget.margin_db.value
+            lk.update(margin_db=None if mg is None else round(mg, 2), state="DEGRADED" if mg is None else link.state(mg, rs["link"]["lock_db"], rs["link"]["marginal_db"]),
+                      rate_mbps=c["downlink_mbps"] * self.radio_config["rate_scale"],
+                      path_basis=solved.path_basis, fspl_db=solved.losses_db["free_space"].value,
+                      range_km=solved.geometry.slant_range_m/1000.,
+                      ray=None if solved.neutral_ray is None else solved.to_dict()["neutral_ray"])
+        reserve = {"data_first": .06, "balanced": .25, "save_power": .55}[self.radio_config["strategy"]]
+        if lk["state"] == "LOCK" and self.soc < reserve:
+            lk.update(state="POWER_HOLD", rate_mbps=0.)
+        tx_active = lk["state"] == "LOCK" and self.buffer_gb > 0 and self.t >= self.reset_until
+        tx_load = it["comm"]["power_w"] * (.4 + .6*self.radio_config["tx_scale"])
+        self.actual_load_w = self.m["power.load_w"] - tx_load*rs["duty"]["comm"] + (tx_load if tx_active else 0.)
+        self.soc = power.soc_step(self.soc, gen, self.actual_load_w, h, self.cap_wh)
         # du lieu
         power_ok = self.soc > 0.05 and "blackout" not in self.faults
         gen_gb = self.m["data.generated_gb_per_day"] / 86400.0 * h
-        drain = lk["rate_mbps"] * rs["downlink_efficiency"] * h / 8000.0 if (lk["state"] in ("LOCK", "MARGINAL") and power_ok) else 0.0
+        drain = lk["rate_mbps"] * rs["downlink_efficiency"] * h / 8000.0 if (tx_active and power_ok) else 0.0
         before = self.buffer_gb + gen_gb
         sent = min(drain, before)
         self.buffer_gb, self.downlinked_gb = min(max(before - sent, 0.0), self.cap_gb), self.downlinked_gb + sent
@@ -155,7 +166,7 @@ class OpsSession:
             "flight": {"alt_km": round(self.alt_km, 3), "v_inertial_ms": round(korbit.v_circ(self.a), 2), "mass_kg": self.m["mass.dry_kg"]},
             "attitude": {"q": [round(float(x), 6) for x in self.q], "omega_dps": [round(math.degrees(float(x)), 4) for x in self.w],
                          "boresight_error_deg": round(L["err"], 3), "auto": self.auto},
-            "power": {"gen_w": round(L["gen_w"], 3), "load_w": round(self.m["power.load_w"], 3), "soc": round(self.soc, 4), "eclipse": L["eclipse"]},
+            "power": {"gen_w": round(L["gen_w"], 3), "load_w": round(getattr(self, "actual_load_w", self.m["power.load_w"]), 3), "soc": round(self.soc, 4), "eclipse": L["eclipse"]},
             "link": L["link"],
             "data": {"buffer_gb": round(self.buffer_gb, 5), "capacity_gb": self.cap_gb, "downlinked_gb": round(self.downlinked_gb, 5)},
             "radiation": {"dose_krad": round(self.dose, 6), "tolerance_krad": self.m["radiation.tolerance_krad"], "seu_active": self.t < self.reset_until},

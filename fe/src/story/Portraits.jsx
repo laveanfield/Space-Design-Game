@@ -90,6 +90,76 @@ export function EngineerPortrait({ mood = 'calm' }) {
   );
 }
 
+/**
+ * Avatar hinh tron cua Ky su truong (zoom can canh khuon mat & mu bao ho)
+ * dung cho hop huong dan (Tutorial) o goc phai man hinh.
+ */
+export function EngineerCircleAvatar({ mood = 'happy' }) {
+  const brow =
+    mood === 'worried'
+      ? 'M76 92 L96 98 M124 92 L104 98'
+      : 'M76 89 Q86 84 96 89 M104 89 Q114 84 124 89';
+  const mouth =
+    mood === 'happy'
+      ? 'M87 126 Q100 137 113 126'
+      : mood === 'worried'
+        ? 'M88 132 Q100 124 112 132'
+        : 'M89 129 L111 129';
+
+  return (
+    <svg viewBox="46 22 108 124" className="eng-circle-svg" aria-label="Kỹ sư trưởng hướng dẫn">
+      <defs>
+        <radialGradient id="engCircleBg" cx="50%" cy="42%" r="60%">
+          <stop offset="0%" stopColor="#1e3b2b" />
+          <stop offset="100%" stopColor="#0b1510" />
+        </radialGradient>
+        <linearGradient id="engCircleHat" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#f6c75c" />
+          <stop offset="100%" stopColor="#b87b22" />
+        </linearGradient>
+      </defs>
+      <rect x="40" y="18" width="120" height="134" fill="url(#engCircleBg)" />
+
+      {/* Shoulders & Overalls */}
+      <path d="M56 150 L66 135 L134 135 L144 150 Z" fill="#9ea3a8" stroke="#221e1a" strokeWidth="2.5" />
+      <rect x="74" y="138" width="52" height="16" fill="#6d6452" stroke="#221e1a" strokeWidth="2" />
+      <rect x="74" y="135" width="11" height="15" fill="#5b5344" stroke="#221e1a" strokeWidth="1.8" />
+      <rect x="115" y="135" width="11" height="15" fill="#5b5344" stroke="#221e1a" strokeWidth="1.8" />
+
+      {/* Hair + Head */}
+      <path
+        d="M62 112 Q54 76 100 72 Q146 76 138 112 Q144 126 132 132 L68 132 Q56 126 62 112 Z"
+        fill="#2d2621"
+        stroke="#181310"
+        strokeWidth="2"
+      />
+      <ellipse cx="100" cy="108" rx="30" ry="29" fill="#e7c2a3" stroke="#221e1a" strokeWidth="2.5" />
+      <path d="M66 96 L78 86 L92 94 L106 84 L122 94 L134 86 L132 74 Q100 66 68 74 Z" fill="#2d2621" />
+
+      {/* Eyes & Smile */}
+      <path d={brow} fill="none" stroke="#1d1815" strokeWidth="3" strokeLinecap="round" />
+      <ellipse cx="86" cy="106" rx="7" ry="6" fill="#fff" stroke="#1d1815" strokeWidth="2" />
+      <ellipse cx="114" cy="106" rx="7" ry="6" fill="#fff" stroke="#1d1815" strokeWidth="2" />
+      <circle cx="87" cy="106" r="3.2" fill="#1d1815" />
+      <circle cx="115" cy="106" r="3.2" fill="#1d1815" />
+      <circle cx="88.5" cy="104.5" r="1.1" fill="#fff" />
+      <circle cx="116.5" cy="104.5" r="1.1" fill="#fff" />
+      <path d="M98 111 Q96 118 101 120" fill="none" stroke="#8a6250" strokeWidth="2" strokeLinecap="round" />
+      <path d={mouth} fill="none" stroke="#632f25" strokeWidth="2.8" strokeLinecap="round" />
+
+      {/* Hard hat + Brass goggles */}
+      <path d="M60 72 Q62 32 100 30 Q138 32 140 72 Z" fill="url(#engCircleHat)" stroke="#221e1a" strokeWidth="2.5" />
+      <path d="M94 31 L106 31 L109 64 L91 64 Z" fill="#f7cf6c" stroke="#221e1a" strokeWidth="2" />
+      <rect x="54" y="68" width="92" height="9" rx="4" fill="#c98d2b" stroke="#221e1a" strokeWidth="2.5" />
+      <rect x="70" y="53" width="24" height="17" rx="5" fill="#70808c" stroke="#221e1a" strokeWidth="2.2" />
+      <rect x="106" y="53" width="24" height="17" rx="5" fill="#70808c" stroke="#221e1a" strokeWidth="2.2" />
+      <circle cx="82" cy="61.5" r="6" fill="#39ff14" opacity="0.82" />
+      <circle cx="118" cy="61.5" r="6" fill="#39ff14" opacity="0.82" />
+      <rect x="94" y="59" width="12" height="5" fill="#3d352c" />
+    </svg>
+  );
+}
+
 export function BossPortrait({ mood = 'smug' }) {
   const isAlert = mood === 'angry' || mood === 'worried';
   const mouth = isAlert ? 'M100 128 Q114 121 128 129' : 'M100 124 Q114 134 128 122';

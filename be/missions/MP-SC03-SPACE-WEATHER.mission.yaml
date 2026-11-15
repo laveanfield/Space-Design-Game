@@ -5,12 +5,12 @@ meta:
   title: { vi: "Trạm gác thời tiết không gian", en: "Space Weather Sentinel" }
   brief: { vi: "Giữ máy đo từ hoạt động liên tục trong vành đai bức xạ.", en: "Keep a magnetometer sampling inside the radiation belts." }
   learning_goals: [ "radiation hardening" ]
-  difficulty: 3
+  difficulty: 2
 objective:
-  statement: { vi: "Sống sót và lấy mẫu liên tục.", en: "Survive and sample continuously." }
+  statement: { vi: "Sống sót qua bão Mặt Trời và gửi về ít nhất 3 khung quan trắc rõ nét (từ phổ, vành đai bức xạ, cực quang).", en: "Survive the solar storm and downlink at least 3 clear observation frames (magnetogram, radiation belts, aurora)." }
 constraints:
   - { id: radiation, critical: true }
-gameplay: { mode: auto }
+gameplay: { mode: auto, params: { evidence_set: space_weather } }
 starter: fail_radiation
 hazards: { profile: standard, seed: 7 }
 presets:
