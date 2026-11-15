@@ -132,15 +132,15 @@ export const TUTORIAL_STEPS = {
       target: 'build-next',
       title: { vi: '10/10 | SANG KIỂM ĐỊNH', en: '10/10 | GO TO INSPECTION' },
       body: {
-        vi: <>Bấm <span className="neon-green">[ GO TO INSPECTION ]</span> bên dưới để kiểm tra trước khi phóng.</>,
-        en: <>Click <span className="neon-green">[ GO TO INSPECTION ]</span> below to run pre-flight checks.</>,
+        vi: <>Bấm <span className="neon-green">[ ▶ TIẾP TỤC ĐẾN KIỂM ĐỊNH ]</span> bên dưới để kiểm tra trước khi phóng.</>,
+        en: <>Click <span className="neon-green">[ ▶ GO TO INSPECTION ]</span> below to run pre-flight checks.</>,
       },
     },
   ],
   inspect: [
     {
       target: 'inspect-cam-align',
-      title: { vi: '1/3 | CĂN TRỤC QUANG HỌC', en: '1/3 | ALIGN OPTICAL AXIS' },
+      title: { vi: '1/4 | CĂN TRỤC QUANG HỌC', en: '1/4 | ALIGN OPTICAL AXIS' },
       body: {
         vi: <>Kéo chuột trong khung 3D để căn trục gương về <span className="neon-green">0.0°</span> và giữ tới 100%.</>,
         en: <>Drag inside the 3D viewport to align the mirror axis to <span className="neon-green">0.0°</span> until 100%.</>,
@@ -148,7 +148,7 @@ export const TUTORIAL_STEPS = {
     },
     {
       target: 'inspect-stage',
-      title: { vi: '2/3 | DÒ RÒ RỈ KHÍ', en: '2/3 | AUDIO LEAK SCAN' },
+      title: { vi: '2/4 | DÒ RÒ RỈ KHÍ', en: '2/4 | AUDIO LEAK SCAN' },
       body: {
         vi: <>Ở góc nhìn <span className="neon-green">FULL STACK</span>, rê chuột tìm tiếng xì lớn nhất và click để hàn kín.</>,
         en: <>In <span className="neon-green">FULL STACK</span>, sweep for the loudest hiss and click to seal the leak.</>,
@@ -156,7 +156,7 @@ export const TUTORIAL_STEPS = {
     },
     {
       target: 'inspect-tools',
-      title: { vi: '3/3 | X-RAY TÌM VẾT NỨT', en: '3/3 | X-RAY WELD CHECK' },
+      title: { vi: '3/4 | X-RAY TÌM VẾT NỨT', en: '3/4 | X-RAY WELD CHECK' },
       body: {
         vi: <>Bật <span className="neon-green">X-RAY MESH</span>, tìm và click vào mọi đường nứt màu vàng.</>,
         en: <>Toggle <span className="neon-green">X-RAY MESH</span> and click every yellow weld crack.</>,
@@ -164,7 +164,7 @@ export const TUTORIAL_STEPS = {
     },
     {
       target: 'inspect-finish',
-      title: { vi: 'HOÀN TẤT KIỂM ĐỊNH', en: 'INSPECTION COMPLETE' },
+      title: { vi: '4/4 | HOÀN TẤT KIỂM ĐỊNH', en: '4/4 | INSPECTION COMPLETE' },
       body: {
         vi: <>Bấm <span className="neon-green">[ FINISH INSPECTION ]</span> để đưa tên lửa ra bệ phóng.</>,
         en: <>Click <span className="neon-green">[ FINISH INSPECTION ]</span> to roll out to the pad.</>,
@@ -184,16 +184,16 @@ export const TUTORIAL_STEPS = {
       target: 'launch-sequencer',
       title: { vi: 'TRÌNH TỰ BAY', en: 'FLIGHT SEQUENCER' },
       body: {
-        vi: <>Bảng bên phải theo dõi các mốc <span className="neon-green">IGNITION → MAX-Q → PAYLOAD_SEP</span>.</>,
-        en: <>The right panel tracks <span className="neon-green">IGNITION → MAX-Q → PAYLOAD_SEP</span>.</>,
+        vi: <>Bảng tiến trình theo dõi các mốc <span className="neon-green">IGNITION → MAX-Q → PAYLOAD_SEP</span>.</>,
+        en: <>The sequencer tracks <span className="neon-green">IGNITION → MAX-Q → PAYLOAD_SEP</span>.</>,
       },
     },
     {
       target: 'launch-next',
       title: { vi: 'ĐẠT QUỸ ĐẠO', en: 'ORBIT REACHED' },
       body: {
-        vi: <>Bấm nút bên dưới để vào pha <span className="neon-green">Vận hành Quỹ đạo [05]</span>.</>,
-        en: <>Click below to enter <span className="neon-green">Orbital Operations [05]</span>.</>,
+        vi: <>Khi phóng đạt quỹ đạo, bấm nút bên dưới để vào pha <span className="neon-green">Vận hành Quỹ đạo [05]</span>.</>,
+        en: <>Once orbit insertion completes, click below to enter <span className="neon-green">Orbital Operations [05]</span>.</>,
       },
     },
   ],
@@ -218,42 +218,40 @@ export const TUTORIAL_STEPS = {
       target: 'orbit-next',
       title: { vi: '3/3 | HOÀN THÀNH NHIỆM VỤ', en: '3/3 | FINISH MISSION' },
       body: {
-        vi: <>Sau khi chạy xong 12 mốc, bấm bên dưới để xem điểm và báo chí.</>,
-        en: <>After 12 epochs complete, click below to open Mission Review.</>,
+        vi: <>Sau khi chạy xong 12 mốc, bấm nút ở góc dưới bên phải để xem kết quả và báo chí.</>,
+        en: <>After 12 epochs complete, click the bottom-right button to open Mission Review.</>,
       },
     },
   ],
   brief: [
     {
-      target: 'brief-missions',
-      title: { vi: '1. CHỌN CHIẾN DỊCH (MISSIONS)', en: '1. SELECT CAMPAIGN MISSION' },
+      target: 'brief-kpis',
+      title: { vi: '1/2 | MỤC TIÊU & NGÂN SÁCH', en: '1/2 | OBJECTIVES & BUDGET' },
       body: {
         vi: (
           <>
-            Chọn một <span className="neon-green">Nhiệm vụ không gian</span> ở cột trái. Bạn cũng có thể bấm{' '}
-            <span className="neon-green">Chơi lại Sandbox (Có hoặc Tắt hướng dẫn)</span> bất cứ lúc nào!
+            Xem các chỉ tiêu cần đạt và ngân sách ở đây. Bấm <span className="neon-green">ĐỔI MÀN CHƠI</span> nếu muốn chọn nhiệm vụ khác hoặc mở Sandbox.
           </>
         ),
         en: (
           <>
-            Select a <span className="neon-green">Space Mission</span> on the left. You can also launch the{' '}
-            <span className="neon-green">Sandbox Tutorial (Guided or Free)</span> anytime.
+            Review mission targets and budget here. Click <span className="neon-green">CHANGE LEVEL</span> to pick another mission or launch Sandbox.
           </>
         ),
       },
     },
     {
       target: 'brief-start',
-      title: { vi: '2. VÀO XƯỞNG CHẾ TẠO [02.BUILD]', en: '2. ENTER INTEGRATION BAY [02.BUILD]' },
+      title: { vi: '2/2 | VÀO XƯỞNG CHẾ TẠO [02.BUILD]', en: '2/2 | ENTER BUILD BAY [02.BUILD]' },
       body: {
         vi: (
           <>
-            Bấm <span className="neon-green">[ VÀO XƯỞNG CHẾ TẠO → ]</span> để bắt đầu thiết kế vệ tinh cho nhiệm vụ đã chọn!
+            Bấm nút vào <span className="neon-green">Xưởng chế tạo</span> bên dưới để bắt đầu thiết kế vệ tinh!
           </>
         ),
         en: (
           <>
-            Click <span className="neon-green">[ ENTER BUILD BAY → ]</span> to start designing the spacecraft for your selected mission.
+            Click the <span className="neon-green">Enter Build Bay</span> button below to start designing your spacecraft.
           </>
         ),
       },

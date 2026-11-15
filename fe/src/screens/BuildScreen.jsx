@@ -6,7 +6,7 @@ import MissionComms from '../components/MissionComms';
 import PartCard from '../components/PartCard';
 import TrajectoryScope from '../components/TrajectoryScope';
 import { DEV } from '../core/devFlag';
-import { SLOTS, isSlotUnlocked } from '../core/gameMachine';
+import { SLOTS, getPartInsight, isSlotUnlocked } from '../core/gameMachine';
 import { useGame } from '../core/GameContext';
 import { tr, tx } from '../core/i18n';
 
@@ -91,6 +91,7 @@ export default function BuildScreen() {
     if (activeSlot === 'launch') return design.launch?.vehicle === item.id;
     return design[activeSlot] === item.id;
   });
+  const currentInsight = currentSelectedItem ? getPartInsight(activeSlot, currentSelectedItem) : null;
 
   const cost = Number(evalReport?.metrics?.['cost.total_musd'] || 0);
   const budget = Number(effectiveBudget ?? scenario.budget_musd ?? 0);
