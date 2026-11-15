@@ -1,4 +1,5 @@
 import React from 'react';
+import { MissionBriefingDossier } from '../components/CrisisIntro';
 import { DEV } from '../core/devFlag';
 import { useGame } from '../core/GameContext';
 import { tr, tx } from '../core/i18n';
@@ -14,6 +15,7 @@ export default function BriefScreen() {
     enterBuild,
     setPhase,
     startTutorialSandbox,
+    replayCrisisIntro,
   } = useGame();
 
   return (
@@ -74,7 +76,16 @@ export default function BriefScreen() {
               </div>
             </div>
 
-            <div className="row-wrap brief-actions" data-tutorial="brief-start">
+            <div style={{ marginTop: 12 }}>
+              <MissionBriefingDossier
+                missionId={missionDetail.id}
+                missionDetail={missionDetail}
+                scenario={scenario}
+                compact
+              />
+            </div>
+
+            <div className="row-wrap brief-actions" data-tutorial="brief-start" style={{ marginTop: 14 }}>
               <button
                 type="button"
                 className="btn primary hazard-cta"
@@ -84,30 +95,41 @@ export default function BriefScreen() {
                   enterBuild();
                 }}
               >
-                [ {tr(lang, 'VÀO XƯỞNG CHẾ TẠO →', 'ENTER ASSEMBLY HANGAR →')} ]
+                {tr(lang, 'VÀO XƯỞNG CHẾ TẠO →', 'ENTER BUILD BAY →')}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                disabled={busy}
+                onClick={replayCrisisIntro}
+                title={tr(lang, 'Mở lại phần giới thiệu toàn màn hình và hồ sơ kỹ thuật nhiệm vụ', 'Open full-screen narrative intro and technical dossier for this mission')}
+              >
+                {tr(lang, 'XEM HỒ SƠ NHIỆM VỤ', 'VIEW MISSION DOSSIER')}
               </button>
               <button
                 type="button"
                 className="btn warn"
                 disabled={busy}
                 onClick={() => startTutorialSandbox(true)}
+                title={tr(lang, 'Chạy hướng dẫn Sandbox từng bước cùng Kỹ sư trưởng', 'Run interactive Sandbox Tutorial guided step-by-step by the Chief Engineer')}
               >
-                🎓 {tr(lang, 'CHƠI SANDBOX (CÓ HƯỚNG DẪN)', 'GUIDED SANDBOX')}
+                {tr(lang, 'CHƠI SANDBOX (CÓ HƯỚNG DẪN)', 'SANDBOX TUTORIAL (GUIDED)')}
               </button>
               <button
                 type="button"
                 className="btn neon-btn"
                 disabled={busy}
                 onClick={() => startTutorialSandbox(false)}
+                title={tr(lang, 'Vào Sandbox tự do mở toàn bộ linh kiện, tắt bảng hướng dẫn', 'Enter free Sandbox with all subsystems unlocked and guide hidden')}
               >
-                🛠️ {tr(lang, 'SANDBOX TỰ DO', 'FREE SANDBOX')}
+                {tr(lang, 'SANDBOX TỰ DO (KHÔNG HD)', 'FREE SANDBOX (NO GUIDE)')}
               </button>
               <button
                 type="button"
                 className="btn"
                 onClick={() => setPhase('levels')}
               >
-                🗺️ {tr(lang, 'ĐỔI MÀN CHƠI', 'CHANGE LEVEL')}
+                {tr(lang, 'ĐỔI MÀN CHƠI', 'CHANGE LEVEL')}
               </button>
               {DEV && missionDetail.presets?.some((p) => p.id === 'good') && (
                 <button
@@ -115,11 +137,11 @@ export default function BriefScreen() {
                   className="btn"
                   disabled={busy}
                   onClick={() => {
-                    applyPreset('good');
+                    applyPreset('good', true);
                     setPhase('design');
                   }}
                 >
-                  DEV: {tr(lang, 'MỞ PRESET CHUẨN', 'LOAD REFERENCE PRESET')}
+                  {tr(lang, 'DEV: MỞ PRESET CHUẨN', 'DEV: LOAD GOOD PRESET')}
                 </button>
               )}
             </div>

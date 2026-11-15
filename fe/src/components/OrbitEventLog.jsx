@@ -29,7 +29,7 @@ export default function OrbitEventLog({ lines, status, dead, total }) {
         <div className="crt-brand">
           <span className="crt-plate">ORBITAL EVENT TERMINAL</span>
           <span className="crt-model">OET-12</span>
-          <span className="crt-leds" title="Đèn báo: PWR (nguồn), WRN (cảnh báo), ERR (sự cố nghiêm trọng)">
+          <span className="crt-leds" title="Indicators: PWR (power), WRN (warning), ERR (critical fault)">
             <i className="crt-led on green" />
             <i className={`crt-led amber ${worst !== 'info' ? 'on' : ''}`} />
             <i className={`crt-led red ${worst === 'crit' ? 'on blink' : ''}`} />
@@ -40,12 +40,12 @@ export default function OrbitEventLog({ lines, status, dead, total }) {
           <div className={`crt-screen lv-${latest}`}>
             <div className="crt-status">
               <span>{status}</span>
-              <span>SỰ KIỆN {pad2(lines.length)}</span>
+              <span>EVENTS {pad2(lines.length)}</span>
             </div>
             <div className="crt-lines" ref={scrollRef}>
               {lines.length === 0 && (
                 <div className="crt-line info">
-                  <span className="crt-tx">ĐANG CHỜ GÓI TELEMETRY ĐẦU TIÊN…</span>
+                  <span className="crt-tx">AWAITING FIRST TELEMETRY PACKET...</span>
                 </div>
               )}
               {lines.map((l, i) => (

@@ -41,28 +41,31 @@ function EvidenceIcon({ type }) {
 const EVIDENCE_CARDS = [
   {
     id: 'DOC-01',
-    code: { vi: 'BÁO CÁO DỊ THƯỜNG', en: 'ANOMALY REPORT' },
+    code: { vi: 'BÁO CÁO DỊ THƯỜNG', en: 'FAILURE REPORT' },
+    sub: '[DOC-01]',
     desc: {
       vi: 'Dữ liệu đo xa chứng minh linh kiện quá tải bức xạ, nguồn điện hoặc sai lệch quỹ đạo.',
-      en: 'Telemetry proving component exceeded radiation, power, or orbital limits.',
+      en: 'Telemetry proving components exceeded radiation, power, or orbital limits.',
     },
     matches: ['radiation', 'power', 'lifetime', 'pointing', 'data', 'science'],
   },
   {
     id: 'DOC-02',
-    code: { vi: 'HÓA ĐƠN KHỐNG', en: 'INVOICE AUDIT' },
+    code: { vi: 'HÓA ĐƠN KHỐNG', en: 'INFLATED INVOICE' },
+    sub: '[DOC-02]',
     desc: {
       vi: 'Chứng từ trần ngân sách ép xưởng dùng linh kiện giá rẻ chưa qua kiểm định.',
-      en: 'Budget cap records forcing workshop to use unverified low-cost parts.',
+      en: 'Budget-cap voucher that forced the workshop onto [CHEAP/UNVERIFIED] hardware.',
     },
     matches: ['radiation', 'power', 'cost', 'data'],
   },
   {
     id: 'DOC-03',
-    code: { vi: 'SỔ ĐEN CỦA SẾP', en: 'DIRECTOR BLACKBOOK' },
+    code: { vi: 'SỔ ĐEN CỦA SẾP', en: 'DIRECTOR LEDGER' },
+    sub: '[DOC-03]',
     desc: {
       vi: 'Chỉ thị ép tiến độ cắt ngắn thời gian đặt hàng và kiểm định tiền phóng.',
-      en: 'Schedule mandates rushing procurement and cutting pre-flight inspection.',
+      en: 'Schedule directive compressing procurement lead time and pre-launch testing.',
     },
     matches: ['schedule', 'lifetime', 'pointing', 'power'],
   },
@@ -97,11 +100,11 @@ export default function BossConfrontation({
       playSoundAsset(audioOn, '06-11-2026-chime.wav', 0.3);
       setReply({
         ok: true,
-        speaker: tr(lang, 'SẾP KẾ TOÁN', 'BUDGET DIRECTOR'),
+        speaker: tr(lang, 'SẾP KẾ TOÁN', 'FINANCE DIRECTOR'),
         text: tr(
           lang,
           'Hồ sơ nghiệm thu đã đạt chuẩn! Không cần truy cứu thêm.',
-          'Acceptance dossier meets standards! No further audit needed.'
+          'Acceptance telemetry passed all requirements! No further inquiry needed.'
         ),
       });
       return;
@@ -110,11 +113,11 @@ export default function BossConfrontation({
       playSoundAsset(audioOn, '08-11-2026-alarm.wav', 0.3);
       setReply({
         ok: false,
-        speaker: tr(lang, 'SẾP KẾ TOÁN', 'BUDGET DIRECTOR'),
+        speaker: tr(lang, 'SẾP KẾ TOÁN', 'FINANCE DIRECTOR'),
         text: tr(
           lang,
           'TỪ CHỐI: Nhật ký tiền phóng cho thấy bạn đã bỏ sót lỗi lắp ráp ở giai đoạn kiểm định!',
-          'REJECTED: Pre-flight logs prove you missed assembly defects during inspection!'
+          'DENIED: Pre-flight logs show unfixed assembly defects from Phase 2 (Inspection)!'
         ),
       });
       return;
@@ -123,11 +126,11 @@ export default function BossConfrontation({
       playSoundAsset(audioOn, '08-11-2026-data_glitch.wav', 0.3);
       setReply({
         ok: false,
-        speaker: tr(lang, 'SẾP KẾ TOÁN', 'BUDGET DIRECTOR'),
+        speaker: tr(lang, 'SẾP KẾ TOÁN', 'FINANCE DIRECTOR'),
         text: tr(
           lang,
           `Bằng chứng ${cardLabel || selectedDoc} chưa khớp nguyên nhân gốc: ${killer.toUpperCase() || 'CHƯA RÕ'}. Hãy chọn chứng cứ khác!`,
-          `Evidence ${cardLabel || selectedDoc} does not match root cause: ${killer.toUpperCase() || 'UNKNOWN'}. Pick another document!`
+          `Evidence ${cardLabel || selectedDoc} does not match root cause (${killer.toUpperCase() || 'UNKNOWN'}). Pick matching evidence!`
         ),
       });
       return;
@@ -138,11 +141,11 @@ export default function BossConfrontation({
     }
     setReply({
       ok: true,
-      speaker: tr(lang, 'SẾP KẾ TOÁN', 'BUDGET DIRECTOR'),
+      speaker: tr(lang, 'SẾP KẾ TOÁN', 'FINANCE DIRECTOR'),
       text: tr(
         lang,
         `Chứng cứ ${cardLabel} không thể chối cãi... Được rồi! Duyệt cấp thêm +$80M ngân sách, +18 tháng và +1 điểm uy tín!`,
-        `Evidence ${cardLabel} is indisputable... Fine! Approving +$80M budget, +18 months, and +1 authority credit!`
+        `${cardLabel} proof is indisputable... Fine! Approving +$80M emergency budget, +18 months schedule, and +1 authorization credit!`
       ),
     });
   };
@@ -150,12 +153,12 @@ export default function BossConfrontation({
   const bossLine = reply
     ? reply.text
     : canConfront
-      ? tr(lang, 'CÁI... CÁI GÌ?! ĐỂ TÔI XEM LẠI ĐÃ...', 'WHAT... WHAT?! LET ME DOUBLE CHECK THIS...')
-      : tr(lang, 'Lần này làm tốt đấy, tôi đang duyệt bảng kê!', 'Good job this time, I am approving the accounts!');
+      ? tr(lang, 'CÁI... CÁI GÌ?! ĐỂ TÔI XEM LẠI ĐÃ...', 'WAIT... HOLD ON! LET ME CHECK THOSE NUMBERS AGAIN...')
+      : tr(lang, 'Lần này làm tốt đấy, tôi đang duyệt bảng kê!', 'Good job this time — signing off on the invoice now!');
 
   const engLine = canConfront
-    ? tr(lang, 'LỖI HỆ THỐNG THẾ NÀY, SẾP GIẢI THÍCH SAO?!', 'A SYSTEM FAILURE LIKE THIS, HOW DO YOU EXPLAIN IT?!')
-    : tr(lang, 'SỐ LIỆU ĐẠT CHUẨN 100%, MỜI SẾP KÝ NGHIỆM THU!', 'ALL METRICS AT 100%, PLEASE SIGN THE ACCEPTANCE!');
+    ? tr(lang, 'LỖI HỆ THỐNG THẾ NÀY, SẾP GIẢI THÍCH SAO?!', 'WITH THIS TELEMETRY FAILURE, HOW DO YOU EXPLAIN THE BUDGET CUTS?')
+    : tr(lang, 'SỐ LIỆU ĐẠT CHUẨN 100%, MỜI SẾP KÝ NGHIỆM THU!', '100% MISSION TELEMETRY VERIFIED — READY FOR SIGN-OFF!');
 
   const unlockedPct = unlocked || budgetBonus > 0 ? 100 : canConfront ? 28 : 100;
 
@@ -163,7 +166,7 @@ export default function BossConfrontation({
     <div className="boss-confront-stage">
       <div className="boss-confront-banner">
         <div className="boss-banner-sub">{tr(lang, 'ĐỐI CHẤT NỘI BỘ', 'BOSS CONFRONTATION')}</div>
-        <div className="boss-banner-main">{tr(lang, 'CHẤT VẤN SẾP', 'DIRECTOR AUDIT')}</div>
+        <div className="boss-banner-main">{tr(lang, 'CHẤT VẤN SẾP', 'EXECUTIVE AUDIT')}</div>
       </div>
 
       <div className="boss-faceoff">
@@ -202,13 +205,13 @@ export default function BossConfrontation({
         <div className="audit-unlock-bar">
           <span className="small">{tr(lang, 'NGÂN SÁCH ĐÃ MỞ KHÓA', 'UNLOCKED BUDGET')}</span>
           <div className="unlock-gauge-row">
-            <div className="unlock-dial" aria-hidden="true">⚙</div>
+            <div className="unlock-dial" aria-hidden="true">BUDGET</div>
             <div className="gauge-bar unlock-track">
               <div className="gauge-fill" style={{ width: `${unlockedPct}%` }} />
             </div>
             <strong className="unlock-amount">
               ${effectiveBudget || '-'}M | {effectiveDeadline || '-'}{' '}
-              {tr(lang, 'THÁNG', 'MO')} {unlocked || budgetBonus > 0 ? '🔓' : '🔒'}
+              {tr(lang, 'THÁNG', 'MO')} {unlocked || budgetBonus > 0 ? tr(lang, '[MỞ KHÓA]', '[UNLOCKED]') : tr(lang, '[ĐANG KHÓA]', '[LOCKED]')}
             </strong>
           </div>
         </div>
@@ -220,11 +223,11 @@ export default function BossConfrontation({
           <div className="row-wrap">
             {unlocked && (
               <button className="btn primary" onClick={onReturnBuild}>
-                {tr(lang, 'ÁP DỤNG NGÂN SÁCH MỚI → VỀ XƯỞNG', 'APPLY OVERRIDE → RETURN TO BUILD')}
+                {tr(lang, 'ÁP DỤNG NGÂN SÁCH MỚI → VỀ XƯỞNG', 'APPLY NEW BUDGET & RETURN TO BAY')}
               </button>
             )}
             <button className="btn warn hazard" disabled={unlocked} onClick={submitConfrontation}>
-              {tr(lang, 'CHẤT VẤN', 'CONFRONT')}
+              {tr(lang, 'CHẤT VẤN', 'PRESENT PROOF')}
             </button>
           </div>
         </div>

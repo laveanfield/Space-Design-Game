@@ -3,15 +3,14 @@ import { playSoundAsset } from '../api/client';
 import { useGame } from '../core/GameContext';
 import { localizeLogText, tr, tx as baseTx } from '../core/i18n';
 import OrbitOps3DCanvas from './OrbitOps3DCanvas';
-import EvidenceGallery from './EvidenceGallery';
+import EvidenceGallery, { fmtSize } from './EvidenceGallery';
 import OrbitEventLog from './OrbitEventLog';
-import HumanityImpactCard from './HumanityImpactCard';
 
 /**
  * CampaignPanels -- cac bang telemetry CRT Terminal dung chung giua man che tao, quy dao 12 moc va tong ket.
  */
 
-export function tx(value, lang = 'vi') {
+export function tx(value, lang = 'en') {
   return baseTx(value, lang);
 }
 
@@ -49,14 +48,14 @@ export function BossPanel({
     <div className="boss-panel">
       <div className="row-between">
         <strong className="small">
-          {tr(lang, 'RÀNG BUỘC KẾ TOÁN // QUYỀN HẠN', 'DIRECTOR CONSTRAINTS // AUTHORITY')}
+          {tr(lang, 'RÀNG BUỘC KẾ TOÁN // QUYỀN HẠN', 'DIR-01 CONSTRAINTS // AUTHORITY')}
         </strong>
         <span
           className="rep-pips"
           title={tr(
             lang,
             'Uy tín với Sếp: mất tên lửa hoặc vệ tinh sẽ bị trừ 1 vạch. Hết 3 vạch sẽ hủy chiến dịch.',
-            'Director Authority: losing rocket or spacecraft deducts 1 pip. 0 pips aborts campaign.'
+            'Director Reputation: losing a rocket or satellite deducts 1 pip. Losing all 3 cancels the program.'
           )}
         >
           {[0, 1, 2].map((i) => (
@@ -67,30 +66,34 @@ export function BossPanel({
           {tr(lang, 'LẦN THỬ', 'ATTEMPT')} #{attempts + 1}
         </span>
       </div>
-      <div className="boss-meter" title={tr(lang, 'Chi phí thiết kế / Ngân sách cho phép', 'Design cost / Authorized budget')}>
-        <span className="small muted">{tr(lang, 'NGÂN SÁCH', 'BUDGET')}</span>
+      <div className="boss-meter" title={tr(lang, 'Chi phí thiết kế / Ngân sách cho phép', 'Design Cost vs. Approved Budget')}>
+        <div className="boss-meter-head">
+          <span className="small muted">{tr(lang, 'NGÂN SÁCH', 'BUDGET')}</span>
+          <b className={overBudget ? 'over' : ''}>
+            ${num(cost)}/{budget || '-'}M
+          </b>
+        </div>
         <div className="gauge-bar">
           <div className={`gauge-fill ${overBudget ? 'err' : ''}`} style={{ width: bar(cost, budget) }} />
         </div>
-        <b className={overBudget ? 'over' : ''}>
-          ${num(cost)}/{budget || '-'}M
-        </b>
       </div>
       <div
         className="boss-meter"
-        title={tr(lang, 'Thời gian đặt linh kiện / Hạn chót: trễ hạn sẽ bị trừ giờ kiểm định', 'Lead time / Deadline: delays reduce inspection window')}
+        title={tr(lang, 'Thời gian đặt linh kiện / Hạn chót: trễ hạn sẽ bị trừ giờ kiểm định', 'Procurement Lead Time vs. Deadline (late delivery cuts inspection time)')}
       >
-        <span className="small muted">{tr(lang, 'HẠN CHÓT', 'DEADLINE')}</span>
+        <div className="boss-meter-head">
+          <span className="small muted">{tr(lang, 'HẠN CHÓT', 'DEADLINE')}</span>
+          <b className={overTime ? 'over' : ''}>
+            {num(months, 0)}/{deadline || '-'} {tr(lang, 'THÁNG', 'MO')}
+          </b>
+        </div>
         <div className="gauge-bar">
           <div className={`gauge-fill ${overTime ? 'warn' : ''}`} style={{ width: bar(months, deadline) }} />
         </div>
-        <b className={overTime ? 'over' : ''}>
-          {num(months, 0)}/{deadline || '-'} {tr(lang, 'THÁNG', 'MO')}
-        </b>
       </div>
       {overTime && (
         <div className="small err-text" style={{ marginTop: 4 }}>
-          ! {tr(lang, 'TRỄ HẠN', 'OVERDUE')} {num(months - deadline, 0)} {tr(lang, 'THÁNG → GIỜ SOI LỖI GIẢM', 'MO → INSPECTION REDUCED')} -{inspectCut}s
+          ⚠ {tr(lang, 'TRỄ HẠN', 'OVERDUE BY')} {num(months - deadline, 0)} {tr(lang, 'THÁNG — GIỜ SOI LỖI GIẢM', 'MO — INSPECTION TIME')} -{inspectCut}s
         </div>
       )}
     </div>
@@ -102,15 +105,15 @@ export function CoreTelemetryBars({ bars }) {
   const { lang } = useGame();
   if (!bars) return null;
   const rows = [
-    ['POWER', bars.power, tr(lang, 'Cân bằng điện phát, tiêu thụ và dự trữ vùng tối', 'Power generation, load balance and eclipse margin')],
-    ['MASS', bars.mass, tr(lang, 'Khối lượng tàu so với tải trọng tên lửa và khung', 'Spacecraft mass vs launch vehicle and bus limits')],
-    ['SIGNAL', bars.signal, tr(lang, 'Tốc độ truyền dữ liệu và độ chính xác chỉ hướng', 'Data transmission speed and pointing accuracy')],
+    ['POWER', bars.power, tr(lang, 'Cân bằng điện phát, tiêu thụ và dự trữ vùng tối', 'Power generation vs. load balance and eclipse reserve')],
+    ['MASS', bars.mass, tr(lang, 'Khối lượng tàu so với tải trọng tên lửa và khung', 'Spacecraft mass against launcher payload and bus limit')],
+    ['SIGNAL', bars.signal, tr(lang, 'Tốc độ truyền dữ liệu và độ chính xác chỉ hướng', 'Downlink data rate and pointing accuracy')],
     ['INTEGRITY', bars.integrity, tr(lang, 'Độ bền bức xạ và tuổi thọ quỹ đạo', 'Radiation tolerance and orbital lifetime')],
   ];
   return (
     <div
       className="core-bars-panel"
-      title={tr(lang, '4 chỉ số sinh tồn hệ thống — chưa gồm lỗi lắp ráp ngẫu nhiên', '4 system survival meters — excludes random assembly defects')}
+      title={tr(lang, '4 chỉ số sinh tồn hệ thống — chưa gồm lỗi lắp ráp ngẫu nhiên', '4 Core Survivability Indices (excluding random assembly defects)')}
     >
       <div className="small muted" style={{ marginBottom: 6 }}>
         {tr(lang, 'CHỈ SỐ SINH TỒN HỆ THỐNG', 'SYSTEM INTEGRITY METERS')}
@@ -144,13 +147,13 @@ export function DatasheetTotals({ metrics }) {
     ['PWR_GEN', tr(lang, 'Điện phát TB', 'Avg Power Gen'), `${num(metrics['power.gen_avg_w'])} W`],
     ['PWR_LOAD', tr(lang, 'Tải tiêu thụ', 'Power Load'), `${num(metrics['power.load_w'])} W`],
     ['DATA_GEN', tr(lang, 'Sinh dữ liệu', 'Data Gen'), `${num(metrics['data.generated_gb_per_day'], 2)} GB/d`],
-    ['DOWNLINK', tr(lang, 'Băng thông', 'Downlink'), `${num(metrics['comm.downlink_mbps'], 2)} Mbps`],
+    ['DOWNLINK', tr(lang, 'Băng thông', 'Downlink Rate'), `${num(metrics['comm.downlink_mbps'], 2)} Mbps`],
     ['ORBIT_ALT', tr(lang, 'Độ cao', 'Altitude'), `${num(metrics['orbit.altitude_km'], 0)} km`],
   ];
   return (
     <div
       className="datasheet"
-      title={tr(lang, 'Cộng số liệu phần cứng thô — chưa kiểm chứng trên quỹ đạo', 'Raw hardware metrics — unverified in orbit')}
+      title={tr(lang, 'Cộng số liệu phần cứng thô — chưa kiểm chứng trên quỹ đạo', 'Nominal combined hardware specs — unverified in orbit')}
     >
       <div className="datasheet-grid">
         {rows.map(([code, name, v]) => (
@@ -190,7 +193,7 @@ export function Logbook({ entries }) {
               <div className="small muted">{e.build}</div>
               {lessonText && (
                 <div className="small" style={{ marginTop: 2 }}>
-                  → {lessonText}
+                  - {lessonText}
                 </div>
               )}
             </div>
@@ -236,7 +239,7 @@ export function Dossier({ dossier }) {
       )}
       {lessonText && (
         <p className="small" style={{ margin: '8px 0 0 0' }}>
-          <strong>{tr(lang, 'BÀI HỌC:', 'LESSON:')}</strong> {lessonText}
+          <strong>{tr(lang, 'BÀI HỌC:', 'LESSON LEARNED:')}</strong> {lessonText}
         </p>
       )}
     </div>
@@ -267,7 +270,7 @@ export function LifePhase({
 }) {
   const { lang } = useGame();
   const [shown, setShown] = useState(0);
-  const [speed, setSpeed] = useState(tutorialMode ? 3 : 1);
+  const [speed, setSpeed] = useState(1);
   const [paused, setPaused] = useState(false);
   const audioRef = useRef(audioOn);
   audioRef.current = audioOn;
@@ -280,9 +283,28 @@ export function LifePhase({
   const communications = life.communications;
   const commTime = communications ? communications.duration_s * Math.min(1, shown / Math.max(1, total)) : 0;
   const commSample = communications?.samples?.findLast((sample) => sample.t_s <= commTime) || null;
+  const commEvidenceNow = (communications?.evidence || []).filter((shot) => shot.t_s <= commTime);
+  const capturedNow = commEvidenceNow.length;
+  const deliveredNow = commEvidenceNow.filter((shot) => shot.delivered_t_s != null && shot.delivered_t_s <= commTime).length;
+  const usableEvidenceNow = commEvidenceNow.filter(
+    (shot) => shot.delivered_t_s != null && shot.delivered_t_s <= commTime && shot.blur < 0.35
+  ).length;
+  const bufferGbNow = Number(commSample?.buffer_gb || 0);
+  const storageCapacityGb = Number(communications?.summary?.storage_capacity_gb || 0);
+  const downlinkMbps = Number(catalog?.tables?.comms?.[design?.comm]?.downlink_mbps || 0)
+    * Number(communications?.settings?.rate_scale || 1);
+  const contactsNow = (communications?.windows || []).filter((window) => window.start_s <= commTime).length;
+  const usableMinutesNow = (communications?.samples || []).filter(
+    (sample) => sample.t_s <= commTime && Number(sample.margin_db) >= 3
+  ).length * Number(communications?.dt_s || 0) / 60;
+  const minSocNow = (communications?.samples || [])
+    .filter((sample) => sample.t_s <= commTime)
+    .reduce((minimum, sample) => Math.min(minimum, Number(sample.soc)), 1);
 
   useEffect(() => {
     setShown(0);
+    setSpeed(1);
+    setPaused(false);
     finishNotifiedRef.current = false;
   }, [life]);
 
@@ -345,19 +367,19 @@ export function LifePhase({
       k: s.k
     })));
   const linkLabel = dead
-    ? tr(lang, 'MẤT LIÊN LẠC', 'LINK LOST')
+    ? tr(lang, 'MẤT LIÊN LẠC', 'LOST CONTACT')
     : commSample?.state === 'POWER_HOLD'
-      ? tr(lang, 'GIỮ PIN · HOÃN TRUYỀN', 'POWER SAVE · HOLD DOWNLINK')
+      ? tr(lang, 'GIỮ PIN · HOÃN TRUYỀN', 'POWER HOLD · TX DEFERRED')
       : commSample?.state === 'WEAK_SIGNAL'
         ? tr(lang, 'TÍN HIỆU YẾU', 'WEAK SIGNAL')
         : commSample?.state === 'TRANSMITTING'
           ? tr(lang, 'ĐANG TRUYỀN DỮ LIỆU', 'TRANSMITTING DATA')
           : commSample?.state === 'NO_PASS'
-            ? tr(lang, 'NGOÀI VÙNG TRẠM THU', 'OUT OF GROUND PASS')
+            ? tr(lang, 'NGOÀI VÙNG TRẠM THU', 'OUT OF STATION VIEW')
             : tr(lang, 'LIÊN LẠC TỐT', 'LINK NOMINAL');
   const logStatus = cur
-    ? `${linkLabel} · ${tr(lang, 'MỐC', 'STEP')} ${cur.k}/${life.steps_total} · ${tr(lang, 'PIN', 'BATT')} ${(soc * 100).toFixed(0)}%`
-    : tr(lang, 'ĐANG TÁCH VỆ TINH…', 'DEPLOYING SPACECRAFT…');
+    ? `${linkLabel} · ${tr(lang, 'MỐC', 'STEP')} ${cur.k}/${life.steps_total} · ${tr(lang, 'PIN', 'SOC')} ${(soc * 100).toFixed(0)}%`
+    : tr(lang, 'ĐANG TÁCH VỆ TINH...', 'DEPLOYING SATELLITE...');
 
   return (
     <div className="phase-stage">
@@ -380,15 +402,15 @@ export function LifePhase({
             <span>
               {tr(lang, 'GIÁM SÁT QUỸ ĐẠO //', 'ORBIT SURVEILLANCE //')}{' '}
               {total === life.steps_total && !dead
-                ? `${life.steps_total} ${tr(lang, 'MỐC', 'STEPS')}`
+                ? `${life.steps_total} ${tr(lang, 'MỐC', 'MILESTONES')}`
                 : tr(lang, 'VÒNG ĐỜI', 'LIFECYCLE')}
             </span>
             <span className={`badge ${dead ? 'err' : 'info'}`}>
-              {cur ? `${tr(lang, 'THÁNG', 'MONTH')} ${cur.month}` : tr(lang, 'TÁCH VỆ TINH', 'SEPARATION')}
+              {cur ? `${tr(lang, 'THÁNG', 'MONTH')} ${cur.month}` : tr(lang, 'TÁCH VỆ TINH', 'DEPLOY')}
             </span>
           </h2>
           <OrbitOps3DCanvas snapshot={snapshot} design={design} catalog={catalog} />
-          <div className="life-timeline">
+          <div className="life-timeline" data-tutorial="orbit-region">
             {Array.from({ length: life.steps_total }, (_, i) => {
               const s = life.steps[i];
               const state =
@@ -404,14 +426,14 @@ export function LifePhase({
             <div className="ok-banner" style={{ marginTop: 8 }}>
               {tr(
                 lang,
-                '⏸ ĐANG TẠM DỪNG MÔ PHỎNG QUỸ ĐẠO ĐỂ GIỚI THIỆU — XEM XONG BẤM [BẮT ĐẦU VẬN HÀNH ▶]',
-                '⏸ ORBIT SIMULATION PAUSED FOR TUTORIAL — CLICK [START OPERATIONS ▶] TO RESUME'
+                'ĐANG TẠM DỪNG MÔ PHỎNG QUỸ ĐẠO ĐỂ GIỚI THIỆU — XEM XONG BẤM [BẮT ĐẦU / TIẾP TỤC]',
+                'ORBIT SIMULATION PAUSED FOR BRIEFING — CLICK [START / RESUME] WHEN READY'
               )}
             </div>
           )}
           {dead && (
             <div className="halt-banner">
-              ⚠ {tr(lang, 'MÔ PHỎNG DỪNG — MẤT VỆ TINH Ở THÁNG', 'SIMULATION HALTED — SPACECRAFT LOST AT MONTH')} {cur.month}
+              ⚠ {tr(lang, 'MÔ PHỎNG DỪNG — MẤT VỆ TINH Ở THÁNG', 'SIMULATION HALTED — SATELLITE LOST AT MONTH')} {cur.month}
             </div>
           )}
           {finished && tutorialMode && (
@@ -419,13 +441,13 @@ export function LifePhase({
               <div className="row-between" style={{ gap: 10, flexWrap: 'wrap' }}>
                 <div>
                   <strong className="neon-green" style={{ fontSize: 15 }}>
-                    ★ {tr(lang, 'Kết thúc sandbox, quay về cốt truyện', 'Sandbox tutorial complete, return to campaign')}
+                    {tr(lang, 'Kết thúc sandbox, quay về cốt truyện', 'Sandbox complete — return to story campaign')}
                   </strong>
                   <div className="small muted" style={{ marginTop: 2 }}>
                     {tr(
                       lang,
                       'Bạn đã hoàn thành toàn bộ hướng dẫn Sandbox 12 tháng trên quỹ đạo!',
-                      'You completed the entire 12-month orbit simulation tutorial!'
+                      'You completed the full 12-month Orbital Operations sandbox tutorial!'
                     )}
                   </div>
                 </div>
@@ -434,24 +456,13 @@ export function LifePhase({
                   className="btn neon-btn sandbox-return-btn"
                   onClick={onReturnCampaign || onDone}
                 >
-                  {tr(lang, '↩ RETURN (QUAY VỀ CỐT TRUYỆN)', '↩ RETURN TO CAMPAIGN')}
+                  {tr(lang, 'QUAY VỀ CỐT TRUYỆN', 'RETURN TO STORY')}
                 </button>
               </div>
             </div>
           )}
-          {finished && (
-            <div style={{ marginTop: 10 }}>
-              <HumanityImpactCard
-                missionId={design?.mission}
-                success={Boolean(life.outcome?.success)}
-                failureId={life.dossier?.id || life.outcome?.killer || life.outcome?.review_fail?.[0] || 'launch'}
-                outcome={life.outcome}
-                compact
-              />
-            </div>
-          )}
           <div className="row-between" style={{ marginTop: 10 }}>
-            <div className="row-wrap">
+            <div className="row-wrap" data-tutorial="orbit-speed">
               <button
                 className={`btn ${!finished && tutorialPaused ? 'neon-btn' : ''}`}
                 disabled={finished}
@@ -465,10 +476,10 @@ export function LifePhase({
                 }}
               >
                 {effectivePaused
-                  ? tr(lang, '▶ BẮT ĐẦU / TIẾP TỤC', '▶ START / RESUME')
+                  ? tr(lang, 'BẮT ĐẦU / TIẾP TỤC', 'START / RESUME')
                   : tr(lang, 'TẠM DỪNG', 'PAUSE')}
               </button>
-              {[1, 3].map((w) => (
+              {[1, 2, 5, 10, 30, 100].map((w) => (
                 <button key={w} className={`btn ${speed === w ? 'primary' : ''}`} onClick={() => setSpeed(w)}>
                   {w}x
                 </button>
@@ -481,7 +492,7 @@ export function LifePhase({
               onClick={tutorialMode ? (onReturnCampaign || onDone) : onDone}
             >
               {tutorialMode
-                ? tr(lang, '↩ RETURN — QUAY VỀ CỐT TRUYỆN', '↩ RETURN TO CAMPAIGN')
+                ? tr(lang, 'QUAY VỀ CỐT TRUYỆN', 'RETURN TO STORY CAMPAIGN')
                 : dead
                   ? tr(lang, 'TRÌNH BẰNG CHỨNG CHO SẾP', 'PRESENT PROOF TO DIRECTOR')
                   : tr(lang, 'HỌP TỔNG KẾT VỚI SẾP', 'MISSION DEBRIEF WITH DIRECTOR')}
@@ -530,7 +541,7 @@ export function LifePhase({
                 {tr(lang, 'PHÓNG ĐẾN', 'DEPLOY')} {num(alt0, 0)} km
               </div>
             </div>
-            <div className="kpi-box">
+            <div className="kpi-box" data-tutorial="orbit-downlink">
               <div className="kpi-label">{tr(lang, 'DỮ LIỆU ĐÃ TRUYỀN', 'DATA DOWNLINK')}</div>
               <div className="kpi-val">{cur ? num(cur.delivered_gb, 2) : '0'} GB</div>
               <div className="gauge-bar">
@@ -542,10 +553,51 @@ export function LifePhase({
                 />
               </div>
               <div className="small muted">
-                {tr(lang, 'MẤT', 'LOST')} {cur ? num(cur.lost_gb, 2) : '0'} GB
+                {tr(lang, 'TỐC ĐỘ', 'RATE')} {num(downlinkMbps, 3)} Mbps · {tr(lang, 'MẤT', 'LOST')} {cur ? num(cur.lost_gb, 2) : '0'} GB
               </div>
             </div>
           </div>
+          {communications && (
+            <div className="mission-data-chain" aria-label={tr(lang, 'Chuỗi dữ liệu nhiệm vụ', 'Mission data chain')}>
+              <div className="mission-data-stage" data-tutorial="orbit-capture">
+                <span className="mission-data-step">01 · {tr(lang, 'QUAN SÁT', 'OBSERVATION')}</span>
+                <strong>{capturedNow} {tr(lang, 'ĐÃ CHỤP', 'CAPTURED')}</strong>
+                <small>{tr(lang, `Mục tiêu: ${life.evidence_need} khung hình xác thực gửi về Trái Đất`, `Target: ${life.evidence_need} verified frames delivered to Earth`)}</small>
+              </div>
+              <div className="mission-data-arrow" aria-hidden="true">/</div>
+              <div
+                className={`mission-data-stage ${storageCapacityGb > 0 && bufferGbNow / storageCapacityGb > 0.85 ? 'warn' : ''}`}
+                data-tutorial="orbit-storage"
+              >
+                <span className="mission-data-step">02 · {tr(lang, 'LƯU TRỮ TRÊN TÀU', 'ONBOARD DATA')}</span>
+                <strong>{fmtSize(bufferGbNow)} / {fmtSize(storageCapacityGb)}</strong>
+                <small>{tr(lang, `${Math.max(0, capturedNow - deliveredNow)} ảnh đang chờ · OBC ${design?.obc}`, `${Math.max(0, capturedNow - deliveredNow)} frames queued · OBC ${design?.obc}`)}</small>
+              </div>
+              <div className="mission-data-arrow" aria-hidden="true">/</div>
+              <div
+                className={`mission-data-stage ${['WEAK_SIGNAL', 'POWER_HOLD', 'NO_PASS'].includes(commSample?.state) ? 'warn' : 'ok'}`}
+                data-tutorial="orbit-comm"
+              >
+                <span className="mission-data-step">03 · {tr(lang, 'TRUYỀN THÔNG', 'COMMUNICATION')}</span>
+                <strong>{linkLabel}</strong>
+                <small>
+                  {commSample?.margin_db == null
+                    ? tr(lang, 'Chưa có biên độ đường truyền', 'No link margin yet')
+                    : `${tr(lang, 'Biên độ', 'Margin')} ${num(commSample.margin_db, 1)} dB`}
+                  {' · '}{num(downlinkMbps, 3)} Mbps
+                </small>
+              </div>
+              <div className="mission-data-arrow" aria-hidden="true">/</div>
+              <div
+                className={`mission-data-stage ${usableEvidenceNow >= life.evidence_need ? 'ok' : ''}`}
+                data-tutorial="orbit-delivered"
+              >
+                <span className="mission-data-step">04 · {tr(lang, 'BẰNG CHỨNG NHIỆM VỤ', 'MISSION EVIDENCE')}</span>
+                <strong>{usableEvidenceNow} / {life.evidence_need} {tr(lang, 'ĐÃ VỀ TRÁI ĐẤT', 'DELIVERED TO EARTH')}</strong>
+                <small>{tr(lang, 'Chỉ các gói truyền về hoàn chỉnh mới được tính', 'Only complete downlinked packets count as evidence')}</small>
+              </div>
+            </div>
+          )}
           {life.imaging && (
             <div style={{ marginTop: 10 }}>
               <EvidenceGallery
@@ -561,16 +613,16 @@ export function LifePhase({
           {communications && (
             <div className="comms-orbit-summary">
               <div className="row-between small">
-                <strong>{tr(lang, 'VẬT LÝ TRUYỀN THÔNG · 7 NGÀY ĐẠI DIỆN', 'COMMUNICATIONS PHYSICS · 7-DAY BENCHMARK')}</strong>
-                <span className={`badge ${communications.summary.delivered >= life.evidence_need ? 'ok' : 'warn'}`}>
-                  {communications.summary.delivered} {tr(lang, 'ĐÃ VỀ', 'DELIVERED')} · {communications.summary.pending} {tr(lang, 'ĐANG CHỜ', 'PENDING')}
+                <strong>{tr(lang, 'VẬT LÝ TRUYỀN THÔNG · CỬA SỔ 7 NGÀY ĐẠI DIỆN', 'COMMUNICATIONS PHYSICS · 7-DAY REPRESENTATIVE WINDOW')}</strong>
+                <span className={`badge ${usableEvidenceNow >= life.evidence_need ? 'ok' : 'warn'}`}>
+                  {deliveredNow} {tr(lang, 'ĐÃ VỀ', 'DELIVERED')} · {Math.max(0, capturedNow - deliveredNow)} {tr(lang, 'ĐANG CHỜ', 'QUEUED')}
                 </span>
               </div>
               <div className="small muted">
-                {communications.windows.length} {tr(lang, 'lượt qua', 'passes over')} {communications.station.name} · {num(communications.summary.usable_min)} {tr(lang, 'phút đủ margin · pin thấp nhất', 'min with margin · min batt')} {num(communications.summary.min_soc * 100, 0)}%
+                {contactsNow} {tr(lang, 'lượt qua', 'passes over')} {communications.station.name} · {num(usableMinutesNow)} {tr(lang, 'phút đủ margin · pin thấp nhất', 'min above margin · min battery')} {num(minSocNow * 100, 0)}%
               </div>
               {finished && communications.diagnostics.map((reason) => (
-                <div className="small" key={reason}>→ {reason}</div>
+                <div className="small" key={reason}>- {reason}</div>
               ))}
             </div>
           )}

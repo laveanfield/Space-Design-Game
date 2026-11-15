@@ -1,6 +1,6 @@
 /**
- * gameMachine -- Finite State Machine, chi tiet Loi ich / Tac hai tung linh kien,
- * Trinh tu mo khoa 9 buoc & 3 nhiem vu kiem dinh chuyen biet (Audio Gas Leak, X-Ray Crack, Camera Tilt Align).
+ * gameMachine -- Finite State Machine, hardware trade-off notes,
+ * 9-step sequential build unlocking, and 3 pre-flight inspection tasks.
  */
 
 export const REP_MAX = 3;
@@ -23,7 +23,7 @@ export const PHASES = [
 ];
 
 /**
- * 9 thanh phan theo dung thu tu mo khoa tuan tu:
+ * 9 subsystem slots in sequential unlock order:
  * 1.ORBIT -> 2.LAUNCH -> 3.BUS -> 4.INSTR -> 5.POWER -> 6.BATT -> 7.COMM -> 8.OBC -> 9.ADCS
  */
 export const SLOTS = [
@@ -31,91 +31,91 @@ export const SLOTS = [
     id: 'orbit',
     label: '1.ORBIT',
     step: 0,
-    title: 'BƯỚC 1/9 • QUỸ ĐẠO BAY (ORBIT)',
-    shortDesc: 'Chọn độ cao & góc nghiêng bay quanh Trái Đất.',
-    highlight: 'Quyết định vùng chụp ảnh, thời gian khuất nắng (Eclipse) và mức bức xạ.',
+    title: 'STEP 1/9 | TARGET ORBIT (ORBIT)',
+    shortDesc: 'Select orbital altitude and inclination around Earth.',
+    highlight: 'Determines imaging coverage, eclipse duration, atmospheric drag, and radiation dose.',
     lockHint: '',
-    nextLabel: '2.LAUNCH (Tên lửa đẩy)',
+    nextLabel: '2.LAUNCH (Launch Vehicle)',
   },
   {
     id: 'launch',
     label: '2.LAUNCH',
     step: 1,
-    title: 'BƯỚC 2/9 • HỆ THỐNG PHÓNG (LAUNCH VEHICLE)',
-    shortDesc: 'Chọn tên lửa đẩy & bãi phóng đưa vệ tinh lên quỹ đạo đã chọn.',
-    highlight: 'Phải đủ sức nâng (CAP kg) cho độ cao quỹ đạo và khoang mũi (FAIR m) vừa vệ tinh.',
-    lockHint: 'Hãy xem & bấm [TIẾP THEO] ở mục 1.ORBIT trước để mở khóa!',
-    nextLabel: '3.BUS (Khung vệ tinh)',
+    title: 'STEP 2/9 | LAUNCH SYSTEM (LAUNCH VEHICLE)',
+    shortDesc: 'Select booster and pad to inject the spacecraft into target orbit.',
+    highlight: 'Must exceed total mass (CAP kg) at target orbit and fit fairing diameter (FAIR m).',
+    lockHint: 'Review and click [NEXT] in 1.ORBIT first to unlock!',
+    nextLabel: '3.BUS (Spacecraft Bus)',
   },
   {
     id: 'bus',
     label: '3.BUS',
     step: 2,
-    title: 'BƯỚC 3/9 • KHUNG VỆ TINH (SATELLITE BUS)',
-    shortDesc: 'Chọn thân khung chịu lực chính chứa toàn bộ thiết bị.',
-    highlight: 'Quyết định trần khối lượng tối đa (≤ kg) và công suất cấp cho Payload.',
-    lockHint: 'Hãy hoàn tất bước 2.LAUNCH trước để mở khóa Khung vệ tinh!',
-    nextLabel: '4.INSTR (Thiết bị quan sát / Camera)',
+    title: 'STEP 3/9 | SPACECRAFT BUS (BUS)',
+    shortDesc: 'Select the structural frame housing all spacecraft subsystems.',
+    highlight: 'Sets maximum dry-mass limit (<= kg) and payload power delivery capability.',
+    lockHint: 'Complete step 2.LAUNCH first to unlock the Spacecraft Bus!',
+    nextLabel: '4.INSTR (Payload / Sensor)',
   },
   {
     id: 'instruments',
     label: '4.INSTR',
     step: 3,
-    title: 'BƯỚC 4/9 • THIẾT BỊ QUAN SÁT (PAYLOAD / CAMERA)',
-    shortDesc: 'Chọn camera hoặc cảm biến thu thập dữ liệu nhiệm vụ.',
-    highlight: 'Sinh dữ liệu (GB/ngày), đòi hỏi đủ điện và độ chuẩn góc hướng (PT °).',
-    lockHint: 'Hãy hoàn tất bước 3.BUS trước để mở khóa Thiết bị quan sát!',
-    nextLabel: '5.POWER (Cánh pin Mặt Trời)',
+    title: 'STEP 4/9 | PAYLOAD INSTRUMENT (CAMERA / SENSOR)',
+    shortDesc: 'Select optical camera or science sensor to collect mission evidence.',
+    highlight: 'Drives daily data volume (GB/day), power draw, and pointing precision (PT deg).',
+    lockHint: 'Complete step 3.BUS first to unlock Payload Instruments!',
+    nextLabel: '5.POWER (Solar Array)',
   },
   {
     id: 'power',
     label: '5.POWER',
     step: 4,
-    title: 'BƯỚC 5/9 • CÁNH PIN MẶT TRỜI (SOLAR ARRAY)',
-    shortDesc: 'Cung cấp nguồn điện nuôi toàn bộ vệ tinh và sạc pin khi có nắng.',
-    highlight: 'Điện phát (GEN W) phải đủ bù thời gian khuất bóng Trái Đất.',
-    lockHint: 'Hãy hoàn tất bước 4.INSTR trước để mở khóa Cánh pin Mặt Trời!',
-    nextLabel: '6.BATT (Pin dự trữ vùng tối)',
+    title: 'STEP 5/9 | SOLAR ARRAY (POWER)',
+    shortDesc: 'Generate electrical power in sunlight to run avionics and charge batteries.',
+    highlight: 'Generated wattage (GEN W) must sustain loads plus orbital eclipse recharging.',
+    lockHint: 'Complete step 4.INSTR first to unlock Solar Arrays!',
+    nextLabel: '6.BATT (Battery Pack)',
   },
   {
     id: 'battery',
     label: '6.BATT',
     step: 5,
-    title: 'BƯỚC 6/9 • PIN DỰ TRỮ (BATTERY)',
-    shortDesc: 'Tích trữ điện năng nuôi tàu khi bay vào vùng tối (Eclipse).',
-    highlight: 'Dung lượng (CAP Wh) quá nhỏ sẽ gây sập nguồn (Brownout) khi mất nắng.',
-    lockHint: 'Hãy hoàn tất bước 5.POWER trước để mở khóa Pin dự trữ!',
-    nextLabel: '7.COMM (Ăng-ten truyền tin)',
+    title: 'STEP 6/9 | ENERGY STORAGE (BATTERY)',
+    shortDesc: 'Store power to keep payload and communications alive through Earth eclipse.',
+    highlight: 'Undersized capacity (CAP Wh) causes brownouts in Earth shadow.',
+    lockHint: 'Complete step 5.POWER first to unlock Batteries!',
+    nextLabel: '7.COMM (Downlink Radio)',
   },
   {
     id: 'comm',
     label: '7.COMM',
     step: 6,
-    title: 'BƯỚC 7/9 • ĂNG-TEN TRUYỀN TIN (COMMUNICATION)',
-    shortDesc: 'Truyền ảnh & dữ liệu từ quỹ đạo về trạm mặt đất.',
-    highlight: 'Tốc độ truyền (DL Mbps) phải kịp gửi hết dữ liệu camera sinh ra mỗi ngày.',
-    lockHint: 'Hãy hoàn tất bước 6.BATT trước để mở khóa Ăng-ten truyền tin!',
-    nextLabel: '8.OBC (Máy tính điều khiển)',
+    title: 'STEP 7/9 | COMMUNICATIONS (RADIO / LASER)',
+    shortDesc: 'Downlink imagery and telemetry from orbit to ground receiving stations.',
+    highlight: 'Downlink rate (DL Mbps) must keep pace with generated daily data volume.',
+    lockHint: 'Complete step 6.BATT first to unlock Communications!',
+    nextLabel: '8.OBC (Flight Computer)',
   },
   {
     id: 'obc',
     label: '8.OBC',
     step: 7,
-    title: 'BƯỚC 8/9 • MÁY TÍNH ĐIỀU KHIỂN (ON-BOARD COMPUTER)',
-    shortDesc: 'Bộ não lưu trữ dữ liệu và điều khiển mọi hoạt động trên quỹ đạo.',
-    highlight: 'Độ chịu bức xạ (RAD krad) thấp sẽ khiến tàu bị treo / cháy chip do bão Mặt Trời.',
-    lockHint: 'Hãy hoàn tất bước 7.COMM trước để mở khóa Máy tính OBC!',
-    nextLabel: '9.ADCS (Hệ điều khiển tư thế)',
+    title: 'STEP 8/9 | ON-BOARD COMPUTER (OBC)',
+    shortDesc: 'Store frames (Store-and-Forward) and command spacecraft operations.',
+    highlight: 'Low radiation tolerance (RAD krad) causes processor lockups in high radiation.',
+    lockHint: 'Complete step 7.COMM first to unlock Flight Computer (OBC)!',
+    nextLabel: '9.ADCS (Attitude Control)',
   },
   {
     id: 'adcs',
     label: '9.ADCS',
     step: 8,
-    title: 'BƯỚC 9/9 • HỆ ĐIỀU HƯỚNG (ADCS)',
-    shortDesc: 'Xoay và giữ ổn định vệ tinh để camera ngắm trúng mục tiêu.',
-    highlight: 'Sai số góc (PT °) phải nhỏ hơn hoặc bằng yêu cầu của Camera để ảnh không bị nhòe.',
-    lockHint: 'Hãy hoàn tất bước 8.OBC trước để mở khóa Hệ điều hướng ADCS!',
-    nextLabel: 'KIỂM ĐỊNH LỖI (03.INSPECT)',
+    title: 'STEP 9/9 | ATTITUDE CONTROL (ADCS)',
+    shortDesc: 'Stabilize spacecraft orientation so optics lock onto ground targets.',
+    highlight: 'Pointing error (PT deg) must be tighter than camera requirement to prevent blur.',
+    lockHint: 'Complete step 8.OBC first to unlock ADCS!',
+    nextLabel: 'GO TO INSPECTION (03.INSPECT)',
   },
 ];
 
@@ -126,316 +126,315 @@ export function isSlotUnlocked(slotId, buildStage = 0) {
 }
 
 /**
- * Co so du lieu chi tiet: Dung o dau (where), Loi ich (pros), Tac hai / Rui ro (cons)
- * cho tung linh kien de nguoi choi hieu sau khi click chon.
+ * Detailed hardware insight database: usage, pros, cons/risks.
  */
 export const PART_INSIGHTS = {
   // --- 1. ORBITS ---
   'ORB-LEO-400': {
-    where: 'Quỹ đạo thấp 400 km (tương tự Trạm ISS) — dùng cho thử nghiệm CubeSat ngắn hạn, chụp ảnh độ phân giải gần.',
-    pros: 'Rất dễ phóng tới (tên lửa nhỏ cũng nâng được nặng), bức xạ thấp (1 krad/năm), ảnh chụp rất gần.',
-    cons: 'Khí quyển còn dày gây lực cản lớn (tuổi thọ tự nhiên chỉ ~2 năm là rơi), khuất nắng 37% thời gian.',
+    where: 'Low Earth Orbit at 400 km (ISS-like) — suited for short-duration CubeSat wildfire/Earth imaging.',
+    pros: 'Very easy to reach (small boosters lift high mass), low radiation (1 krad/yr), close sharp imaging.',
+    cons: 'Noticeable atmospheric drag (~2 yr natural decay without reboost) and 37% eclipse time.',
   },
   'ORB-LEO-500': {
-    where: 'Quỹ đạo thấp tiêu chuẩn 500 km — dùng cho quan sát Trái Đất tầm gần và vệ tinh viễn thám nhỏ.',
-    pros: 'Cân bằng tốt: ít lực cản khí quyển hơn 400km (bền ~10 năm), dễ đạt tới, bức xạ thấp (1.5 krad/năm).',
-    cons: 'Góc chiếu sáng Mặt Trời thay đổi theo ngày, thời gian khuất bóng Trái Đất (Eclipse) chiếm 37%.',
+    where: 'Standard 500 km Low Earth Orbit — balanced baseline for small Earth observation missions.',
+    pros: 'Good longevity (~10 yr), manageable booster demand, low radiation (1.5 krad/yr).',
+    cons: 'Local solar lighting angle drifts seasonally; 37% eclipse fraction.',
   },
   'ORB-SSO-600': {
-    where: 'Quỹ đạo đồng bộ Mặt Trời 600 km (10:30 sáng) — chuẩn vàng để chụp ảnh nông nghiệp, bờ biển, rừng và khí nhà kính.',
-    pros: 'Bay qua mọi điểm trên Trái Đất cùng 1 giờ nắng địa phương giúp so sánh ảnh cực chuẩn; tuổi thọ 25 năm.',
-    cons: 'Đòi hỏi tên lửa đẩy mạnh hơn LEO thường và bức xạ tăng lên 3 krad/năm.',
+    where: 'Sun-Synchronous 600 km Orbit (10:30 AM node) — gold standard for forestry, coast, and GHG monitoring.',
+    pros: 'Passes every site at the same local sun time for consistent imagery; ~25 yr orbital life.',
+    cons: 'Higher delta-v/polar inclination required; radiation increases to 3 krad/yr.',
   },
   'ORB-SSO-DD-600': {
-    where: 'Quỹ đạo Bình minh – Hoàng hôn 600 km — dùng cho kính thiên văn không gian hoặc radar cần điện liên tục.',
-    pros: 'Gần như KHÔNG bao giờ vào bóng tối (Eclipse chỉ 3%), pin Mặt Trời phát điện suốt ngày đêm!',
-    cons: 'Góc nhìn xuống mặt đất luôn xiên bóng dài, khó phóng hơn quỹ đạo thấp thường.',
+    where: 'Dawn-Dusk 600 km Sun-Synchronous Orbit — built for space telescopes or high-power SAR radar.',
+    pros: 'Near-continuous sunlight (only ~3% eclipse) so solar arrays generate power almost constantly.',
+    cons: 'Oblique low-angle ground shadows; requires high-inclination polar launch.',
   },
   'ORB-POLAR-800': {
-    where: 'Quỹ đạo Cực 800 km — dùng cho vệ tinh Radar quét toàn cầu cả 2 cực Bắc – Nam.',
-    pros: 'Bao phủ 100% bề mặt Trái Đất, thời gian liên lạc trạm mặt đất dài (65 phút/ngày).',
-    cons: 'Đi qua vùng sừng bức xạ cực làm liều bức xạ tăng cao (8 krad/năm), tốn nhiên liệu tên lửa.',
+    where: '800 km Polar Orbit — suited for global radar/mapping across both poles.',
+    pros: '100% global Earth coverage with long ground-station pass durations (65 min/day).',
+    cons: 'Passes polar radiation horns (8 krad/yr) and requires higher booster energy.',
   },
   'ORB-MEO-20200': {
-    where: 'Quỹ đạo Trung bình 20.200 km (vùng GPS) — dùng cho nghiên cứu thời tiết không gian & hạt năng lượng cao.',
-    pros: 'Nhìn bao quát nửa bán cầu, thời gian liên lạc mặt đất cực lâu (240 phút/ngày).',
-    cons: 'Nằm giữa vành đai bức xạ Van Allen cực độc hại (25 krad/năm — dễ nướng cháy chip thường) và rất tốn sức tên lửa!',
+    where: '20,200 km Medium Earth Orbit (GPS belt) — used for Space Weather & radiation belt science.',
+    pros: 'Hemispheric view and long ground contact windows (240 min/day).',
+    cons: 'Sits deep inside the Van Allen radiation belts (25 krad/yr — fries non-hardened chips) and costs high delta-v.',
   },
   'ORB-GTO': {
-    where: 'Quỹ đạo chuyển tiếp Địa tĩnh (250 × 35.786 km) — dùng làm bước đệm lên GEO hoặc khảo sát từ quyển.',
-    pros: 'Cắt ngang qua nhiều tầng từ quyển Trái Đất, thời gian thấy trạm mặt đất lâu.',
-    cons: 'Xuyên qua tâm vành đai bức xạ (15 krad/năm), đòi hỏi tên lửa hạng trung/nặng.',
+    where: 'Geostationary Transfer Orbit (250 x 35,786 km) — magnetosphere sweeps or GEO transfer.',
+    pros: 'Samples multiple magnetospheric layers with long apogee visibility.',
+    cons: 'Repeatedly cuts through Van Allen belts (15 krad/yr) and demands medium/heavy lift.',
   },
   'ORB-GEO': {
-    where: 'Quỹ đạo Địa tĩnh 35.786 km — dùng cho vệ tinh khí tượng/viễn thông đứng yên cố định trên 1 vùng lãnh thổ.',
-    pros: 'Đứng yên 24/24 trên bầu trời (liên lạc liên tục 1440 phút/ngày), hầu như không khuất nắng (1%).',
-    cons: 'Khoảng cách cực xa (camera thường sẽ chụp mờ, cần ăng-ten chảo lớn và tên lửa siêu mạnh).',
+    where: '35,786 km Geostationary Orbit — fixed 24/7 dwell over one continent for weather/telecom.',
+    pros: 'Fixed sky position (1,440 min/day contact) with minimal ~1% eclipse.',
+    cons: 'Extreme distance (standard imagers blur out; requires large antennas and heavy launchers).',
   },
 
   // --- 2. LAUNCH VEHICLES ---
   'LV-ELECTRON': {
-    where: 'Tên lửa hạng nhẹ Rocket Lab Electron — chuyên phóng CubeSat (3U–12U) và vệ tinh siêu nhỏ lên LEO/SSO.',
-    pros: 'Giá siêu rẻ ($7.5M), chế tạo nhanh (6 tháng), lý tưởng cho nhiệm vụ ngân sách thấp.',
-    cons: 'Sức nâng rất nhỏ (tối đa 300kg LEO) và khoang mũi hẹp (1.2m) — gắn vệ tinh lớn sẽ vỡ fairing khi qua Max-Q!',
+    where: 'Light Rocket Lab Electron — built for CubeSats (3U–12U) and microsatellites to LEO/SSO.',
+    pros: 'Very low cost ($7.5M) and rapid 6-month lead time, ideal for tight-budget LEO missions.',
+    cons: 'Tight lift cap (300 kg LEO max) and narrow 1.2 m fairing — oversized stacks risk fairing rupture at Max-Q.',
   },
   'LV-VEGAC': {
-    where: 'Tên lửa hạng trung nhẹ Vega-C — chuyên đưa vệ tinh khoa học tầm trung (ESPA / SmallSat) lên quỹ đạo cực & SSO.',
-    pros: 'Nâng được 3.300kg LEO với khoang mũi rộng 3.3m, chi phí hợp lý ($40M).',
-    cons: 'Độ tin cậy thấp hơn các dòng cao cấp (88%) và thời gian chuẩn bị 18 tháng.',
+    where: 'Small-to-medium Vega-C — suited for ESPA / SmallSat science payloads to SSO & polar orbits.',
+    pros: 'Lifts 3,300 kg to LEO with a 3.3 m fairing for $40M.',
+    cons: 'Lower reliability rating (88%) and 18-month integration lead time.',
   },
   'LV-LVM3': {
-    where: 'Tên lửa hạng trung nặng ISRO LVM3 — dùng cho vệ tinh tầm trung/lớn lên LEO, MEO hoặc GTO.',
-    pros: 'Giá rất tốt so với sức nâng ($42M cho 8.000kg LEO, khoang mũi 5.0m), độ tin cậy cao (97%).',
-    cons: 'Thời gian chờ chế tạo lâu (24 tháng) — dễ gây trễ hạn nếu deadline ngắn.',
+    where: 'Medium-heavy ISRO LVM3 — reliable workhorse for mid-to-heavy spacecraft to LEO, MEO, or GTO.',
+    pros: 'Strong price-to-mass ratio ($42M for 8,000 kg LEO, 5.0 m fairing) with 97% reliability.',
+    cons: '24-month procurement timeline can cut into tight deadlines.',
   },
   'LV-H3-24L': {
-    where: 'Tên lửa đẩy H3-24L (JAXA) — dùng cho vệ tinh lớn cần khoang mũi dài 5.2m.',
-    pros: 'Sức nâng mạnh (16.500kg LEO, 6.500kg GTO) với giá tầm trung ($65M).',
-    cons: 'Độ tin cậy 85% và thời gian chuẩn bị 24 tháng.',
+    where: 'JAXA H3-24L heavy booster — suited for bulky satellites needing a 5.2 m fairing.',
+    pros: 'High lift capacity (16,500 kg LEO, 6,500 kg GTO) at $65M.',
+    cons: '85% catalog reliability and 24-month lead time.',
   },
   'LV-NEWGLENN': {
-    where: 'Tên lửa siêu trường Blue Origin New Glenn — dùng cho đài quan sát khổng lồ hoặc vệ tinh GEO nặng.',
-    pros: 'Khoang mũi khổng lồ 7.0m và sức nâng 45.000kg LEO với giá $90M.',
-    cons: 'Độ tin cậy 90%, quá dư thừa và tốn kém cho các vệ tinh nhỏ.',
+    where: 'Super-heavy Blue Origin New Glenn — designed for massive observatories or heavy GEO spacecraft.',
+    pros: 'Huge 7.0 m fairing and 45,000 kg LEO capacity at $90M.',
+    cons: '90% catalog reliability and heavily oversized for small satellites.',
   },
   'LV-ARIANE62': {
-    where: 'Tên lửa Ariane 62 (2 tầng đẩy phụ) — chuẩn châu Âu cho vệ tinh khoa học và viễn thám lớn.',
-    pros: 'Độ tin cậy cao (97%), khoang mũi rộng 5.4m, nâng 10.300kg LEO / 4.500kg GTO.',
-    cons: 'Chi phí cao ($95M) — dễ vượt ngân sách ở các màn đầu.',
+    where: 'Ariane 62 (2 boosters) — European baseline for large science and Earth observation satellites.',
+    pros: '97% reliability, 5.4 m fairing, 10,300 kg LEO / 4,500 kg GTO capacity.',
+    cons: 'High $95M price easily exceeds early-mission budgets.',
   },
   'LV-VULCAN-VC6': {
-    where: 'Tên lửa hạng nặng ULA Vulcan Centaur VC6 — dùng cho nhiệm vụ MEO/GEO nặng đòi hỏi lực đẩy tầng trên cao.',
-    pros: 'Nâng 27.200kg LEO và 14.500kg GTO, thời gian chế tạo 18 tháng.',
-    cons: 'Đắt đỏ ($110M).',
+    where: 'Heavy ULA Vulcan Centaur VC6 — built for high-energy MEO/GEO upper-stage insertion.',
+    pros: '27,200 kg LEO and 14,500 kg GTO capacity with an 18-month build time.',
+    cons: 'Expensive ($110M).',
   },
   'LV-ARIANE64': {
-    where: 'Tên lửa hạng nặng Ariane 64 (4 tầng đẩy phụ) — dùng cho vệ tinh nặng nhất và quỹ đạo xa.',
-    pros: 'Cực khỏe (21.600kg LEO / 11.500kg GTO), khoang mũi 5.4m vừa mọi vệ tinh.',
-    cons: 'Đắt nhất ($125M) và mất 24 tháng chế tạo.',
+    where: 'Heavy Ariane 64 (4 boosters) — maximum lift for heavy observatories and distant orbits.',
+    pros: '21,600 kg LEO / 11,500 kg GTO capacity with 5.4 m fairing.',
+    cons: 'Most expensive ($125M) with 24-month build schedule.',
   },
 
   // --- 3. SATELLITE BUSES ---
   'BUS-3U': {
-    where: 'Khung CubeSat 3U cỡ hộp sữa — dùng cho nhiệm vụ đầu tay giá rẻ với camera mini.',
-    pros: 'Siêu rẻ ($0.4M), siêu nhẹ (1kg), làm xong trong 6 tháng.',
-    cons: 'Chỉ chịu được tổng khối lượng ≤ 6kg và cấp tối đa 6W cho Payload — gắn thiết bị lớn sẽ quá tải ngay!',
+    where: 'Shoebox-sized 3U CubeSat bus — starter low-cost platform for tiny RGB imagers.',
+    pros: 'Ultra-cheap ($0.4M), light (1 kg dry), 6-month build time.',
+    cons: 'Hard 6 kg total mass cap and only 6 W payload power — heavy instruments overload immediately.',
   },
   'BUS-6U': {
-    where: 'Khung CubeSat 6U — dùng cho vệ tinh nhỏ gắn camera cơ bản hoặc cảm biến từ trường.',
-    pros: 'Rẻ ($1.2M), gọn nhẹ, chịu tải tới 12kg và cấp 25W cho thiết bị.',
-    cons: 'Không chứa nổi các camera đa phổ hoặc radar nặng hàng chục kg.',
+    where: '6U CubeSat bus — compact frame for small imagers or magnetometers.',
+    pros: 'Affordable ($1.2M), supports up to 12 kg total mass and 25 W payload power.',
+    cons: 'Too small for multispectral imagers or radar payloads.',
   },
   'BUS-12U': {
-    where: 'Khung CubeSat 12U cỡ lớn — dùng cho nhiệm vụ tiết kiệm cần gắn cảm biến tầm trung nhẹ.',
-    pros: 'Giá chỉ $3.0M, tải tối đa 24kg và cấp 50W điện.',
-    cons: 'Vẫn quá nhỏ nếu muốn gắn Multispectral Imager (25kg) hay SAR Radar (85kg).',
+    where: 'Large 12U CubeSat bus — budget-friendly frame for mid-weight payloads.',
+    pros: '$3.0M cost, up to 24 kg total mass and 50 W payload power.',
+    cons: 'Still too tight for 25 kg multispectral imagers or SAR radar.',
   },
   'BUS-ESPA': {
-    where: 'Khung vệ tinh vi mô ESPA (~180kg) — dùng cho nhiệm vụ chụp ảnh đa phổ hoặc hồng ngoại nhiệt.',
-    pros: 'Chịu tải tới 180kg và cấp 150W điện, vừa với hầu hết tên lửa tầm trung.',
-    cons: 'Giá $18M và mất 24 tháng chế tạo.',
+    where: 'Microsatellite ESPA bus (~180 kg class) — built for multispectral, thermal IR, or MEO science.',
+    pros: 'Handles up to 180 kg total mass and 150 W payload power; fits mid-size boosters.',
+    cons: 'Costs $18M with a 24-month build duration.',
   },
   'BUS-SMALL500': {
-    where: 'Khung vệ tinh 500kg — dùng cho nhiệm vụ Radar SAR, đo khí nhà kính hoặc thiên văn.',
-    pros: 'Rất khỏe: chịu tải 500kg, cấp tới 500W điện cho các cảm biến ngốn điện.',
-    cons: 'Nặng (130kg khung rỗng), giá $60M và cần 30 tháng chế tạo.',
+    where: '500 kg SmallSat bus — tailored for SAR radar, greenhouse gas spectrometers, or astronomy.',
+    pros: 'Rugged 500 kg mass ceiling and 500 W payload power.',
+    cons: '130 kg dry mass, $60M cost, and 30-month schedule.',
   },
   'BUS-LARGE-LEO': {
-    where: 'Khung Đài quan sát LEO lớn (2.000kg) — dùng cho tổ hợp đa thiết bị nặng ở quỹ đạo thấp.',
-    pros: 'Sức chứa khủng 2.000kg, cấp 2.500W điện.',
-    cons: 'Rất đắt ($220M), mất 48 tháng chế tạo và bắt buộc dùng tên lửa lớn.',
+    where: 'Large 2,000 kg LEO Observatory bus — multi-instrument heavy remote sensing platforms.',
+    pros: '2,000 kg capacity and 2,500 W power capability.',
+    cons: 'Very costly ($220M), 48-month build, requires heavy lift.',
   },
   'BUS-GEO': {
-    where: 'Khung vệ tinh Địa tĩnh GEO (4.000kg) — chuyên dụng cho nhiệm vụ 10–15 năm ở độ cao 35.786km.',
-    pros: 'Sức chứa 4.000kg, cấp 5.000W điện, chịu đựng môi trường khắc nghiệt dài hạn.',
-    cons: 'Giá khổng lồ ($450M) và mất 60 tháng chế tạo.',
+    where: '4,000 kg Geostationary bus — built for 10–15 yr service at 35,786 km.',
+    pros: '4,000 kg mass capacity and 5,000 W power output.',
+    cons: '$450M cost and 60-month lead time.',
   },
 
   // --- 4. INSTRUMENTS (PAYLOAD) ---
   'INS-01': {
-    where: 'Camera màu RGB nhỏ gọn — dùng chụp ảnh Trái Đất cơ bản ở quỹ đạo thấp (LEO/SSO).',
-    pros: 'Siêu nhẹ (0.8kg), tốn ít điện (4W), sinh ít dữ liệu (0.4 GB/ngày), giá rẻ ($0.3M).',
-    cons: 'Hàng giá rẻ (tier Basic): chất lượng quang học cơ bản và ốc giữ camera dễ bị lệch góc nhiều khi lắp ráp!',
+    where: 'Compact RGB camera — entry-level Earth observation in Low Earth Orbit (LEO/SSO).',
+    pros: 'Ultra-light (0.8 kg), low draw (4 W), small data footprint (0.4 GB/day), $0.3M.',
+    cons: 'Basic optical tier: coarse resolution and alignment mounts drift easily during integration!',
   },
   'INS-02': {
-    where: 'Camera Đa phổ (Multispectral Imager) — dùng giám sát bờ biển, nông nghiệp, rừng và lũ lụt.',
-    pros: 'Chụp nhiều dải bước sóng cho điểm khoa học cao (40 pts), độ tin cậy tốt.',
-    cons: 'Nặng 25kg, tốn 45W điện, sinh 12 GB dữ liệu/ngày và cần ADCS giữ góc chuẩn ≤ 0.1°.',
+    where: 'Multispectral Imager — coastal, agriculture, forestry, and flood monitoring.',
+    pros: 'Multi-band sensing yields high science value (40 pts) with solid reliability.',
+    cons: '25 kg mass, 45 W draw, generates 12 GB/day, and needs <= 0.1 deg ADCS pointing.',
   },
   'INS-03': {
-    where: 'Camera Hồng ngoại Nhiệt (Thermal IR) — dùng phát hiện cháy rừng, núi lửa và đảo nhiệt đô thị ban đêm.',
-    pros: 'Nhìn xuyên khói mù để bắt điểm nóng cháy rừng, nặng vừa phải (12kg, 30W).',
-    cons: 'Đòi hỏi giữ góc ≤ 0.1° và sinh 8 GB dữ liệu/ngày.',
+    where: 'Thermal Infrared Camera — detects wildfires, volcanic hotspots, and nocturnal heat.',
+    pros: 'Penetrates smoke haze to locate fire fronts; moderate 12 kg / 30 W footprint.',
+    cons: 'Requires <= 0.1 deg pointing accuracy and produces 8 GB/day.',
   },
   'INS-04': {
-    where: 'Thiết bị Siêu phổ (Hyperspectral) — dùng phân tích thành phần hóa học và khoáng vật chi tiết.',
-    pros: 'Điểm khoa học rất cao (70 pts), phân tích hàng trăm kênh màu.',
-    cons: 'Rất nặng (60kg, 120W), sinh 40 GB/ngày và đòi hỏi giữ góc cực chuẩn ≤ 0.05°.',
+    where: 'Hyperspectral / GHG Spectrometer — precision chemical, mineral, and emission mapping.',
+    pros: 'Top-tier spectral sensitivity (70+ pts) across hundreds of narrow channels.',
+    cons: 'Heavy (60 kg, 120 W), generates 40 GB/day, demands <= 0.05 deg pointing.',
   },
   'INS-05': {
-    where: 'Radar khẩu độ tổng hợp (Small SAR X-band) — dùng chụp xuyên mây mù, bão lũ bất kể ngày đêm.',
-    pros: 'Hoạt động trong mọi thời tiết (80 pts), không sợ mây che.',
-    cons: 'Ngốn tới 450W điện và sinh 150 GB dữ liệu/ngày — bắt buộc dùng cánh pin lớn & ăng-ten Ka/Laser!',
+    where: 'Small X-Band SAR Radar — all-weather day/night imaging through clouds and storms.',
+    pros: 'Weather-independent operations (80 pts), unaffected by smoke or cloud cover.',
+    cons: 'Draws 450 W and generates 150 GB/day — requires large solar wings and Ka/Optical downlink.',
   },
   'INS-06': {
-    where: 'Máy đo Khí nhà kính (Atmospheric Gas Sounder) — dùng đo CO2 và CH4 toàn cầu.',
-    pros: 'Độ nhạy khí quyển cực cao (75 pts).',
-    cons: 'Rất nặng (140kg), tốn 150W điện, giá $90M và chế tạo mất 42 tháng.',
+    where: 'Atmospheric Gas Sounder — global CO2 and CH4 column monitoring.',
+    pros: 'Extremely sensitive trace-gas detection (75 pts).',
+    cons: 'Heavy (140 kg), 150 W draw, $90M cost, 42-month lead time.',
   },
   'INS-07': {
-    where: 'Từ kế Fluxgate (Magnetometer) — dùng đo từ trường Trái Đất và bão từ.',
-    pros: 'Nhẹ (1.5kg), chỉ tốn 2W điện, gần như không cần giữ góc khắt khe (±10°).',
-    cons: 'Không chụp được ảnh bề mặt Trái Đất (chỉ thu số liệu từ trường).',
+    where: 'Fluxgate Magnetometer — measures Earth magnetic field and geomagnetic storms.',
+    pros: 'Tiny footprint (1.5 kg, 2 W) and relaxed pointing (+/-10 deg).',
+    cons: 'Telemetry-only science sensor; captures no surface optical imagery.',
   },
   'INS-08': {
-    where: 'Đầu dò Hạt & Bức xạ (Particle Detector) — dùng cho nhiệm vụ Thời tiết không gian ở MEO/GTO.',
-    pros: 'Nhẹ (3kg, 5W), dữ liệu rất nhẹ (0.05 GB/ngày), chịu được quỹ đạo cao.',
-    cons: 'Chỉ đo hạt bức xạ, không dùng để chụp ảnh mặt đất.',
+    where: 'Charged Particle & Magnetometer Sensor — built for MEO/GTO Space Weather.',
+    pros: 'Lightweight (3 kg, 5 W), minimal data (0.05 GB/day), thrives in high orbits.',
+    cons: 'Measures space environment only, not surface optical frames.',
   },
   'INS-09': {
-    where: 'Kính thiên văn Không gian UV/Quang học 0.3m — dùng quan sát thiên hà và sao xa.',
-    pros: 'Độ phân giải thiên văn xuất sắc (80 pts).',
-    cons: 'Đòi hỏi hệ điều hướng siêu chính xác ADCS-FINE (≤ 0.001°) và giá $120M.',
+    where: '0.3 m UV/Optical Space Telescope — deep-sky galaxy and stellar science.',
+    pros: 'Outstanding astronomical resolution (80 pts).',
+    cons: 'Requires ADCS-FINE (<= 0.001 deg) and $120M budget.',
   },
   'INS-10': {
-    where: 'Phổ kế Khảo sát Bầu trời Hồng ngoại gần — dùng lập bản đồ vũ trụ ở quỹ đạo Dawn-Dusk.',
-    pros: 'Điểm khoa học tối đa (85 pts).',
-    cons: 'Chỉ hoạt động ở quỹ đạo ORB-SSO-DD-600, nặng 110kg và giá $100M.',
+    where: 'Near-IR Sky Survey Spectrometer — all-sky cosmology in Dawn-Dusk orbit.',
+    pros: 'Maximum science score (85 pts).',
+    cons: 'Restricted to ORB-SSO-DD-600, 110 kg mass, $100M price.',
   },
 
   // --- 5. SOLAR ARRAYS (POWER) ---
   'PWR-SA-BODY': {
-    where: 'Pin Mặt Trời dán sát thân (3U) — dùng cho CubeSat siêu nhỏ mang thiết bị vài Watt.',
-    pros: 'Rất rẻ ($0.25M), nhẹ (0.3kg), không sợ kẹt bản lề bung cánh.',
-    cons: 'Chỉ phát được 12W điện — gắn camera hay ăng-ten mạnh sẽ sập nguồn ngay!',
+    where: 'Body-mounted 3U solar panels — for low-power CubeSats running basic sensors.',
+    pros: 'Inexpensive ($0.25M), 0.3 kg, zero deployment hinge risk.',
+    cons: 'Generates only 12 W — cameras plus S-Band radio will drain batteries rapidly.',
   },
   'PWR-SA-DEP': {
-    where: 'Cánh pin Mặt Trời bung mở (6U–12U) — dùng cho CubeSat và vệ tinh nhỏ.',
-    pros: 'Phát 60W điện mà chỉ nặng 1.5kg, giá $1.0M, đủ nuôi camera RGB + ăng-ten S-band.',
-    cons: 'Chưa đủ nuôi các camera đa phổ hay radar hàng trăm Watt.',
+    where: 'Deployable 6U–12U solar wings — ideal for imaging CubeSats and small sats.',
+    pros: 'Produces 60 W for 1.5 kg and $1.0M — comfortably powers RGB imagers + S-Band radio.',
+    cons: 'Insufficient for heavy multispectral or radar payloads.',
   },
   'PWR-SA-SMALL': {
-    where: 'Cánh pin SmallSat (350W) — dùng cho vệ tinh ESPA và SmallSat tầm trung.',
-    pros: 'Phát 350W ổn định, suy hao thấp (1.5%/năm), nuôi tốt camera đa phổ & hồng ngoại.',
-    cons: 'Nặng 11kg (không lắp vừa khung CubeSat 3U/6U).',
+    where: 'SmallSat solar array (350 W) — built for ESPA and medium remote-sensing buses.',
+    pros: '350 W steady generation with low 1.5%/yr degradation.',
+    cons: '11 kg array mass will not fit small 3U/6U CubeSat buses.',
   },
   'PWR-SA-LARGE': {
-    where: 'Cánh pin LEO cỡ lớn (2.500W) — dùng cho vệ tinh Radar SAR hoặc tổ hợp nhiều cảm biến nặng.',
-    pros: 'Cung cấp nguồn điện dồi dào 2.5kW.',
-    cons: 'Nặng 65kg và giá $18M.',
+    where: 'Large 2,500 W LEO array — built for SAR radar and multi-sensor observatories.',
+    pros: 'Delivers generous 2.5 kW orbital power.',
+    cons: '65 kg mass and $18M price tag.',
   },
   'PWR-SA-GEO': {
-    where: 'Cánh pin Địa tĩnh khổng lồ (6.000W) — dùng cho đài quan sát GEO hoạt động trên 10 năm.',
-    pros: 'Công suất cực đại 6kW.',
-    cons: 'Nặng 150kg và giá $45M.',
+    where: 'High-capacity 6,000 W GEO wings — built for 10+ yr geostationary platforms.',
+    pros: 'Massive 6 kW continuous output.',
+    cons: '150 kg mass and $45M cost.',
   },
 
   // --- 6. BATTERIES ---
   'BAT-S': {
-    where: 'Pin Li-ion nhỏ (40 Wh) — dùng giữ nguồn cho CubeSat 3U–6U khi bay qua bóng tối Trái Đất.',
-    pros: 'Nhẹ (0.3kg), rẻ ($0.1M), giao hàng nhanh (3 tháng).',
-    cons: 'Dung lượng thấp (40 Wh) — nếu tải tiêu thụ > 15W sẽ cạn sạch pin khi vào vùng tối (Eclipse)!',
+    where: 'Small 40 Wh Li-ion pack — carries tiny CubeSats across short orbital eclipses.',
+    pros: 'Light (0.3 kg), cheap ($0.1M), fast 3-month delivery.',
+    cons: 'Only 40 Wh — loads above ~15 W risk complete brownout in Earth shadow.',
   },
   'BAT-M': {
-    where: 'Pin Li-ion tầm trung (200 Wh) — dùng cho CubeSat 12U và vệ tinh nhỏ ở quỹ đạo thấp.',
-    pros: 'Dung lượng 200 Wh an toàn cho thiết bị tầm vừa, chỉ nặng 1.4kg, giá $0.4M.',
-    cons: 'Không gánh nổi Radar SAR hay thiết bị > 100W qua vùng tối.',
+    where: 'Mid-size 200 Wh Li-ion battery — standard storage for 12U and small satellites.',
+    pros: '200 Wh safety cushion for 1.4 kg and $0.4M.',
+    cons: 'Insufficient for >100 W radar loads across eclipse.',
   },
   'BAT-L': {
-    where: 'Pin Li-ion dung lượng lớn (1.000 Wh) — dùng cho vệ tinh viễn thám tầm trung và lớn.',
-    pros: 'Dự trữ 1 kWh giúp tàu vượt qua vùng tối an toàn ngay cả khi mang cảm biến lớn.',
-    cons: 'Nặng 6.5kg (lưu ý giới hạn khối lượng nếu dùng khung CubeSat nhỏ).',
+    where: 'High-capacity 1,000 Wh Li-ion battery — built for medium and heavy payloads.',
+    pros: '1 kWh reserve sustains heavy sensors safely through eclipse transitions.',
+    cons: '6.5 kg weight requires checking small CubeSat mass budgets.',
   },
   'BAT-XL': {
-    where: 'Tổ hợp Pin GEO (8.000 Wh) — dùng cho vệ tinh hạng nặng và địa tĩnh.',
-    pros: 'Dung lượng 8 kWh cực lớn, xả sâu tới 60%.',
-    cons: 'Rất nặng (55kg) và giá $12M.',
+    where: '8,000 Wh GEO battery bank — heavy-duty long-life storage.',
+    pros: 'Massive 8 kWh capacity rated to 60% depth of discharge.',
+    cons: '55 kg weight and $12M cost.',
   },
 
   // --- 7. COMMUNICATIONS (COMM) ---
   'COM-UHF': {
-    where: 'Bộ đàm vô tuyến UHF — chỉ dùng truyền tín hiệu báo cáo sức khỏe tàu hoặc cảm biến từ trường siêu nhẹ.',
-    pros: 'Siêu rẻ ($0.1M), nhẹ (0.1kg), không cần hướng ăng-ten chính xác (±30°).',
-    cons: 'Băng thông cực chậm (0.0096 Mbps) — KHÔNG THỂ truyền kịp ảnh chụp, sẽ gây tràn bộ nhớ!',
+    where: 'UHF Transceiver — beacon telemetry and tiny health packets only.',
+    pros: 'Ultra-cheap ($0.1M), 0.1 kg, forgiving +/-30 deg antenna pattern.',
+    cons: 'Tiny 0.0096 Mbps throughput — CANNOT downlink images, causing storage overflow!',
   },
   'COM-S-CUBE': {
-    where: 'Bộ phát S-band CubeSat — dùng tải ảnh từ Camera RGB nhỏ (INS-01) ở quỹ đạo thấp.',
-    pros: 'Tốc độ 2 Mbps vừa đủ cho camera nhỏ, nhẹ (0.4kg) và rẻ ($0.3M).',
-    cons: 'Tầm phát tối đa 3.000km (không dùng được ở MEO/GEO) và bị nghẽn nếu dùng camera Đa phổ/Radar.',
+    where: 'CubeSat S-Band Transmitter — downlinks RGB wildfire imagery (INS-01) from LEO.',
+    pros: '2 Mbps speed clears small camera frames reliably for 0.4 kg and $0.3M.',
+    cons: '3,000 km max range (too weak for MEO/GEO) and throttles heavy multispectral/radar frames.',
   },
   'COM-X-SMALL': {
-    where: 'Bộ phát X-band SmallSat (50 Mbps) — dùng truyền ảnh Đa phổ & Hồng ngoại ở LEO/SSO.',
-    pros: 'Tốc độ nhanh 50 Mbps, tải sạch dữ liệu của hầu hết camera tầm trung.',
-    cons: 'Tiêu thụ 35W điện, nặng 3kg và chỉ phủ sóng ≤ 3.000km.',
+    where: 'SmallSat 50 Mbps X-Band radio — downlinks multispectral & thermal IR frames in LEO/SSO.',
+    pros: 'Fast 50 Mbps rate keeps onboard queues clear for most mid-tier sensors.',
+    cons: 'Draws 35 W, weighs 3 kg, range capped at <= 3,000 km.',
   },
   'COM-KA-LEO': {
-    where: 'Ăng-ten Ka-band tốc độ cao (500 Mbps) — dùng cho vệ tinh Radar SAR và Siêu phổ.',
-    pros: 'Băng thông cực lớn 500 Mbps, không bao giờ lo tắc nghẽn dữ liệu ở LEO.',
-    cons: 'Ngốn 120W điện, nặng 12kg và cần giữ góc hướng ≤ 0.5°.',
+    where: 'High-rate 500 Mbps Ka-Band terminal — built for SAR radar and hyperspectral missions.',
+    pros: 'Massive 500 Mbps pipeline eliminates LEO data bottlenecks.',
+    cons: 'Draws 120 W, 12 kg mass, needs <= 0.5 deg pointing.',
   },
   'COM-OPT-LEO': {
-    where: 'Thiết bị truyền tin Laser Quang học (1.000 Mbps) — dùng khi cần tốc độ tối đa ở LEO.',
-    pros: 'Tốc độ 1 Gbps nhanh nhất hệ thống.',
-    cons: 'Đòi hỏi giữ góc cực kỳ khắt khe (≤ 0.01°) và dễ bị mây che cản tia laser.',
+    where: '1,000 Mbps Laser Optical Terminal — maximum LEO throughput.',
+    pros: 'Fastest 1 Gbps link in the catalog.',
+    cons: 'Demands ultra-tight <= 0.01 deg pointing and clear skies.',
   },
   'COM-X-MGA': {
-    where: 'Ăng-ten X-band độ lợi trung bình — dùng cho quỹ đạo xa (MEO 20.200km & GTO).',
-    pros: 'Tầm phát xa tới 60.000km (bắt sóng tốt từ MEO/GTO về mặt đất).',
-    cons: 'Tốn 90W điện và nặng 8kg.',
+    where: 'Medium-gain X-Band terminal — closes long links from MEO 20,200 km & GTO.',
+    pros: '60,000 km operating range reaches ground stations reliably from MEO/GTO.',
+    cons: 'Draws 90 W and weighs 8 kg.',
   },
   'COM-X-HGA': {
-    where: 'Chảo ăng-ten X-band 1.5m — dùng cho quỹ đạo GEO hoặc không gian sâu.',
-    pros: 'Tầm phát 400.000km, tốc độ 60 Mbps.',
-    cons: 'Chảo lớn (cần kiểm tra vừa khoang mũi tên lửa), nặng 25kg, tốn 150W.',
+    where: '1.5 m High-Gain X-Band dish — GEO and deep-space communications.',
+    pros: '400,000 km reach at 60 Mbps.',
+    cons: 'Large dish checks fairing diameter; 25 kg mass and 150 W draw.',
   },
   'COM-KA-GEO': {
-    where: 'Hệ truyền dẫn Ka-band GEO — dùng truyền dữ liệu lớn từ độ cao 35.786km.',
-    pros: 'Tầm xa 100.000km với tốc độ 300 Mbps.',
-    cons: 'Nặng 40kg, ngốn 280W điện và giá $45M.',
+    where: 'GEO Ka-Band wideband link — high-rate 35,786 km broadcasting.',
+    pros: '100,000 km range at 300 Mbps.',
+    cons: '40 kg mass, 280 W power draw, $45M price.',
   },
 
   // --- 8. ON-BOARD COMPUTER (OBC) ---
   'OBC-BASIC': {
-    where: 'Vi điều khiển OBC cơ bản — dùng cho CubeSat bay ngắn hạn ở quỹ đạo rất thấp (LEO 400–500km).',
-    pros: 'Siêu rẻ ($0.05M), nhẹ 50g, chỉ tốn 0.5W điện.',
-    cons: 'Chịu bức xạ rất kém (10 krad) và bộ nhớ chỉ 4GB — lên quỹ đạo cao sẽ bị bão Mặt Trời đánh sập!',
+    where: 'Entry microcontroller — short-duration CubeSats in low radiation (LEO 400–500 km).',
+    pros: 'Ultra-cheap ($0.05M), 50 g, 0.5 W draw.',
+    cons: 'Weak 10 krad tolerance and 4 GB storage — locks up quickly in high radiation orbits.',
   },
   'OBC-CUBE': {
-    where: 'Máy tính CubeSat Linux — dùng cho vệ tinh nhỏ chụp ảnh ở LEO và SSO.',
-    pros: 'Bộ nhớ 32GB lưu ảnh tốt, chịu bức xạ 20 krad, giá rẻ ($0.15M).',
-    cons: 'Chưa chịu nổi vùng bức xạ nặng ở MEO/GTO trong nhiều năm.',
+    where: 'CubeSat Linux Flight Computer — imaging missions in LEO and SSO.',
+    pros: '32 GB Store-and-Forward buffer, 20 krad tolerance, low $0.15M price.',
+    cons: 'Cannot survive multi-year MEO/GTO radiation belts.',
   },
   'OBC-SPACE': {
-    where: 'Bo mạch xử lý chuẩn Không gian (Space-grade) — dùng cho nhiệm vụ viễn thám kéo dài 3–5 năm.',
-    pros: 'Chịu bức xạ 50 krad rất an toàn ở LEO/SSO/Polar, bộ nhớ 128GB.',
-    cons: 'Giá $1.5M và tiêu thụ 8W điện.',
+    where: 'Space-grade avionics processor — reliable 3–5 yr remote sensing campaigns.',
+    pros: '50 krad tolerance and 128 GB onboard storage.',
+    cons: '$1.5M cost and 8 W draw.',
   },
   'OBC-RADHARD': {
-    where: 'Máy tính chống bức xạ cấp Quân sự/Vũ trụ sâu (Rad-Hard) — bắt buộc cho quỹ đạo MEO, GTO, GEO.',
-    pros: 'Bất tử trước bão bức xạ (chịu tới 200 krad), hoạt động bền bỉ hàng chục năm.',
-    cons: 'Nặng 8kg, tốn 25W điện và giá $12M.',
+    where: 'Radiation-hardened Rad-Hard processor — mandatory for MEO, GTO, and GEO.',
+    pros: 'Withstands 200 krad inside Van Allen belts without SEU lockups.',
+    cons: '8 kg mass, 25 W draw, and $12M cost.',
   },
 
   // --- 9. ATTITUDE CONTROL (ADCS) ---
   'ADCS-MAG': {
-    where: 'Cuộn từ trường + Cảm biến Mặt Trời — dùng cho vệ tinh đo từ trường/bức xạ không cần chụp ảnh nét.',
-    pros: 'Rẻ ($0.1M), nhẹ (0.2kg), rất bền.',
-    cons: 'Sai số góc rất lớn (±5.0°) — nếu gắn Camera chụp ảnh thì toàn bộ ảnh sẽ bị NHÒE (BLUR)!',
+    where: 'Magnetorquers + Sun Sensors — coarse orientation for particle/field probes.',
+    pros: 'Cheap ($0.1M), light (0.2 kg), mechanically simple.',
+    cons: 'Coarse +/-5.0 deg jitter — optical camera photos will BLUR beyond usability!',
   },
   'ADCS-WHEEL': {
-    where: 'Bánh đà phản ứng 3 trục (Reaction Wheels) — dùng cho CubeSat gắn Camera RGB cơ bản (INS-01).',
-    pros: 'Giữ góc chuẩn ±1.0° (vừa khít yêu cầu của Camera RGB INS-01), nhẹ (1kg), giá $0.6M.',
-    cons: 'Chưa đủ chính xác cho Camera Đa phổ (±0.1°) hay Siêu phổ (±0.05°).',
+    where: '3-Axis Reaction Wheels — built for CubeSat optical cameras like INS-01.',
+    pros: 'Holds +/-1.0 deg pointing stability (meets INS-01 specs) for 1 kg and $0.6M.',
+    cons: 'Too coarse for high-res multispectral (+/-0.1 deg) or GHG spectrometers.',
   },
   'ADCS-STAR': {
-    where: 'Bánh đà + Ống ngắm Sao (Star Tracker) — dùng cho hầu hết vệ tinh chụp ảnh Đa phổ, Nhiệt, Radar.',
-    pros: 'Độ chính xác cao (±0.05°), đảm bảo ảnh chụp sắc nét không bao giờ bị nhòe ở mọi camera viễn thám.',
-    cons: 'Nặng 6kg, tốn 15W điện và giá $4.0M.',
+    where: 'Reaction Wheels + Star Tracker — precision pointing for multispectral, IR, and SAR.',
+    pros: 'High +/-0.05 deg stability eliminates motion blur across Earth imagers.',
+    cons: '6 kg mass, 15 W draw, $4.0M cost.',
   },
   'ADCS-FINE': {
-    where: 'Hệ thống điều hướng siêu tinh (Fine-pointing) — chuyên dụng cho Kính thiên văn không gian (INS-09).',
-    pros: 'Độ chính xác tuyệt đối (±0.001°), khóa chết mục tiêu giữa các vì sao.',
-    cons: 'Rất nặng (30kg), tốn 60W điện và giá $25M.',
+    where: 'Fine-Pointing Star-Tracker Suite — built for GHG spectrometers and space telescopes.',
+    pros: 'Sub-arcsecond +/-0.001 deg lock on targets.',
+    cons: 'Heavy (30 kg), 60 W draw, $25M cost.',
   },
 };
 
@@ -443,53 +442,53 @@ export function getPartInsight(slot, item) {
   if (!item) return null;
   if (PART_INSIGHTS[item.id]) return PART_INSIGHTS[item.id];
   return {
-    where: item.description_simple || `Sử dụng cho phân hệ ${slot.toUpperCase()}.`,
-    pros: `Đáp ứng thông số chuẩn của ${item.name || item.id}.`,
-    cons: item.cost_musd > 50 ? 'Chi phí đầu tư và khối lượng lớn.' : 'Cần kiểm tra kỹ tương thích công suất và tải trọng.',
+    where: item.description_simple || `Used for subsystem ${slot.toUpperCase()}.`,
+    pros: `Meets nominal specifications for ${item.name || item.id}.`,
+    cons: item.cost_musd > 50 ? 'High procurement cost and mass.' : 'Verify power and mass margin compatibility.',
   };
 }
 
 /**
- * 3 hang muc kiem dinh chuyen biet (Phase 03.INSPECT):
- * 1. GAS_LEAK_AUDIO: Tim loi xi ga qua am thanh (Audio Hiss khi lia chuot den gan).
- * 2. STRUCT_CRACK_XRAY: Bat che do X-Ray Mesh trang thua de soi vet nut (o FULL STACK hoac giau trong PAYLOAD FOCUS).
- * 3. CAMERA_TILT_ALIGN: Chinh goc nghieng Camera ve 0.0 do bang keo chuot (camera cang dom goc lech cang lon).
+ * 3 specialized pre-flight diagnostics (Phase 03.INSPECT):
+ * 1. GAS_LEAK_AUDIO: Locate pressurant leak purely by proximity hiss audio.
+ * 2. STRUCT_CRACK_XRAY: Toggle wireframe X-Ray Mesh to spot and weld yellow cracks.
+ * 3. CAMERA_TILT_ALIGN: Drag optical mirror back to 0.0 deg alignment and hold steady.
  */
 export const CHECKLIST_TEMPLATES = [
   {
     id: 'GAS_LEAK_AUDIO',
     kind: 'audio_leak',
-    label: { vi: '1. RÒ RỈ KHÍ GA', en: '1. PROPELLANT GAS LEAK' },
+    label: { vi: '1. RÒ RỈ KHÍ GA', en: '1. GAS LEAK [AUDIO SCAN]' },
     group: 'rocket',
     basePos: [-0.11, -0.28, 0.18],
     meter: 'pressureDiff',
     symptom: {
       vi: 'Không có dấu hiệu bằng mắt thường. Hãy lia chuột nghe tiếng xì ga to dần rồi nhỏ dần để bấm trúng tâm điểm rò.',
-      en: 'No visual cue. Sweep the cursor and listen for peak hiss intensity to pinpoint and seal the cryogenic leak.',
+      en: 'No visual clue! Sweep your pointer over the booster and listen for the loudest hiss peak, then click to seal.',
     },
   },
   {
     id: 'STRUCT_CRACK_XRAY',
     kind: 'xray_crack',
-    label: { vi: '2. VẾT NỨT KẾT CẤU', en: '2. STRUCTURAL CRACK' },
+    label: { vi: '2. VẾT NỨT KẾT CẤU', en: '2. STRUCTURAL CRACK [YELLOW X-RAY]' },
     group: 'sat',
     basePos: [0.06, 0.56, 0.15],
     meter: 'structVib',
     symptom: {
       vi: 'Bật chế độ X-Ray tìm đường nứt ngoằn nghoèo nhỏ màu vàng để bấm hàn.',
-      en: 'Enable X-Ray mode to spot fine yellow hairline structural cracks and weld them closed.',
+      en: 'Enable [X-RAY MESH] and click every jagged yellow weld crack (low-reliability rockets carry multiple cracks!).',
     },
   },
   {
     id: 'CAMERA_TILT_ALIGN',
     kind: 'camera_align',
-    label: { vi: '3. CÂN CHỈNH GƯƠNG QUANG HỌC', en: '3. OPTICAL MIRROR ALIGNMENT' },
+    label: { vi: '3. CÂN CHỈNH GƯƠNG QUANG HỌC', en: '3. CAMERA MIRROR ALIGNMENT [0°]' },
     group: 'sat',
     basePos: [0.0, 0.72, 0.16],
     meter: 'emiNoise',
     symptom: {
       vi: 'Gương phản xạ bị lệch và rơ bánh răng — kéo giữ chuột đưa gương về 0.0° và giữ ổn định để khóa chốt.',
-      en: 'Reflective optics mirror is off-axis with backlash — drag steadily to 0.0° and hold to lock.',
+      en: 'Optical mirror assembly is skewed with gear backlash — drag smoothly to 0.0 deg and hold steady until locked.',
     },
   },
 ];
@@ -544,7 +543,7 @@ export function resolvePresetDesign(presets, presetId, missionDetail) {
   };
 }
 
-/** Tinh 4 thanh KPI song con (POWER, MASS, SIGNAL, INTEGRITY) cho Phase 02.BUILD. */
+/** Computes 4 live telemetry bars (POWER, MASS, SIGNAL, INTEGRITY) for 02.BUILD. */
 export function computeCoreBars(metrics, fitOk = true) {
   if (!metrics) return null;
   const loadW = Math.max(0.1, Number(metrics['power.load_w'] || 0));
@@ -599,10 +598,7 @@ export function computeCoreBars(metrics, fitOk = true) {
 }
 
 /**
- * Sinh 3 nhiem vu kiem dinh ngau nhien cho Phase 03.INSPECT:
- * 1. GAS_LEAK_AUDIO: Vi tri ngau nhien doc than ten lua (FULL STACK).
- * 2. STRUCT_CRACK_XRAY: Vet nut ket cau (ngau nhien o FULL STACK hoac giau trong PAYLOAD FOCUS).
- * 3. CAMERA_TILT_ALIGN: Goc lech ban dau phu thuoc do "dom" (tier) cua Camera dang gan tren tau.
+ * Generates 3 deterministic-per-salt pre-flight inspection tasks for Phase 03.INSPECT.
  */
 export function generateInspectionDefects(salt = Date.now(), design = null, catalog = null) {
   let state = (Math.floor(salt) ^ 0x9e3779b9) >>> 0;
@@ -611,35 +607,33 @@ export function generateInspectionDefects(salt = Date.now(), design = null, cata
     return state / 4294967296;
   };
 
-  // 1. Xac dinh camera dang gan tren ve tinh -> Goc lech & benh guong phan xa do "dom"
   const firstInsId = design?.instruments?.[0] || 'INS-01';
   const insItem = catalog?.tables?.instruments?.[firstInsId];
   const tier = insItem?.tier || 'basic';
   let tiltMagnitude = 22;
   let mirrorIssue = '';
   if (tier === 'basic') {
-    tiltMagnitude = Math.round(20 + rnd() * 8); // 20° .. 28° cho camera dom/re tien
+    tiltMagnitude = Math.round(20 + rnd() * 8);
     mirrorIssue = {
       vi: 'Camera giá rẻ: Gương phản xạ bị rơ bánh răng & kẹt lò xo hồi vị — kéo nặng tay và dễ bật lệch nếu thả sớm.',
-      en: 'Budget camera optics: Gear backlash and sticking spring — heavy drag and rebounds if released too early.',
+      en: 'Basic Camera Tier: Mirror mount suffers from Gear Backlash and stiff spring return — drag firmly to 0.0 deg and hold steady or it springs out of alignment!',
     };
   } else if (tier === 'advanced') {
-    tiltMagnitude = Math.round(12 + rnd() * 5); // 12° .. 17° cho camera tam trung
+    tiltMagnitude = Math.round(12 + rnd() * 5);
     mirrorIssue = {
       vi: 'Camera tầm trung: Gương hội tụ bị trôi ốc hãm ma sát khi vận chuyển — kéo chậm và giữ ở 0.0° để khóa chốt.',
-      en: 'Mid-tier optics: Friction screw drifted during transport — drag slowly and hold at 0.0° to lock.',
+      en: 'Advanced Camera Tier: Friction lock drifted during transit — pull smoothly to 0.0 deg and hold to engage detent.',
     };
   } else {
-    tiltMagnitude = Math.round(7 + rnd() * 5); // 7° .. 12° cho camera cao cap
+    tiltMagnitude = Math.round(7 + rnd() * 5);
     mirrorIssue = {
       vi: 'Camera cao cấp: Gương tinh chỉnh lệch nhẹ khỏi trục chuẩn — kéo mượt về 0.0° để khóa ngàm quang học.',
-      en: 'High-precision optics: Slight alignment offset — steer smoothly to 0.0° to latch optical mount.',
+      en: 'Expert Camera Tier: Minor optical axis offset — align cleanly to 0.0 deg to lock collar.',
     };
   }
   const tiltSign = rnd() > 0.5 ? 1 : -1;
   const initialTiltDeg = tiltSign * tiltMagnitude;
 
-  // 2. Xac dinh ten lua dang chon -> Rocket dom/re tien se co hon 1 vet nut ngoan nghoeo mau vang!
   const lvId = design?.launch?.vehicle || 'LV-ELECTRON';
   const lvItem = catalog?.tables?.launch_vehicles?.[lvId];
   const lvRel = Number(lvItem?.reliability ?? 0.95);
@@ -649,7 +643,6 @@ export function generateInspectionDefects(salt = Date.now(), design = null, cata
 
   const cracks = [];
   for (let i = 0; i < crackCount; i++) {
-    // Dam bao neu co >= 2 vet thi co ca o FULL STACK va PAYLOAD FOCUS de nguoi choi phai soi ky ca 2
     const inPayload = crackCount === 1 ? rnd() > 0.45 : i === crackCount - 1;
     const cy = inPayload ? -0.08 + rnd() * 0.34 : -0.68 + (i * 0.42 + rnd() * 0.28);
     const cx = (rnd() - 0.5) * 0.16;
@@ -661,7 +654,6 @@ export function generateInspectionDefects(salt = Date.now(), design = null, cata
     });
   }
 
-  // 3. Vi tri xi ga ngau nhien doc than ten lua (khong hien diem tren man hinh, chi nghe tieng xi to/nho)
   const leakY = -0.6 + rnd() * 0.75;
   const leakX = (rnd() - 0.5) * 0.14;
 
@@ -691,7 +683,7 @@ export function generateInspectionDefects(salt = Date.now(), design = null, cata
   ];
 }
 
-/** Danh gia hau qua khi ket thuc Phase 03.INSPECT. */
+/** Evaluates consequences when leaving Phase 03.INSPECT. */
 export function evaluateInspectionOutcome(defects, fixedIds) {
   const unfixed = (defects || []).filter((d) => !fixedIds.includes(d.id));
   if (unfixed.length === 0) {
@@ -699,7 +691,7 @@ export function evaluateInspectionOutcome(defects, fixedIds) {
   }
   const hasRocketFault = unfixed.some((d) => d.id === 'GAS_LEAK_AUDIO' || (d.id === 'STRUCT_CRACK_XRAY' && !d.hiddenInPayload));
   if (unfixed.length >= 2 || hasRocketFault) {
-    const pickLang = (label, l) => (label && typeof label === 'object' ? label[l] || label.vi || label.en : label);
+    const pickLang = (label, l) => (label && typeof label === 'object' ? label[l] || label.en || label.vi : label);
     const shortName = (label, l) => String(pickLang(label, l) || '').replace(/^\d+\.\s*/, '').replace(/\s*\[[^\]]*\]\s*$/, '');
     const namesVi = unfixed.map((d) => shortName(d.label, 'vi')).join(', ');
     const namesEn = unfixed.map((d) => shortName(d.label, 'en')).join(', ');
@@ -713,13 +705,13 @@ export function evaluateInspectionOutcome(defects, fixedIds) {
         constraint: 'inspection',
         title: {
           vi: `NỔ TÊN LỬA DO BỎ SÓT LỖI KIỂM ĐỊNH: ${namesVi}`,
-          en: `VEHICLE EXPLOSION: MISSED PRE-FLIGHT DEFECTS: ${namesEn}`,
+          en: `VEHICLE EXPLOSION: MISSED PRE-FLIGHT DEFECTS (${namesEn})`,
         },
         cause: {
           vi: `Đội kiểm định đã bỏ sót ${unfixed.length} lỗi phần cứng nghiêm trọng (${namesVi}) trước khi rời bệ. Tên lửa mất ổn định và phát nổ trên đường bay.`,
           en: `Pre-flight inspection missed critical hardware defects (${namesEn}). The stack suffered catastrophic failure in flight.`,
         },
-        numbers: unfixed.map((d) => ({ label: shortName(d.label, 'vi'), value: 'UNFIXED' })),
+        numbers: unfixed.map((d) => ({ label: shortName(d.label, 'en'), value: 'UNFIXED' })),
       },
       orbitFault: null,
     };

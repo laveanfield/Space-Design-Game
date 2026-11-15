@@ -11,11 +11,11 @@ import StoryScene from '../story/StoryScene';
 
 // Su co MAU chi de xem thu to bao (khong phai so lieu that cua engine)
 const MOCK_FAILURES = {
-  fts: { kind: 'fts', explode: true, title: { vi: 'KÍCH HOẠT TỰ HỦY AN TOÀN (FTS)' }, cause: { vi: 'Bạn ra lệnh hủy chuyến bay khi tên lửa đang bay: hệ thống tự hủy phá tên lửa trên không để bảo vệ khu dân cư. Mất cả tên lửa lẫn vệ tinh.' }, numbers: [] },
-  scrub: { kind: 'scrub', explode: false, title: { vi: 'HOÃN PHÓNG THEO LỆNH KỸ SƯ TRƯỞNG' }, cause: { vi: 'Bạn dừng đếm ngược trước khi đánh lửa. Tên lửa an toàn, nhưng chi phí chuẩn bị chuyến bay coi như mất và Sếp không vui.' }, numbers: [] },
-  dv_shortfall: { kind: 'dv_shortfall', t: 1300, explode: true, title: { vi: 'HỤT VẬN TỐC, RƠI LẠI KHÍ QUYỂN' }, cause: { vi: 'Tên lửa cháy hết nhiên liệu khi chưa đủ vận tốc quỹ đạo: tải quá nặng hoặc quỹ đạo quá cao so với sức đẩy.' }, numbers: [{ label: 'dv_needed_ms', value: 9400, unit: 'm/s' }, { label: 'dv_ideal_ms', value: 8700, unit: 'm/s' }, { label: 'dv_short_ms', value: 700, unit: 'm/s' }] },
-  wrong_plane: { kind: 'wrong_plane', t: 900, explode: false, title: { vi: 'KHÔNG VÀO ĐƯỢC MẶT PHẲNG QUỸ ĐẠO' }, cause: { vi: 'Từ bãi phóng này không thể phóng trực tiếp vào quỹ đạo có độ nghiêng nhỏ hơn vĩ độ của bãi.' }, numbers: [] },
-  mass: { kind: 'structural_maxq', t: 36.1, explode: true, constraint: 'mass', title: { vi: 'GÃY KHUNG VỆ TINH TẠI MAX-Q' }, cause: { vi: 'Tổng khối lượng linh kiện vượt sức chịu của khung vệ tinh. Ở Max-Q khung gãy, tải trọng va vào fairing và hệ thống an toàn bãi phóng phải hủy chuyến bay.' }, numbers: [{ label: 'mass.dry_kg', value: 73.3, unit: 'kg' }, { label: 'mass.bus_limit_kg', value: 24, unit: 'kg' }] },
+  fts: { kind: 'fts', explode: true, title: { en: 'FLIGHT TERMINATION SYSTEM ACTIVATED' }, cause: { en: 'Range Safety termination destroyed the vehicle mid-flight to protect downrange areas.' }, numbers: [] },
+  scrub: { kind: 'scrub', explode: false, title: { en: 'LAUNCH SCRUBBED BY LEAD ENGINEER' }, cause: { en: 'Countdown halted prior to ignition. Hardware preserved, launch readiness cost spent.' }, numbers: [] },
+  dv_shortfall: { kind: 'dv_shortfall', t: 1300, explode: true, title: { en: 'DELTA-V SHORTFALL — RE-ENTRY' }, cause: { en: 'Booster exhausted propellant short of orbital velocity.' }, numbers: [{ label: 'dv_needed_ms', value: 9400, unit: 'm/s' }, { label: 'dv_ideal_ms', value: 8700, unit: 'm/s' }, { label: 'dv_short_ms', value: 700, unit: 'm/s' }] },
+  wrong_plane: { kind: 'wrong_plane', t: 900, explode: false, title: { en: 'ORBITAL PLANE UNREACHABLE' }, cause: { en: 'Target inclination is below launch site latitude for direct insertion.' }, numbers: [] },
+  mass: { kind: 'structural_maxq', t: 36.1, explode: true, constraint: 'mass', title: { en: 'STRUCTURAL BREAKUP AT MAX-Q' }, cause: { en: 'Dry mass exceeded bus load limit, failing structural mounts at Max-Q.' }, numbers: [{ label: 'mass.dry_kg', value: 73.3, unit: 'kg' }, { label: 'mass.bus_limit_kg', value: 24, unit: 'kg' }] },
 };
 
 /** Lab cua so hoi thoai: ?lab=story&mode=launch_fail|review_ok|review_fail (launch_fail co them to bao tai nan) */

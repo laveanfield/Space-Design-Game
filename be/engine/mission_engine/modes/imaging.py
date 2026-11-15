@@ -49,14 +49,14 @@ class Imaging:
 
     def hud(self, st, t):
         nxt = next((w for w in st["windows"] if w["t1"] >= t), None)
-        lines = [f"Ảnh đã chụp: {len(st['captures'])}  ·  tốt nhất {st['best_quality']:.0%}"]
+        lines = [f"Captured frames: {len(st['captures'])}  ·  best {st['best_quality']:.0%}"]
         prompts = []
         if nxt and nxt["t0"] <= t:
-            prompts.append(f"Đang trong cửa sổ: {nxt['name']} — bấm CHỤP")
+            prompts.append(f"In window: {nxt['name']} — press CAPTURE")
         elif nxt:
-            lines.append(f"Cửa sổ kế tiếp: {nxt['name']} sau {nxt['t0'] - t:,.0f} s")
+            lines.append(f"Next window: {nxt['name']} in {nxt['t0'] - t:,.0f} s")
         else:
-            lines.append("Hết cửa sổ trong tầm mô phỏng")
+            lines.append("No remaining windows in horizon")
         return {"title": "IMAGING", "lines": lines, "prompts": prompts, "windows": st["windows"][:6]}
 
     def view_hint(self, st, t):

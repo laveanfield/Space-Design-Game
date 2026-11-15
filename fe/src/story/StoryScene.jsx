@@ -1,14 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { playSoundAsset } from '../api/client';
 import AccidentNewspaper from '../components/AccidentNewspaper';
-import HumanityImpactCard from '../components/HumanityImpactCard';
 import { tr, tx } from '../core/i18n';
 import { BossPortrait, EngineerPortrait } from './Portraits';
 import { CAST, fill } from './14-11-2026-script';
 
 const TYPE_SPEED = 42;
 
-export function getCast(lang = 'vi') {
+export function getCast(lang = 'en') {
   return {
     eng: {
       name: tx(CAST.eng.name, lang),
@@ -45,7 +44,7 @@ function hydrateLines(lines, ctx) {
           stamp: ch.stamp
             ? fill(resolveField(ch.stamp, lang), c)
             : lang === 'en'
-            ? 'REQUEST DENIED'
+            ? 'REQUEST DENIED // OVERRIDDEN'
             : 'TỪ CHỐI PHÊ DUYỆT',
           bossReply: fill(resolveField(ch.bossReply, lang), c),
           engNote: ch.engNote ? fill(resolveField(ch.engNote, lang), c) : '',
@@ -169,12 +168,12 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
 
         <div className="term-comm-nodes">
           <div className={`term-node ${speaking === 'eng' || waitingChoice ? 'speaking eng' : ''}`}>
-            <span className="term-role-pill player">{tr(lang, 'KỸ SƯ TRƯỞNG', 'CHIEF ENGINEER')}</span>
+            <span className="term-role-pill player">{tr(lang, 'KỸ SƯ TRƯỞNG', 'YOUR ROLE // PLAYER')}</span>
             <EngineerPortrait mood={mood.eng || (speaking === 'eng' || waitingChoice ? 'calm' : 'worried')} />
-            <div className="term-node-label">{tr(lang, 'BẠN — KỸ SƯ TRƯỞNG', 'YOU — CHIEF ENGINEER')}</div>
+            <div className="term-node-label">{tr(lang, 'BẠN — KỸ SƯ TRƯỞNG', '[YOU // ENG-01] LEAD ENGINEER')}</div>
           </div>
           <div className={`term-node ${speaking === 'boss' && !waitingChoice ? 'speaking boss' : ''}`}>
-            <span className="term-role-pill npc">{tr(lang, 'BAN GIÁM ĐỐC', 'MANAGEMENT')}</span>
+            <span className="term-role-pill npc">{tr(lang, 'BAN GIÁM ĐỐC', 'MANAGEMENT // NPC')}</span>
             <BossPortrait mood={line.stamp ? 'angry' : mood.boss || 'smug'} />
             <div className="term-node-label">{cast.boss.name}</div>
           </div>
@@ -187,14 +186,14 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
                 [{h.who === 'boss' ? cast.boss.name : cast.eng.name}]
               </span>{' '}
               {h.choiceTag && <span className="term-choice-echo">[{h.choiceTag}]</span>}{' '}
-              {h.stamp && <span className="term-reject-stamp">⛔ {h.stamp}</span>} {h.text}
+              {h.stamp && <span className="term-reject-stamp">⚠ {h.stamp}</span>} {h.text}
             </div>
           ))}
           <div className={`term-log-active ${speaking} ${line.isThought ? 'thought' : ''}`}>
             <span className="term-tag">
               [{speaking === 'boss' ? cast.boss.name : cast.eng.name}]:&gt;
             </span>{' '}
-            {line.stamp && <span className="term-reject-stamp">⛔ {line.stamp}</span>} {line.text.slice(0, typed)}
+            {line.stamp && <span className="term-reject-stamp">⚠ {line.stamp}</span>} {line.text.slice(0, typed)}
             <span className="story-caret">▍</span>
           </div>
         </div>
@@ -205,7 +204,7 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
               {tr(
                 lang,
                 `CHỌN LỜI PHẢN HỒI — Phím 1-${line.choices.length} hoặc nhấp chuột:`,
-                `CHOOSE YOUR RESPONSE — Keys 1-${line.choices.length} or click:`
+                `SELECT YOUR RESPONSE [YOU // ENG-01] (Press 1-${line.choices.length} or click):`
               )}
             </div>
             <div className="term-choices-list">
@@ -220,28 +219,17 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
                     <span className="term-choice-key">[{idx + 1}]</span>
                     <span className="term-choice-tag">{ch.tag}</span>
                   </span>
-                  <span className="term-choice-text">“{ch.text}”</span>
+                  <span className="term-choice-text">&ldquo;{ch.text}&rdquo;</span>
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {showNews && (
-          <div className={`story-news ${accident ? '' : 'single'}`}>
-            {accident && (
-              <div className="story-news-item">
-                <AccidentNewspaper info={accident} variant="compact" />
-              </div>
-            )}
+        {showNews && accident && (
+          <div className="story-news single">
             <div className="story-news-item">
-              <HumanityImpactCard
-                missionId={ctx?.mission}
-                success={Boolean(ctx?.success)}
-                failureId={ctx?.failureId || ''}
-                compact
-                lang={lang}
-              />
+              <AccidentNewspaper info={accident} variant="compact" />
             </div>
           </div>
         )}
@@ -252,12 +240,12 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
               ? tr(
                   lang,
                   `Chọn phản hồi 1-${line.choices.length} để nói với sếp • Phím ESC để bỏ qua`,
-                  `Select response 1-${line.choices.length} to reply • ESC to skip`
+                  `CHOOSE RESPONSE [1-${line.choices.length}] TO REPLY TO DIRECTOR | [ESC] SKIP`
                 )
               : tr(
                   lang,
                   `Tin ${i + 1}/${activeScript.length} • Enter hoặc nhấp chuột để tiếp tục • Phím ESC để bỏ qua`,
-                  `Msg ${i + 1}/${activeScript.length} • Enter or click to continue • ESC to skip`
+                  `MSG ${i + 1}/${activeScript.length} | [ENTER/CLICK] CONTINUE | [ESC] SKIP`
                 )}
           </span>
           <div className="row-wrap">
@@ -268,8 +256,8 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
               {waitingChoice
                 ? tr(lang, 'CHỌN PHẢN HỒI Ở TRÊN', 'SELECT RESPONSE ABOVE')
                 : i + 1 >= activeScript.length && typed >= line.text.length
-                ? tr(lang, 'XÁC NHẬN HOÀN TẤT', 'ACKNOWLEDGE')
-                : tr(lang, 'TIẾP TỤC →', 'CONTINUE →')}
+                ? tr(lang, 'XÁC NHẬN HOÀN TẤT', 'ACKNOWLEDGE [DONE]')
+                : tr(lang, 'TIẾP TỤC →', 'ACK / NEXT >>')}
             </button>
           </div>
         </div>

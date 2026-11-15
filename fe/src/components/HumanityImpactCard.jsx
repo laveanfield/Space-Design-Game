@@ -2,6 +2,7 @@ import React from 'react';
 import { useGame } from '../core/GameContext';
 import { tr } from '../core/i18n';
 import { getHumanityImpact } from '../story/humanityImpact';
+import { canShowOrbitalTimes } from './missionPlayback';
 
 function MissionImpactArt({ missionKey, success, lang = 'vi' }) {
   if (missionKey === 'space_weather') {
@@ -134,11 +135,11 @@ function MissionImpactArt({ missionKey, success, lang = 'vi' }) {
   );
 }
 
-/** Ngay thang tren dau bao (theo dong ho may nguoi choi). */
-function editionDate(lang = 'vi') {
+/** Edition date displayed on newspaper masthead (player local clock). */
+function editionDate(lang = 'en') {
   try {
     const locale = lang === 'en' ? 'en-US' : 'vi-VN';
-    return new Date().toLocaleDateString(locale, { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+    return new Date().toLocaleDateString(locale, { weekday: 'long', month: 'short', day: '2-digit', year: 'numeric' });
   } catch {
     return '';
   }
@@ -155,13 +156,19 @@ export default function HumanityImpactCard({
   success,
   failureId,
   outcome,
+  lifeData,
+  launchResult,
+  flightData,
   compact = false,
   lang: langProp,
 }) {
   const gameCtx = useGame();
-  const lang = langProp || gameCtx?.lang || 'vi';
-  const story = getHumanityImpact(missionId, { success, failureId, outcome, lang });
-  const toneClass = story.success ? 'ok' : 'fail';
+  const lang = langProp || gameCtx?.lang || 'en';
+  if (!canShowOrbitalTimes({ missionId, success, outcome, lifeData, launchResult, flightData })) {
+    return null;
+  }
+  const story = getHumanityImpact(missionId, { success: true, failureId, outcome, lang });
+  const toneClass = 'ok';
   const paragraphs = compact ? story.paragraphs.slice(0, 1) : story.paragraphs;
 
   return (
@@ -169,8 +176,8 @@ export default function HumanityImpactCard({
       <header className="news-masthead">
         {!compact && (
           <div className="news-ears">
-            <span>{tr(lang, 'ẤN BẢN TRÁI ĐẤT', 'EARTH EDITION')}</span>
-            <span>{tr(lang, '“Mọi tin tức đều bắt đầu từ quỹ đạo”', '“All news begins from orbit”')}</span>
+            <span>{tr(lang, 'ẤN BẢN TRÁI ĐẤT', 'PLANETARY EDITION')}</span>
+            <span>{tr(lang, '“Mọi tin tức đều bắt đầu từ quỹ đạo”', '“Every headline begins in orbit”')}</span>
           </div>
         )}
         <h2 className="news-name">The Orbital Times</h2>
@@ -188,13 +195,17 @@ export default function HumanityImpactCard({
 
       <h1 className="news-headline">{story.headline}</h1>
       {story.causeBridge && <p className="news-deck">{story.causeBridge}</p>}
-      <div className="news-byline">{tr(lang, 'Bản tin Không gian & Trái Đất · Trạm điều hành mặt đất', 'Space & Earth Dispatch · Ground Mission Ops')}</div>
+      <div className="news-byline">
+        {tr(lang, 'Bản tin Không gian & Trái Đất · Trạm điều hành mặt đất', 'Earth & Space Desk | Ground Operations Terminal')}
+      </div>
 
       <div className="news-body">
         <div className="news-main">
           <figure className="news-photo">
             <img src={`/mission_art/${missionId}.jpg`} alt="" draggable={false} />
-            <figcaption>{tr(lang, 'Ảnh minh họa vùng nhiệm vụ nhìn từ quỹ đạo.', 'Mission zone illustration viewed from orbit.')}</figcaption>
+            <figcaption>
+              {tr(lang, 'Ảnh minh họa vùng nhiệm vụ nhìn từ quỹ đạo.', 'Orbital illustration of the verified mission region.')}
+            </figcaption>
           </figure>
           <div className="news-columns">
             {paragraphs.map((p, idx) => (
@@ -205,7 +216,7 @@ export default function HumanityImpactCard({
           </div>
         </div>
         <aside className="news-sidebar">
-          <div className="news-sidebar-title">{tr(lang, 'NHỮNG CON SỐ', 'BY THE NUMBERS')}</div>
+          <div className="news-sidebar-title">{tr(lang, 'NHỮNG CON SỐ', 'KEY METRICS')}</div>
           {story.metrics.map((m) => (
             <div key={m.label} className="news-figure">
               <div className="news-figure-value">{m.value}</div>
@@ -222,7 +233,13 @@ export default function HumanityImpactCard({
       </div>
 
       {!compact && <blockquote className="news-pullquote">{story.moral}</blockquote>}
-      <footer className="news-foot">{tr(lang, 'Bài báo và số liệu là minh họa cho câu chuyện trong trò chơi, không phải thống kê thật.', 'Articles and figures are narrative illustrations for the game, not real-world statistics.')}</footer>
+      <footer className="news-foot">
+        {tr(
+          lang,
+          'Bài báo và số liệu là minh họa cho câu chuyện trong trò chơi, không phải thống kê thật.',
+          'This article and its figures are fictionalized in-game scenario illustrations, not real-world news statistics.'
+        )}
+      </footer>
     </article>
   );
 }

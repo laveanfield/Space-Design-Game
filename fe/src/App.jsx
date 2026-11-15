@@ -13,6 +13,7 @@ import OrbitScreen from './screens/OrbitScreen';
 import ReviewScreen from './screens/ReviewScreen';
 import StoryScene from './story/StoryScene';
 import TutorialOverlay from './components/TutorialOverlay';
+import CrisisIntro from './components/CrisisIntro';
 
 /**
  * Screen Registry (State Pattern): anh xa phase -> man hinh doc lap.
@@ -58,7 +59,9 @@ function TerminalShell() {
     flightData,
     lifeData,
     outcome,
+    selectedMissionId,
     missionDetail,
+    scenario,
     effectiveBudget,
     effectiveDeadline,
     story,
@@ -73,6 +76,9 @@ function TerminalShell() {
     validityDoc,
     dialogRef,
     openValidityModal,
+    crisisIntroOpen,
+    completeCrisisIntro,
+    replayCrisisIntro,
   } = useGame();
 
   const ActiveScreen = SCREENS[phase] || HomeScreen;
@@ -127,6 +133,13 @@ function TerminalShell() {
         </nav>
 
         <div className="top-actions">
+          <button
+            className="btn top-action-btn"
+            onClick={replayCrisisIntro}
+            title={tr(lang, 'Xem lại báo khẩn cấp và hồ sơ nhiệm vụ', 'View opening newspaper and mission technical dossier')}
+          >
+            {tr(lang, 'HỒ SƠ BÁO CHÍ', 'REPLAY BRIEFING')}
+          </button>
           {tutorialMode && (
             <button
               className="btn neon-btn top-action-btn"
@@ -183,13 +196,26 @@ function TerminalShell() {
         <StoryScene lines={story.lines} ctx={story.ctx} header={storyHeader} audioOn={audioOn} onClose={closeStory} />
       )}
 
-      {!story && tutorialOpen && (
+      {!crisisIntroOpen && !story && tutorialOpen && (
         <TutorialOverlay
           lang={lang}
           phase={phase}
           stepIndex={tutorialStep}
           onStepChange={setTutorialStep}
           onClose={closeTutorial}
+        />
+      )}
+
+      {crisisIntroOpen && (
+        <CrisisIntro
+          missionId={selectedMissionId || missionDetail?.id || 'MP-SC01-FIRST-EYES'}
+          missionDetail={missionDetail}
+          scenario={scenario}
+          phase={phase}
+          lang={lang}
+          audioOn={audioOn}
+          onComplete={completeCrisisIntro}
+          onSkip={completeCrisisIntro}
         />
       )}
 

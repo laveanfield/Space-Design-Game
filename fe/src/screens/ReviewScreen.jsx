@@ -2,6 +2,7 @@ import React from 'react';
 import BossConfrontation from '../components/BossConfrontation';
 import { Dossier, Logbook } from '../components/CampaignPanels';
 import HumanityImpactCard from '../components/HumanityImpactCard';
+import { canShowOrbitalTimes } from '../components/missionPlayback';
 import { REP_MAX } from '../core/gameMachine';
 import { useGame } from '../core/GameContext';
 import { tr, tx } from '../core/i18n';
@@ -10,6 +11,8 @@ export default function ReviewScreen() {
   const {
     outcome,
     lifeData,
+    launchResult,
+    flightData,
     effectiveBudget,
     effectiveDeadline,
     budgetBonus,
@@ -31,13 +34,17 @@ export default function ReviewScreen() {
     return (
       <div className="sandbox-end-wrap">
         <section className="panel sandbox-end-card">
-          <div className="sandbox-end-badge">✓ {tr(lang, 'HOÀN THÀNH HƯỚNG DẪN SANDBOX', 'SANDBOX TUTORIAL COMPLETE')}</div>
-          <h2 className="sandbox-end-title">{tr(lang, 'Kết thúc sandbox, quay về cốt truyện', 'Sandbox tutorial complete, return to campaign')}</h2>
+          <div className="sandbox-end-badge">
+            {tr(lang, '✓ HOÀN THÀNH HƯỚNG DẪN SANDBOX', 'SANDBOX WALKTHROUGH COMPLETE')}
+          </div>
+          <h2 className="sandbox-end-title">
+            {tr(lang, 'Kết thúc sandbox, quay về cốt truyện', 'Sandbox Complete — Return to Campaign')}
+          </h2>
           <p className="sandbox-end-desc">
             {tr(
               lang,
               'Bạn đã hoàn tất toàn bộ quy trình từ thiết kế 9 thành phần vệ tinh, kiểm định 3 lỗi phần cứng (nghe tiếng xì ga, soi X-Ray vết nứt vàng, kéo trục pháp gương trùng trục đứng 0°), phóng tên lửa 3D tới vận hành 12 tháng trên quỹ đạo.',
-              'You completed the entire workflow from designing 9 subsystems, bench-testing 3 hardware faults (listening for gas leak, X-ray scanning micro-fractures, aligning mirror optical axis to 0°), 3D rocket launch, and 12-month orbit operations.'
+              'You completed the entire mission workflow: building all 9 subsystems, passing the 3 pre-flight inspection checks, flying the 3D ascent, and running 12-month orbital operations.'
             )}
           </p>
           <div className="sandbox-end-actions">
@@ -46,14 +53,14 @@ export default function ReviewScreen() {
               className="btn neon-btn sandbox-return-btn"
               onClick={completeTutorialToBrief}
             >
-              ↩ {tr(lang, 'RETURN (QUAY VỀ CỐT TRUYỆN)', 'RETURN TO CAMPAIGN')}
+              {tr(lang, '↩ RETURN (QUAY VỀ CỐT TRUYỆN)', 'RETURN TO MISSIONS')}
             </button>
             <button
               type="button"
               className="btn"
               onClick={() => startTutorialSandbox(false)}
             >
-              🛠️ {tr(lang, 'CHƠI LẠI SANDBOX (TẮT HƯỚNG DẪN)', 'REPLAY SANDBOX (FREE PLAY)')}
+              {tr(lang, 'CHƠI LẠI SANDBOX (TẮT HƯỚNG DẪN)', 'REPLAY FREE SANDBOX (NO GUIDE)')}
             </button>
           </div>
         </section>
@@ -68,7 +75,7 @@ export default function ReviewScreen() {
       {/* Cột trái: Báo cáo hậu quả & hồ sơ nguyên nhân gốc */}
       <section className="panel review-col-left">
         <h2 className="panel-title">
-          <span>{tr(lang, 'ĐÁNH GIÁ CỦA GIÁM ĐỐC // TỔNG KẾT NHIỆM VỤ', 'DIRECTOR REVIEW // MISSION SUMMARY')}</span>
+          <span>{tr(lang, 'ĐÁNH GIÁ CỦA GIÁM ĐỐC // TỔNG KẾT NHIỆM VỤ', 'DIRECTOR REVIEW // SUMMARY & AUDIT')}</span>
           <span className={`badge ${outcome.success ? 'ok' : 'err'}`}>
             {outcome.success
               ? tr(lang, 'NHIỆM VỤ HOÀN THÀNH', 'MISSION COMPLETE')
@@ -83,24 +90,24 @@ export default function ReviewScreen() {
           <div className="kpi-cell">
             <div className="kpi-label">{tr(lang, 'VÒNG ĐỜI HOẠT ĐỘNG', 'OPERATIONAL LIFETIME')}</div>
             <div className="kpi-val review-metric-val">
-              {outcome.survived_steps} / {lifeData?.steps_total ?? 12} {tr(lang, 'MỐC', 'STEPS')}
+              {outcome.survived_steps} / {lifeData?.steps_total ?? 12} {tr(lang, 'MỐC', 'EPOCHS')}
             </div>
           </div>
           <div className="kpi-cell">
-            <div className="kpi-label">{tr(lang, 'DỮ LIỆU HỢP LỆ', 'USABLE DATA')}</div>
+            <div className="kpi-label">{tr(lang, 'DỮ LIỆU HỢP LỆ', 'VALID EVIDENCE DATA')}</div>
             <div className="kpi-val review-metric-val">
               {Number(outcome.usable_gb).toFixed(1)} / {Number(outcome.generated_gb).toFixed(1)} GB
             </div>
           </div>
           <div className="kpi-cell">
-            <div className="kpi-label">{tr(lang, 'UY TÍN', 'AUTHORITY')}</div>
+            <div className="kpi-label">{tr(lang, 'UY TÍN', 'AUTHORIZATION CREDITS')}</div>
             <div className="kpi-val review-metric-val">
               {outcome.repLoss > 0 ? `-${outcome.repLoss} → ` : ''}
-              {tr(lang, 'CÒN', 'REMAINING')} {outcome.repAfter}/{REP_MAX}
+              {tr(lang, `CÒN ${outcome.repAfter}/${REP_MAX}`, `${outcome.repAfter}/${REP_MAX} LEFT`)}
             </div>
           </div>
           <div className="kpi-cell">
-            <div className="kpi-label">{tr(lang, 'CHỈ SỐ BỀN BỈ', 'RELIABILITY GRADE')}</div>
+            <div className="kpi-label">{tr(lang, 'CHỈ SỐ BỀN BỈ', 'DURABILITY RATING')}</div>
             <div className="kpi-val review-metric-val">
               {outcome.score ? tr(lang, `HẠNG ${outcome.score.grade}`, `GRADE ${outcome.score.grade}`) : '-'}
             </div>
@@ -108,13 +115,25 @@ export default function ReviewScreen() {
         </div>
 
         <div className="review-section-block" data-tutorial="review-impact">
-          <HumanityImpactCard
-            missionId={selectedMissionId}
-            success={Boolean(outcome.success)}
-            failureId={failureId}
-            outcome={outcome}
-            lang={lang}
-          />
+          {canShowOrbitalTimes({
+            missionId: selectedMissionId,
+            success: Boolean(outcome.success),
+            outcome,
+            lifeData,
+            launchResult,
+            flightData,
+          }) && (
+            <HumanityImpactCard
+              missionId={selectedMissionId}
+              success={Boolean(outcome.success)}
+              failureId={failureId}
+              outcome={outcome}
+              lifeData={lifeData}
+              launchResult={launchResult}
+              flightData={flightData}
+              lang={lang}
+            />
+          )}
         </div>
 
         <div className="review-section-block" data-tutorial="review-dossier">
@@ -126,16 +145,17 @@ export default function ReviewScreen() {
             <div className="row-between small">
               <strong>{tr(lang, 'ĐÁNH GIÁ TRUYỀN THÔNG', 'COMMUNICATIONS REVIEW')}</strong>
               <span className={`badge ${lifeData.communications.summary.delivered >= lifeData.evidence_need ? 'ok' : 'err'}`}>
-                {lifeData.communications.summary.delivered}/{lifeData.evidence_need} {tr(lang, 'BẰNG CHỨNG ĐÃ VỀ', 'EVIDENCES DELIVERED')}
+                {lifeData.communications.summary.delivered}/{lifeData.evidence_need}{' '}
+                {tr(lang, 'BẰNG CHỨNG ĐÃ VỀ', 'EVIDENCE DELIVERED')}
               </span>
             </div>
             <div className="small muted">
-              {lifeData.communications.windows.length} {tr(lang, 'lượt qua trạm · ', 'passes · ')}
-              {Number(lifeData.communications.summary.usable_min).toFixed(1)} {tr(lang, 'phút đủ tín hiệu · ', 'min signal · ')}
+              {lifeData.communications.windows.length} {tr(lang, 'lượt qua trạm · ', 'ground passes | ')}
+              {Number(lifeData.communications.summary.usable_min).toFixed(1)} {tr(lang, 'phút đủ tín hiệu · ', 'min usable link | ')}
               {Number(lifeData.communications.summary.buffer_gb).toFixed(3)} {tr(lang, 'GB còn chờ', 'GB pending')}
             </div>
             {lifeData.communications.diagnostics.map((reason) => (
-              <div className="small" key={reason}>→ {reason}</div>
+              <div className="small" key={reason}>- {reason}</div>
             ))}
           </div>
         )}
@@ -172,20 +192,20 @@ export default function ReviewScreen() {
             {outcome.repAfter > 0 ? (
               <button className="btn primary" onClick={() => setPhase('design')}>
                 {outcome.success
-                  ? tr(lang, '← THỬ CẤU HÌNH KHÁC', '← TRY ANOTHER CONFIG')
-                  : tr(lang, '← VỀ XƯỞNG SỬA THIẾT KẾ', '← BACK TO BUILD')}
+                  ? tr(lang, '← THỬ CẤU HÌNH KHÁC', 'TRY ANOTHER CONFIGURATION')
+                  : tr(lang, '← VỀ XƯỞNG SỬA THIẾT KẾ', 'RETURN TO BUILD BAY')}
               </button>
             ) : (
               <button className="btn warn" onClick={() => loadMission(selectedMissionId)}>
-                {tr(lang, 'DỰ ÁN BỊ HỦY — LÀM LẠI TỪ ĐẦU', 'PROJECT SCRUBBED — RESTART MISSION')}
+                {tr(lang, 'DỰ ÁN BỊ HỦY — LÀM LẠI TỪ ĐẦU', 'PROGRAM CANCELED — RESTART MISSION')}
               </button>
             )}
             <button className="btn" onClick={() => setPhase('levels')}>
-              {tr(lang, 'CHỌN MÀN CHƠI KHÁC', 'SELECT OTHER MISSION')}
+              {tr(lang, 'CHỌN MÀN CHƠI KHÁC', 'SELECT ANOTHER MISSION')}
             </button>
             {outcome.survived_steps > 0 && (
               <button className="btn" disabled={busy} onClick={startOps}>
-                {tr(lang, 'VẬN HÀNH QUỸ ĐẠO', 'MANUAL ORBIT OPS')}
+                {tr(lang, 'VẬN HÀNH TAY 2 NGÀY (ADCS / RCS)', '2-DAY MANUAL OPS (ADCS / RCS)')}
               </button>
             )}
           </div>

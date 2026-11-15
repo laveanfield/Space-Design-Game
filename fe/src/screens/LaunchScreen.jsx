@@ -1,8 +1,6 @@
 import React from 'react';
-import { LaunchPadLive } from '../anatomy/LaunchPadFigure';
 import AccidentNewspaper, { buildAccidentInfo } from '../components/AccidentNewspaper';
 import { Dossier } from '../components/CampaignPanels';
-import HumanityImpactCard from '../components/HumanityImpactCard';
 import Launch3DCanvas from '../components/Launch3DCanvas';
 import { REP_MAX } from '../core/gameMachine';
 import { useGame } from '../core/GameContext';
@@ -47,11 +45,11 @@ export default function LaunchScreen() {
     return (
       <div className="sandbox-end-wrap">
         <section className="panel sandbox-end-card">
-          <div className="sandbox-end-badge">✓ {tr(lang, 'KẾT THÚC HƯỚNG DẪN SANDBOX', 'SANDBOX TUTORIAL COMPLETE')}</div>
-          <h2 className="sandbox-end-title">{tr(lang, 'Kết thúc sandbox, quay về cốt truyện', 'Sandbox tutorial complete, return to campaign')}</h2>
+          <div className="sandbox-end-badge">{tr(lang, 'KẾT THÚC HƯỚNG DẪN SANDBOX', 'SANDBOX WALKTHROUGH COMPLETE')}</div>
+          <h2 className="sandbox-end-title">{tr(lang, 'Kết thúc sandbox, quay về cốt truyện', 'Sandbox Complete — Return to Campaign')}</h2>
           <div className="sandbox-end-actions">
             <button type="button" className="btn neon-btn sandbox-return-btn" onClick={completeTutorialToBrief}>
-              ↩ {tr(lang, 'RETURN (QUAY VỀ CỐT TRUYỆN)', 'RETURN TO CAMPAIGN')}
+              {tr(lang, 'QUAY VỀ CỐT TRUYỆN', 'RETURN TO MISSIONS')}
             </button>
           </div>
         </section>
@@ -105,7 +103,6 @@ export default function LaunchScreen() {
       </section>
 
       <section className="panel" data-tutorial="launch-sequencer">
-        <LaunchPadLive key={launchSeq} fired={launchFired} />
 
         <h2 className="panel-title" style={{ marginTop: 10 }}>
           <span>{tr(lang, 'TIẾN TRÌNH PHÓNG TÊN LỬA', 'ASCENT SEQUENCER')}</span>
@@ -128,7 +125,7 @@ export default function LaunchScreen() {
             {tr(
               lang,
               'ĐANG PHÓNG. Không thể chỉnh sửa thiết kế trong lúc tên lửa rời bệ.',
-              'LAUNCH IN PROGRESS. Configuration locked during ascent.'
+              'LAUNCH IN PROGRESS. Design cannot be modified after ignition.'
             )}
           </div>
         )}
@@ -139,23 +136,14 @@ export default function LaunchScreen() {
               {tr(lang, '⚠ THẤT BẠI PHÓNG NGHIÊM TRỌNG', '⚠ CRITICAL LAUNCH FAILURE')}
             </div>
             <Dossier dossier={launchResult.failure} />
-            <div style={{ marginTop: 10 }}>
-              <HumanityImpactCard
-                missionId={selectedMissionId}
-                success={false}
-                failureId={launchResult.failure?.kind || 'launch'}
-                compact
-                lang={lang}
-              />
-            </div>
           </>
         )}
         {launchResult?.success && (
           <div className="ok-banner">
             {tr(
               lang,
-              'ĐÃ VÀO QUỸ ĐẠO. Bắt đầu theo dõi vận hành để kiểm chứng độ bền hệ thống.',
-              'ORBIT INSERTION CONFIRMED. Initiating mission lifetime evaluation.'
+              'ĐÃ VÀO QUỸ ĐẠO. Bắt đầu theo dõi vận hành 12 tháng để kiểm chứng độ bền hệ thống.',
+              'ORBIT REACHED. Begin 12-month orbital operations to verify mission delivery.'
             )}
           </div>
         )}
@@ -163,15 +151,15 @@ export default function LaunchScreen() {
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {launchResult?.success && (
             <button className="btn primary hazard hazard-cta" data-tutorial="launch-next" disabled={busy} onClick={startLife}>
-              {tr(lang, '[ THEO DÕI 12 MỐC QUỸ ĐẠO [05] → ]', '[ PROCEED TO ORBIT OPERATIONS → ]')}
+              {tr(lang, 'THEO DÕI 12 MỐC QUỸ ĐẠO [05] →', 'ENTER 12-EPOCH ORBIT OPS [05]')}
             </button>
           )}
           {launchResult && !launchResult.success && reputation > 0 && (
             <button className="btn primary" onClick={() => setPhase('design')}>
               {tr(
                 lang,
-                `← VỀ XƯỞNG SỬA THIẾT KẾ (CÒN ${reputation}/${REP_MAX} VẠCH UY TÍN)`,
-                `← RETURN TO BUILD (AUTHORITY ${reputation}/${REP_MAX})`
+                `VỀ XƯỞNG SỬA THIẾT KẾ (CÒN ${reputation}/${REP_MAX} VẠCH UY TÍN)`,
+                `RETURN TO BUILD BAY (${reputation}/${REP_MAX} CREDITS LEFT)`
               )}
             </button>
           )}
@@ -180,7 +168,7 @@ export default function LaunchScreen() {
               {tr(
                 lang,
                 'DỰ ÁN BỊ HỦY — NHẬN LẠI NHIỆM VỤ TỪ ĐẦU',
-                'PROJECT SCRUBBED — RESTART MISSION'
+                'PROGRAM CANCELED — RESTART MISSION'
               )}
             </button>
           )}

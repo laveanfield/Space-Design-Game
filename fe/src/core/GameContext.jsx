@@ -17,6 +17,7 @@ import {
 
 const LOG_KEY = 'smdg.logbook.v1';
 const UNLOCK_KEY = 'smdg.unlocked.v1';
+const CRISIS_INTRO_KEY = 'smdg.crisis-intro.seen.v1';
 const GameContext = createContext(null);
 
 function readLogbook() {
@@ -37,6 +38,14 @@ function readUnlockedMissions() {
     // fallback default
   }
   return [MISSION_ORDER[0]];
+}
+
+function hasSeenCrisisIntro() {
+  try {
+    return window.localStorage.getItem(CRISIS_INTRO_KEY) === '1';
+  } catch {
+    return false;
+  }
 }
 
 export function GameProvider({ children }) {
@@ -94,6 +103,7 @@ export function GameProvider({ children }) {
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [seenTutorials, setSeenTutorials] = useState({});
+  const [crisisIntroOpen, setCrisisIntroOpen] = useState(true);
 
   // Optional Manual Ops & Debrief
   const [opsId, setOpsId] = useState(null);
@@ -280,6 +290,20 @@ export function GameProvider({ children }) {
     setTutorialOpen(false);
     setSeenTutorials((prev) => (prev[phase] ? prev : { ...prev, [phase]: true }));
   }, [phase]);
+
+  const completeCrisisIntro = useCallback(() => {
+    try {
+      window.localStorage.setItem(CRISIS_INTRO_KEY, '1');
+    } catch {
+      // The intro still closes when storage is unavailable.
+    }
+    setCrisisIntroOpen(false);
+  }, []);
+
+  const replayCrisisIntro = useCallback(() => {
+    setTutorialOpen(false);
+    setCrisisIntroOpen(true);
+  }, []);
 
   // Bat dau / choi lai man Sandbox (co tuy chon xem lai Tutorial hoac khong)
   const startTutorialSandbox = useCallback(
@@ -494,6 +518,10 @@ export function GameProvider({ children }) {
     const deadline = missionOverride?.scenario?.deadline_months ?? (effectiveDeadline || scenario.deadline_months);
     setActiveSlot('orbit');
     setBuildStage(tutorialMode && tutorialGuided ? 0 : SLOTS.length);
+    setFlightData(null);
+    setLaunchResult(null);
+    setLifeData(null);
+    setOutcome(null);
     setPhase('design');
     if (!tutorialMode && mid && !seenIntro[mid]) {
       setSeenIntro((s) => ({ ...s, [mid]: true }));
@@ -520,8 +548,8 @@ export function GameProvider({ children }) {
 
   const startLaunchFromInspect = async (fixedIds = []) => {
     if (!design) return;
-    // Trong man Tutorial Sandbox: luon dam bao phong thanh cong, khong bi no do loi kiem dinh hay qua tai
-    const outcomeInspect = tutorialMode
+    // Trong man Tutorial Sandbox: luon dam bao phong thanh cong khi o che do co huong dan
+    const outcomeInspect = tutorialMode && tutorialGuided
       ? { mode: 'clean', unfixed: [], flightFailure: null, orbitFault: null }
       : evaluateInspectionOutcome(inspectSession?.defects || [], fixedIds);
     setInspectReport(outcomeInspect);
@@ -534,7 +562,7 @@ export function GameProvider({ children }) {
           method: 'POST',
           body: { design, mission_id: selectedMissionId, allow_nofit: true },
         });
-        if (tutorialMode && (fl.failure || !fl.meta?.reaches_orbit)) {
+        if (tutorialMode && tutorialGuided && (fl.failure || !fl.meta?.reaches_orbit)) {
           const goodDesign = resolvePresetDesign(missionDetail?.presets, 'good', missionDetail) || design;
           const goodFl = await apiFetch('/fly', {
             method: 'POST',
@@ -548,7 +576,7 @@ export function GameProvider({ children }) {
           };
           goodFl.failure = null;
           fl = goodFl;
-        } else if (!tutorialMode && !fl.failure && outcomeInspect.flightFailure) {
+        } else if (!(tutorialMode && tutorialGuided) && !fl.failure && outcomeInspect.flightFailure) {
           fl.failure = outcomeInspect.flightFailure;
           fl.meta.reaches_orbit = false;
         }
@@ -592,7 +620,7 @@ export function GameProvider({ children }) {
         setReputation(repAfter);
         addLog(
           false,
-          result.failure?.title || { vi: 'Mất tên lửa', en: 'Rocket loss' },
+          result.failure?.title || { vi: 'Mất tên lửa', en: 'Launch vehicle lost' },
           result.failure?.cause || ''
         );
         const key = result.aborted === 'scrub' ? 'abort_scrub' : result.aborted === 'fts' ? 'abort_fts' : 'launch_fail';
@@ -631,12 +659,13 @@ export function GameProvider({ children }) {
     if (!design) return;
     setBusy(true);
     setErrorMsg('');
+    setOutcome(null);
     try {
       let life = await apiFetch('/campaign/lifetime', {
         method: 'POST',
         body: { design, mission_id: selectedMissionId },
       });
-      if (tutorialMode && (!life?.outcome?.alive || !life?.outcome?.success)) {
+      if (tutorialMode && tutorialGuided && (!life?.outcome?.alive || !life?.outcome?.success)) {
         const goodDesign = resolvePresetDesign(missionDetail?.presets, 'good', missionDetail) || design;
         life = await apiFetch('/campaign/lifetime', {
           method: 'POST',
@@ -647,7 +676,7 @@ export function GameProvider({ children }) {
           life.outcome.success = true;
           life.dossier = null;
         }
-      } else if (!tutorialMode && inspectReport?.orbitFault && Array.isArray(life?.steps) && life.steps.length >= 2) {
+      } else if (!(tutorialMode && tutorialGuided) && inspectReport?.orbitFault && Array.isArray(life?.steps) && life.steps.length >= 2) {
         // Neu bo sot 1 loi ve tinh o Phase 03.INSPECT -> ve tinh chet som o thang 2 tren quy dao
         const fault = inspectReport.orbitFault;
         const faultLabel = tx(fault.label, lang);
@@ -662,7 +691,7 @@ export function GameProvider({ children }) {
               level: 'crit',
               text: {
                 vi: `SỰ CỐ LẮP RÁP (${tx(fault.label, 'vi')}): ${tx(fault.symptom, 'vi')} Vệ tinh mất kiểm soát.`,
-                en: `ASSEMBLY DEFECT (${tx(fault.label, 'en')}): ${tx(fault.symptom, 'en')} Spacecraft failed in orbit.`,
+                en: `ASSEMBLY DEFECT (${tx(fault.label, 'en')}): ${tx(fault.symptom, 'en')} Spacecraft lost control.`,
               },
             },
           ],
@@ -681,11 +710,11 @@ export function GameProvider({ children }) {
           subsystem: faultLabel,
           cause: {
             vi: `Lỗi lắp ráp ${tx(fault.label, 'vi')} bị bỏ sót tại màn Kiểm định trước phóng (03.INSPECT). ${tx(fault.symptom, 'vi')}`,
-            en: `Assembly defect ${tx(fault.label, 'en')} was not fixed during pre-flight inspection. ${tx(fault.symptom, 'en')}`,
+            en: `Assembly defect ${tx(fault.label, 'en')} was missed during Pre-Flight Inspection (03.INSPECT). ${tx(fault.symptom, 'en')}`,
           },
           lesson: {
             vi: 'Hãy dùng đèn X-Ray soi kỹ toàn bộ vệ tinh và tên lửa trước khi cho phép phóng.',
-            en: 'Scan the full vehicle carefully during Pre-Flight Inspection.',
+            en: 'Use X-Ray Mesh and audio diagnostics carefully across the full vehicle before authorizing launch.',
           },
           numbers: [{ label: 'missed_defect', value: faultLabel }],
         };
@@ -711,7 +740,7 @@ export function GameProvider({ children }) {
       setOutcome({
         ...o,
         success: true,
-        headline: tr(lang, 'Kết thúc Sandbox, quay về cốt truyện', 'Sandbox complete, return to campaign'),
+        headline: tr(lang, 'Kết thúc Sandbox, quay về cốt truyện', 'Sandbox Complete — Return to Campaign'),
         repLoss: 0,
         repAfter: reputation,
         dossier: null,
@@ -736,9 +765,9 @@ export function GameProvider({ children }) {
     const repAfter = Math.max(0, reputation - loss);
     const headlineObj = o.success
       ? overEffectiveBudget || overEffectiveDeadline
-        ? { vi: 'Hoàn thành nhiệm vụ, nhưng vượt trần Sếp giao', en: 'Mission complete, but exceeded constraints' }
-        : { vi: 'Nhiệm vụ hoàn thành trọn vẹn', en: 'Mission accomplished' }
-      : lifeData.dossier?.title || { vi: 'Nhiệm vụ thất bại', en: 'Mission failed' };
+        ? { vi: 'Hoàn thành nhiệm vụ, nhưng vượt trần Sếp giao', en: 'Mission Accomplished (Over Management Cap)' }
+        : { vi: 'Nhiệm vụ hoàn thành trọn vẹn', en: 'Mission Accomplished' }
+      : lifeData.dossier?.title || { vi: 'Nhiệm vụ thất bại', en: 'Mission Failed' };
     const headline = tx(headlineObj, lang);
 
     setReputation(repAfter);
@@ -751,6 +780,8 @@ export function GameProvider({ children }) {
     );
     setOutcome({
       ...o,
+      missionId: selectedMissionId,
+      runKey: `${selectedMissionId}:${launchSeq}`,
       headline,
       repLoss: loss,
       repAfter,
@@ -857,6 +888,11 @@ export function GameProvider({ children }) {
     if (!allowed) return;
     beep(audioOn, 660, 0.03);
     if (targetId !== 'ops') setOpsRunning(false);
+    if (targetId === 'brief' || targetId === 'design') {
+      setOutcome(null);
+      setLifeData(null);
+      setLaunchResult(null);
+    }
     setPhase(targetId);
   };
 
@@ -936,6 +972,9 @@ export function GameProvider({ children }) {
     setTutorialStep,
     openTutorial,
     closeTutorial,
+    crisisIntroOpen,
+    completeCrisisIntro,
+    replayCrisisIntro,
     enterBuild,
     opsId,
     opsSnap,

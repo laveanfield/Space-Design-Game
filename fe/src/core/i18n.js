@@ -3,9 +3,9 @@ export const LANG_KEY = 'smdg.lang.v1';
 export function readLang() {
   try {
     const v = window.localStorage.getItem(LANG_KEY);
-    return v === 'en' ? 'en' : 'vi';
+    return v === 'vi' ? 'vi' : 'en';
   } catch {
-    return 'vi';
+    return 'en';
   }
 }
 
@@ -13,7 +13,7 @@ export function tr(lang, viText, enText) {
   return lang === 'en' ? enText : viText;
 }
 
-export function tx(value, lang = 'vi') {
+export function tx(value, lang = 'en') {
   if (value == null) return '';
   if (typeof value === 'object') {
     return lang === 'en' ? value.en || value.vi || '' : value.vi || value.en || '';

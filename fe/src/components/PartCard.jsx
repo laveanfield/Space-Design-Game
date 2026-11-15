@@ -465,7 +465,7 @@ export default function PartCard({ slot, item, selected, warnText, deadlineMonth
                 </div>
               </div>
 
-              {lang === 'vi' && insight && (insight.where || insight.pros || insight.cons) && (
+              {insight && (insight.where || insight.pros || insight.cons) && (
                 <div
                   className="part-insight-box"
                   style={{
@@ -478,17 +478,20 @@ export default function PartCard({ slot, item, selected, warnText, deadlineMonth
                 >
                   {insight.where && (
                     <div className="small" style={{ marginBottom: 4 }}>
-                      <b>📍 Vị trí & Công dụng:</b> {insight.where}
+                      <b>{tr(lang, 'Vị trí & Công dụng:', 'Where used:')}</b>{' '}
+                      {typeof insight.where === 'object' ? insight.where[lang] || insight.where.en || insight.where.vi : insight.where}
                     </div>
                   )}
                   {insight.pros && (
                     <div className="small ok-text" style={{ marginBottom: 4 }}>
-                      <b>✅ Lợi ích:</b> {insight.pros}
+                      <b>{tr(lang, '+ Lợi ích:', '+ Pros:')}</b>{' '}
+                      {typeof insight.pros === 'object' ? insight.pros[lang] || insight.pros.en || insight.pros.vi : insight.pros}
                     </div>
                   )}
                   {insight.cons && (
                     <div className="small warn-text">
-                      <b>⚠️ Tác hại & Nhược điểm:</b> {insight.cons}
+                      <b>{tr(lang, '! Tác hại & Nhược điểm:', '! Cons / Risks:')}</b>{' '}
+                      {typeof insight.cons === 'object' ? insight.cons[lang] || insight.cons.en || insight.cons.vi : insight.cons}
                     </div>
                   )}
                 </div>
@@ -496,7 +499,7 @@ export default function PartCard({ slot, item, selected, warnText, deadlineMonth
 
               <div className="part-info-proscons">
                 <div className="part-pros-box">
-                  <h3>✅ {tr(lang, 'ĐIỂM LỢI', 'PROS')}</h3>
+                  <h3>{tr(lang, '+ ĐIỂM LỢI', '+ PROS')}</h3>
                   <ul>
                     {analysis.pros.map((line, i) => (
                       <li key={i}>{line}</li>
@@ -505,7 +508,7 @@ export default function PartCard({ slot, item, selected, warnText, deadlineMonth
                 </div>
 
                 <div className="part-cons-box">
-                  <h3>⚠️ {tr(lang, 'ĐIỂM HẠI & RỦI RO', 'CONS & RISKS')}</h3>
+                  <h3>{tr(lang, '! ĐIỂM HẠI & RỦI RO', '! CONS & RISKS')}</h3>
                   <ul>
                     {analysis.cons.length > 0 ? (
                       analysis.cons.map((line, i) => <li key={i}>{line}</li>)
@@ -541,8 +544,8 @@ export default function PartCard({ slot, item, selected, warnText, deadlineMonth
                   }}
                 >
                   {selected
-                    ? tr(lang, '✓ ĐANG LẮP LINH KIỆN NÀY', '✓ CURRENTLY INSTALLED')
-                    : tr(lang, '✓ CHỌN LẮP LINH KIỆN NÀY', '✓ INSTALL THIS PART')}
+                    ? tr(lang, 'ĐANG LẮP LINH KIỆN NÀY', 'CURRENTLY INSTALLED')
+                    : tr(lang, 'CHỌN LẮP LINH KIỆN NÀY', 'INSTALL THIS PART')}
                 </button>
                 <button type="button" className="btn" onClick={() => setShowInfo(false)}>
                   {tr(lang, 'ĐÓNG', 'CLOSE')}

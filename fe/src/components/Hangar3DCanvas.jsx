@@ -600,11 +600,11 @@ export default function Hangar3DCanvas({ design, catalog, theme }) {
           {tr(lang, 'VỆ TINH', 'SATELLITE')}
         </button>
         <button className={`btn small ${view === 'rocket' ? 'primary' : ''}`} onClick={() => setView('rocket')}>
-          {tr(lang, 'TÊN LỬA', 'ROCKET')}
+          {tr(lang, 'TÊN LỬA', 'LAUNCH VEHICLE')}
         </button>
         {view === 'sat' && (
           <button className="btn small" onClick={() => setDeployed((d) => !d)}>
-            {deployed ? tr(lang, 'GẬP CÁNH', 'STOW WINGS') : tr(lang, 'MỞ CÁNH / ĂNG-TEN', 'DEPLOY WINGS')}
+            {deployed ? tr(lang, 'GẬP CÁNH', 'STOW ARRAYS') : tr(lang, 'MỞ CÁNH / ĂNG-TEN', 'DEPLOY ARRAYS / ANTENNA')}
           </button>
         )}
       </div>

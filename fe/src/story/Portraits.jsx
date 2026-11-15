@@ -18,7 +18,7 @@ export function EngineerPortrait({ mood = 'calm' }) {
         : 'M89 130 L111 130';
 
   return (
-    <svg viewBox="0 0 220 175" className="portrait" aria-label="Kỹ sư trưởng">
+    <svg viewBox="0 0 220 175" className="portrait" aria-label="Chief Engineer">
       <defs>
         <linearGradient id="engBg" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#352a1e" />
@@ -107,7 +107,7 @@ export function EngineerCircleAvatar({ mood = 'happy' }) {
         : 'M89 129 L111 129';
 
   return (
-    <svg viewBox="46 22 108 124" className="eng-circle-svg" aria-label="Kỹ sư trưởng hướng dẫn">
+    <svg viewBox="46 22 108 124" className="eng-circle-svg" aria-label="Chief Engineer Guide">
       <defs>
         <radialGradient id="engCircleBg" cx="50%" cy="42%" r="60%">
           <stop offset="0%" stopColor="#1e3b2b" />
@@ -165,7 +165,7 @@ export function BossPortrait({ mood = 'smug' }) {
   const mouth = isAlert ? 'M100 128 Q114 121 128 129' : 'M100 124 Q114 134 128 122';
 
   return (
-    <svg viewBox="0 0 220 175" className="portrait" aria-label="Sếp kế toán">
+    <svg viewBox="0 0 220 175" className="portrait" aria-label="Finance Director">
       <defs>
         <linearGradient id="bossBg" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#35251d" />

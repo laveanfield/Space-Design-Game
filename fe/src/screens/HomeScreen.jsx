@@ -20,6 +20,7 @@ export default function HomeScreen() {
     openValidityModal,
     setPhase,
     startTutorialSandbox,
+    replayCrisisIntro,
   } = useGame();
 
   const [modal, setModal] = useState(null); // null | 'story' | 'settings'
@@ -95,7 +96,10 @@ export default function HomeScreen() {
             <button
               type="button"
               className="btn home-menu-btn"
-              onClick={() => openModal('story')}
+              onClick={() => {
+                beep(audioOn, 760, 0.04);
+                replayCrisisIntro();
+              }}
             >
               <span className="home-btn-label">📖 {tr(lang, 'CỐT TRUYỆN', 'STORY')}</span>
               <span className="home-btn-meta">{tr(lang, 'BỐI CẢNH', 'LORE')}</span>

@@ -34,7 +34,11 @@ class OpsSession:
         self.t, self.q, self.w, self.auto = 0.0, np.array([1.0, 0, 0, 0]), np.zeros(3), None
         self.acc, self.log = 0.0, []
         self.soc, self.cap_wh = 0.8, it["battery"]["capacity_wh"]
-        self.buffer_gb, self.cap_gb, self.downlinked_gb = 0.0, float(rs.get("buffer_capacity_gb", 8.0)), 0.0
+        self.buffer_gb, self.cap_gb, self.downlinked_gb = (
+            0.0,
+            float(it["obc"].get("storage_gb", rs.get("buffer_capacity_gb", 8.0))),
+            0.0,
+        )
         self.faults = {f["id"]: f for f in self.flt}
         self.dose, self.reset_until, self.events = 0.0, -1.0, []
         self.stations, self.targets = catalog.rows("ground_stations"), catalog.rows("targets")

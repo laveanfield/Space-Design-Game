@@ -48,8 +48,11 @@ def fly(design, mission, catalog, seed=0, ballast_kg=0.0, allow_nofit=False):
         "events": out["events"] + [{"t": out["t_sep"], "name": "PAYLOAD_SEP"}],
         "series": {"dt_s": out["dt_s"], "n": len(s["t"]), "t": encode_f32(s["t"]), "alt_km": encode_f32(s["alt_km"]),
                    "v_inertial_ms": encode_f32(s["v_inertial_ms"]), "mass_kg": encode_f32(s["mass_kg"]),
-                   "thrust_n": encode_f32(s["thrust_n"]), "stage_idx": encode_u8(s["stage_idx"])},
+                   "thrust_n": encode_f32(s["thrust_n"]), "stage_idx": encode_u8(s["stage_idx"]),
+                   **({"downrange_km": encode_f32(s["downrange_km"])} if "downrange_km" in s else {}),
+                   **({"gamma_deg": encode_f32(s["gamma_deg"])} if "gamma_deg" in s else {})},
         "orbit": {"a_km": a / 1e3, "e": 0.0, "i_deg": orb["inclination_deg"], "period_s": korbit.period(a)},
+        **({"insertion": out["insertion"]} if "insertion" in out else {}),
         "separation": {"t": out["t_sep"], "dv_ms": 1.0},
         "failure": failure,          # None = phong sach; nguoc lai: su co (no o Max-Q, hut van toc, vo fairing...)
     }
