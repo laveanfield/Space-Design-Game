@@ -5972,6 +5972,87 @@ dialog.modal::backdrop {
   border-color: #8b2e24 !important;
 }
 
+/* Launch Mechanical Analog Gauges */
+.launch-gauges-panel {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+}
+
+.mech-gauges-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.mech-gauge-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(160deg, #161f25 0%, #0d1418 100%);
+  border: 1px solid #2e3d46;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.mech-rivet {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #4e606b;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.6);
+}
+.mech-rivet.tl { top: 5px; left: 5px; }
+.mech-rivet.tr { top: 5px; right: 5px; }
+.mech-rivet.bl { bottom: 5px; left: 5px; }
+.mech-rivet.br { bottom: 5px; right: 5px; }
+
+.mech-dial-svg {
+  width: 78px;
+  height: 78px;
+  flex: 0 0 78px;
+}
+
+.mech-gauge-readout {
+  min-width: 0;
+}
+
+.mech-gauge-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: #edf5f2;
+  line-height: 1.2;
+}
+
+.mech-gauge-unit {
+  font-size: 11px;
+  font-weight: 500;
+  color: #8ea6b2;
+}
+
+.mech-gauge-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: #8ea6b2;
+  margin-top: 3px;
+}
+
+@media (max-width: 960px) {
+  .mech-gauges-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .mech-gauges-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   .paper-columns {
     grid-template-columns: 1fr;

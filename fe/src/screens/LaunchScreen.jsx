@@ -1,10 +1,101 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AccidentNewspaper, { buildAccidentInfo } from '../components/AccidentNewspaper';
 import { Dossier } from '../components/CampaignPanels';
 import Launch3DCanvas from '../components/Launch3DCanvas';
 import { REP_MAX } from '../core/gameMachine';
 import { useGame } from '../core/GameContext';
 import { tr, tx } from '../core/i18n';
+
+function MechDial({ label, valueText, unit, value, min = 0, max = 100, accent = '#34d399', warnAt = 0.85 }) {
+  const pct = Math.max(0, Math.min(1, (value - min) / Math.max(1e-6, max - min)));
+  const startDeg = -130;
+  const sweepDeg = 260;
+  const needleDeg = startDeg + pct * sweepDeg;
+  const ticks = Array.from({ length: 11 }, (_, i) => {
+    const a = ((startDeg + (i / 10) * sweepDeg - 90) * Math.PI) / 180;
+    const r1 = 36;
+    const r2 = i % 2 === 0 ? 43 : 40;
+    return {
+      x1: 54 + r1 * Math.cos(a),
+      y1: 54 + r1 * Math.sin(a),
+      x2: 54 + r2 * Math.cos(a),
+      y2: 54 + r2 * Math.sin(a),
+      major: i % 2 === 0,
+      warn: i / 10 >= warnAt,
+    };
+  });
+
+  return (
+    <div className="mech-gauge-card">
+      <span className="mech-rivet tl" />
+      <span className="mech-rivet tr" />
+      <span className="mech-rivet bl" />
+      <span className="mech-rivet br" />
+      <svg className="mech-dial-svg" viewBox="0 0 108 108" aria-hidden="true">
+        <circle cx="54" cy="54" r="49" fill="#0b1216" stroke="#36464f" strokeWidth="2.5" />
+        <circle cx="54" cy="54" r="45" fill="none" stroke="#1e2b33" strokeWidth="1" />
+        {ticks.map((tk, idx) => (
+          <line
+            key={idx}
+            x1={tk.x1}
+            y1={tk.y1}
+            x2={tk.x2}
+            y2={tk.y2}
+            stroke={tk.warn ? '#f59e0b' : tk.major ? '#9bb2be' : '#4a5d68'}
+            strokeWidth={tk.major ? 1.8 : 1.1}
+            strokeLinecap="round"
+          />
+        ))}
+        <g transform={`rotate(${needleDeg} 54 54)`}>
+          <polygon points="52.4,56 55.6,56 54.6,17 53.4,17" fill={accent} />
+        </g>
+        <circle cx="54" cy="54" r="5.5" fill="#d9a441" stroke="#1b2429" strokeWidth="1.5" />
+      </svg>
+      <div className="mech-gauge-readout">
+        <div className="mech-gauge-val">{valueText} <span className="mech-gauge-unit">{unit}</span></div>
+        <div className="mech-gauge-lbl">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function MechOrbitDial({ orbitId, altKm, incDeg, periodMin, progress }) {
+  const angleRad = ((progress * 360 - 90) * Math.PI) / 180;
+  const satX = 54 + 36 * Math.cos(angleRad);
+  const satY = 54 + 36 * Math.sin(angleRad);
+  return (
+    <div className="mech-gauge-card mech-orbit-card">
+      <span className="mech-rivet tl" />
+      <span className="mech-rivet tr" />
+      <span className="mech-rivet bl" />
+      <span className="mech-rivet br" />
+      <svg className="mech-dial-svg" viewBox="0 0 108 108" aria-hidden="true">
+        <circle cx="54" cy="54" r="49" fill="#0b1216" stroke="#36464f" strokeWidth="2.5" />
+        <ellipse
+          cx="54"
+          cy="54"
+          rx="36"
+          ry="36"
+          fill="none"
+          stroke="#f59e0b"
+          strokeWidth="1.5"
+          strokeDasharray="4 3"
+          opacity="0.85"
+        />
+        <circle cx="54" cy="54" r="18" fill="#0d4a75" stroke="#38bdf8" strokeWidth="1.2" />
+        <line x1="12" y1="54" x2="96" y2="54" stroke="#22323c" strokeWidth="0.9" />
+        <line x1="54" y1="12" x2="54" y2="96" stroke="#22323c" strokeWidth="0.9" />
+        <circle cx={satX} cy={satY} r="4.2" fill="#34d399" stroke="#082419" strokeWidth="1.2" />
+      </svg>
+      <div className="mech-gauge-readout">
+        <div className="mech-gauge-val">{orbitId}</div>
+        <div className="mech-gauge-lbl">
+          {altKm} km · {incDeg}° · {periodMin}m
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const EVENT_NAMES = {
   IGNITION: { vi: 'ĐÁNH LỬA ĐỘNG CƠ', en: 'IGNITION' },
@@ -59,10 +150,16 @@ export default function LaunchScreen() {
 
   const tutorialPaused = Boolean(tutorialOpen && !launchResult);
 
+  const [telem, setTelem] = useState({ t: 0, altKm: 0, velKms: 0, pitchDeg: 0, targetAltKm: 400, phase: 'countdown' });
+
   // vi tri bai phong + do nghieng quy dao -> Trai Dat o canh phong quay dung duoi ve tinh
   const site = catalog?.tables?.launch_sites?.[design?.launch?.site];
   const orbit = catalog?.tables?.orbits?.[design?.orbit];
   const geo = { latDeg: site?.lat_deg, lonDeg: site?.lon_deg, incDeg: orbit?.inclination_deg };
+  const targetAltKm = Number(orbit?.altitude_km || telem.targetAltKm || 400);
+  const orbitRadiusKm = 6371 + targetAltKm;
+  const periodMin = Math.round((2 * Math.PI * Math.sqrt(Math.pow(orbitRadiusKm, 3) / 398600.44)) / 60);
+  const incDeg = Number(orbit?.inclination_deg ?? 53).toFixed(0);
 
   // To bao tai nan (du lieu su co that cua chuyen bay) lap day o trong duoi khung 3D khi phong that bai
   const accident =
@@ -95,6 +192,7 @@ export default function LaunchScreen() {
           audioOn={audioOn}
           onEvent={onLaunchEvent}
           onEnd={onLaunchEnd}
+          onTelemetry={setTelem}
           tutorialPaused={tutorialPaused}
           onResumeFromTutorial={closeTutorial}
         />
@@ -174,6 +272,49 @@ export default function LaunchScreen() {
           )}
         </div>
       </section>
+      {!accident && (
+        <section className="panel launch-gauges-panel" aria-label="Telemetry Gauges">
+          <div className="mech-gauges-grid">
+            <MechOrbitDial
+              orbitId={design?.orbit || 'LEO'}
+              altKm={targetAltKm}
+              incDeg={incDeg}
+              periodMin={periodMin}
+              progress={(Math.max(0, telem.t) % 120) / 120}
+            />
+            <MechDial
+              label={tr(lang, 'ĐỘ CAO', 'ALTITUDE')}
+              valueText={telem.altKm < 10 ? telem.altKm.toFixed(1) : Math.round(telem.altKm)}
+              unit="km"
+              value={telem.altKm}
+              min={0}
+              max={Math.max(200, targetAltKm)}
+              accent="#38bdf8"
+              warnAt={0.92}
+            />
+            <MechDial
+              label={tr(lang, 'VẬN TỐC', 'VELOCITY')}
+              valueText={telem.velKms.toFixed(2)}
+              unit="km/s"
+              value={telem.velKms}
+              min={0}
+              max={10}
+              accent="#34d399"
+              warnAt={0.8}
+            />
+            <MechDial
+              label={tr(lang, 'GÓC NGHIÊNG', 'PITCH')}
+              valueText={Math.round(telem.pitchDeg)}
+              unit="°"
+              value={telem.pitchDeg}
+              min={0}
+              max={90}
+              accent="#f59e0b"
+              warnAt={0.9}
+            />
+          </div>
+        </section>
+      )}
     </div>
   );
 }

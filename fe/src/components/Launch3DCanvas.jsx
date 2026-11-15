@@ -109,13 +109,13 @@ function makeParticles(count, { color, size, additive, opacity = 1 }) {
   };
 }
 
-export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, onEnd, tutorialPaused = false, onResumeFromTutorial }) {
+export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, onEnd, onTelemetry, tutorialPaused = false, onResumeFromTutorial }) {
   const { lang } = useGame();
   const containerRef = useRef(null);
   const hudRef = useRef({});
   const ctlRef = useRef({ warp: 1, playing: true });
-  const cbRef = useRef({ onEvent, onEnd, audioOn });
-  cbRef.current = { onEvent, onEnd, audioOn };
+  const cbRef = useRef({ onEvent, onEnd, onTelemetry, audioOn });
+  cbRef.current = { onEvent, onEnd, onTelemetry, audioOn };
   const [warp, setWarp] = useState(1);
   const [playing, setPlaying] = useState(true);
   const [banner, setBanner] = useState(null);
@@ -660,6 +660,18 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
         h.stage.textContent = F.phase === 'deploy' ? 'PAYLOAD' : `S${F.stageNow + 1}`;
         h.velBar.style.width = `${clamp01(F.vel / 7800) * 100}%`;
         h.altBar.style.width = `${clamp01(F.altKm / Math.max(200, S.alt[S.n - 1])) * 100}%`;
+      }
+      const nowMs = performance.now();
+      if (nowMs - (tick.lastTelem || 0) >= 90) {
+        tick.lastTelem = nowMs;
+        cbRef.current.onTelemetry?.({
+          t: F.t,
+          altKm: F.altKm,
+          velKms: F.vel / 1000,
+          pitchDeg: Math.min(90, Math.max(0, (F.pitch * 180) / Math.PI)),
+          targetAltKm: Math.max(100, S.alt[S.n - 1]),
+          phase: F.phase,
+        });
       }
     };
     rafId = requestAnimationFrame(tick);
