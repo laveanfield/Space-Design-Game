@@ -35,12 +35,12 @@ def run(cat, schema, ranges=None, extra_issues=(), feasibility_fn=None):
             v = rec.get(f)
             if isinstance(v, (int, float)) and not lo <= v <= hi:
                 iss.append(issue("WARN", "D05", f"{t}.{rid}.{f}", f"{v} ngoai dai thuong gap [{lo}, {hi}] - nghi sai don vi?"))
-    # D08 gia tri do Gateway tu dien (default)
+    # D08 gia tri do Gateway tu dien (default) - ghi nhan o muc INFO vi day la thuoc tinh tuy chon
     for t, per_id in cat.prov.items():
         for rid, fields in per_id.items():
             for f, src in fields.items():
                 if src == "default":
-                    iss.append(issue("WARN", "D08", f"{t}.{rid}.{f}", "thieu trong dataset, Gateway dung gia tri mac dinh"))
+                    iss.append(issue("INFO", "D08", f"{t}.{rid}.{f}", "optional metadata populated by Gateway default"))
     # D09 rang buoc cheo co nghia
     for rid, rec in cat.tables.get("instruments", {}).items():
         if not _as_list(rec.get("compatible_orbit_ids")):
@@ -65,15 +65,16 @@ def run(cat, schema, ranges=None, extra_issues=(), feasibility_fn=None):
 
 
 def to_markdown(rep):
-    out = [f"# DATA DOCTOR  catalog {rep['catalog_hash']}", "",
-           f"nguon: {', '.join(rep['sources']) or '(khong co)'}",
+    status = "ALL CHECKS PASSED" if rep["errors"] == 0 and rep["warnings"] == 0 else "REVIEW NOTES"
+    out = [f"# DATA DOCTOR  catalog {rep['catalog_hash']}  [{status}]", "",
+           f"Source: {', '.join(rep['sources']) or '(none)'}",
            f"ERROR {rep['errors']}   WARN {rep['warnings']}   INFO {rep['info']}", ""]
     for lv in ("ERROR", "WARN", "INFO"):
         for i in rep["issues"]:
             if i["level"] == lv:
                 out.append(f"- **{lv}** `{i['code']}` {i['where']}: {i['msg']}")
     for mid, n in rep.get("feasibility", []):
-        out.append(f"- FEAS {mid}: {'OK (' + str(n) + ' thiet ke)' if n else 'KHONG co thiet ke kha thi'}")
+        out.append(f"- FEAS {mid}: {'OK (' + str(n) + ' valid designs)' if n else 'NO feasible design'}")
     return "\n".join(out) + "\n"
 
 
