@@ -50,7 +50,10 @@ export default function HomeScreen() {
           <p className="home-menu-subtitle">
             {tr(lang, 'Từ chối cắt góc kỹ thuật — bảo vệ Trái Đất bằng vật lý thực thụ', 'Refuse to cut corners — defend Earth with real orbital physics')}
           </p>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+            <span className="badge info" style={{ padding: '5px 10px', fontSize: '0.75rem', letterSpacing: '0.06em' }}>
+              🛸 TEAM COSMIC INVADERS
+            </span>
             <a
               href="https://github.com/laveanfield/Space-Design-Game"
               target="_blank"
@@ -183,16 +186,19 @@ export default function HomeScreen() {
                 )}
               </div>
             </div>
-            <div className="menu-modal-foot" style={{ justifyContent: 'space-between' }}>
-              <a
-                href="https://github.com/laveanfield/Space-Design-Game"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn small"
-                style={{ textDecoration: 'none' }}
-              >
-                🔗 GitHub Repo
-              </a>
+            <div className="menu-modal-foot" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span className="small muted">🛸 Team: <strong>Cosmic Invaders</strong></span>
+                <a
+                  href="https://github.com/laveanfield/Space-Design-Game"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn small"
+                  style={{ textDecoration: 'none' }}
+                >
+                  🔗 GitHub Repo
+                </a>
+              </div>
               <button
                 type="button"
                 className="btn primary"
