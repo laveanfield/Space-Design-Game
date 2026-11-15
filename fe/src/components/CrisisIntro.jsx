@@ -101,64 +101,99 @@ export function getMissionBriefingSpec(missionId, missionDetail = null, scenario
   };
 }
 
-export function MissionBriefingDossier({ missionId, missionDetail, scenario, compact = false }) {
+export function MissionBriefingDossier({ missionId, missionDetail, scenario, compact = false, lang = 'en' }) {
   const spec = getMissionBriefingSpec(missionId, missionDetail, scenario);
+  const [expanded, setExpanded] = useState(!compact);
+  const isVi = lang === 'vi';
 
   return (
-    <div className={`mission-dossier-sheet ${compact ? 'compact' : ''}`} data-testid="mission-briefing-dossier">
+    <div
+      className={`mission-dossier-sheet mission-letter ${compact ? 'compact' : ''} ${expanded ? 'is-expanded' : 'is-brief'}`}
+      data-testid="mission-briefing-dossier"
+    >
       <div className="mission-dossier-top">
         <div>
-          <div className="mission-dossier-code">{spec.code}</div>
+          <div className="mission-dossier-code">
+            ✉ {isVi ? 'THƯ CHỈ THỊ NHIỆM VỤ' : 'OFFICIAL MISSION DISPATCH'} // {spec.id}
+          </div>
           <h2 className="mission-dossier-title">{spec.titleEn}</h2>
           <div className="mission-dossier-sub">{spec.subtitle}</div>
         </div>
-        <span className="badge ok">{spec.id}</span>
+        <span className="mission-letter-seal">{spec.id}</span>
       </div>
 
-      <div className="mission-dossier-grid">
-        <div className="mission-dossier-cell full">
-          <div className="mission-dossier-label">1. MISSION CONTEXT</div>
-          <p>{spec.context}</p>
+      <div className="mission-letter-brief">
+        <div className="mission-dossier-label">
+          {isVi ? '1. TÓM TẮT NHIỆM VỤ' : '1. MISSION BRIEF'}
         </div>
+        <p>{spec.context}</p>
+        {!expanded && (
+          <p className="mission-letter-brief-goal">
+            <strong>{isVi ? 'Mục tiêu chính:' : 'Primary Goal:'}</strong> {spec.primaryObjective}
+          </p>
+        )}
+      </div>
 
-        <div className="mission-dossier-cell">
-          <div className="mission-dossier-label">2. TARGET ORBIT</div>
-          <p>{spec.targetOrbit}</p>
-        </div>
+      {expanded && (
+        <div className="mission-dossier-grid" style={{ marginTop: 10 }}>
+          <div className="mission-dossier-cell">
+            <div className="mission-dossier-label">2. TARGET ORBIT</div>
+            <p>{spec.targetOrbit}</p>
+          </div>
 
-        <div className="mission-dossier-cell">
-          <div className="mission-dossier-label">3. PRIMARY SCIENTIFIC OBJECTIVE</div>
-          <p>{spec.primaryObjective}</p>
-        </div>
+          <div className="mission-dossier-cell">
+            <div className="mission-dossier-label">3. PRIMARY SCIENTIFIC OBJECTIVE</div>
+            <p>{spec.primaryObjective}</p>
+          </div>
 
-        <div className="mission-dossier-cell">
-          <div className="mission-dossier-label">4. PAYLOAD &amp; HARDWARE REQUIREMENTS</div>
-          <p>{spec.payloadCapabilities}</p>
-        </div>
+          <div className="mission-dossier-cell">
+            <div className="mission-dossier-label">4. PAYLOAD &amp; HARDWARE REQUIREMENTS</div>
+            <p>{spec.payloadCapabilities}</p>
+          </div>
 
-        <div className="mission-dossier-cell">
-          <div className="mission-dossier-label">5. OBSERVATION REQUIREMENTS</div>
-          <p>{spec.observationReqs}</p>
-        </div>
+          <div className="mission-dossier-cell">
+            <div className="mission-dossier-label">5. OBSERVATION REQUIREMENTS</div>
+            <p>{spec.observationReqs}</p>
+          </div>
 
-        <div className="mission-dossier-cell">
-          <div className="mission-dossier-label">6. COMMUNICATION &amp; DOWNLINK REQUIREMENTS</div>
-          <p>{spec.commReqs}</p>
-        </div>
+          <div className="mission-dossier-cell">
+            <div className="mission-dossier-label">6. COMMUNICATION &amp; DOWNLINK REQUIREMENTS</div>
+            <p>{spec.commReqs}</p>
+          </div>
 
-        <div className="mission-dossier-cell">
-          <div className="mission-dossier-label">7. CONSTRAINTS &amp; SCHEDULE</div>
-          <p>{spec.constraintsText}</p>
-        </div>
+          <div className="mission-dossier-cell">
+            <div className="mission-dossier-label">7. CONSTRAINTS &amp; SCHEDULE</div>
+            <p>{spec.constraintsText}</p>
+          </div>
 
-        <div className="mission-dossier-cell full">
-          <div className="mission-dossier-label">8. MISSION SUCCESS CRITERIA</div>
-          <ul className="mission-dossier-list">
-            {spec.successCriteria.map((item, idx) => (
-              <li key={idx}>{item}</li>
-            ))}
-          </ul>
+          <div className="mission-dossier-cell full">
+            <div className="mission-dossier-label">8. MISSION SUCCESS CRITERIA</div>
+            <ul className="mission-dossier-list">
+              {spec.successCriteria.map((item, idx) => (
+                <li key={idx}>{item}</li>
+              ))}
+            </ul>
+          </div>
         </div>
+      )}
+
+      <div className="mission-letter-foot">
+        <span className="mission-letter-sign">
+          {isVi ? '— Ban Điều Hành Chuyến Bay' : '— Flight Operations Command'}
+        </span>
+        <button
+          type="button"
+          className="btn small mission-letter-toggle"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded
+            ? isVi
+              ? '▲ THU GỌN BỨC THƯ'
+              : '▲ FOLD LETTER (BRIEF)'
+            : isVi
+              ? '📜 MỞ XEM CHI TIẾT NHIỆM VỤ'
+              : '📜 OPEN FULL LETTER DETAILS'}
+        </button>
       </div>
     </div>
   );

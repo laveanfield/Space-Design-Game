@@ -81,6 +81,7 @@ export default function BriefScreen() {
                 missionDetail={missionDetail}
                 scenario={scenario}
                 compact
+                lang={lang}
               />
             </div>
 
