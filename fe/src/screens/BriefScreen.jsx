@@ -37,7 +37,6 @@ export default function BriefScreen() {
               </span>
               <h3 className="mission-hero-title">
                 {tx(missionDetail.meta?.title, lang)}
-                <small>{tx(missionDetail.meta?.title, lang === 'vi' ? 'en' : 'vi')}</small>
               </h3>
               <span className="mission-hero-note">{tr(lang, 'ảnh minh họa', 'concept art')}</span>
             </div>

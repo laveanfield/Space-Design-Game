@@ -6,7 +6,7 @@ import MissionComms from '../components/MissionComms';
 import PartCard from '../components/PartCard';
 import TrajectoryScope from '../components/TrajectoryScope';
 import { DEV } from '../core/devFlag';
-import { SLOTS, getPartInsight, isSlotUnlocked } from '../core/gameMachine';
+import { SLOTS } from '../core/gameMachine';
 import { useGame } from '../core/GameContext';
 import { tr, tx } from '../core/i18n';
 
@@ -91,7 +91,6 @@ export default function BuildScreen() {
     if (activeSlot === 'launch') return design.launch?.vehicle === item.id;
     return design[activeSlot] === item.id;
   });
-  const currentInsight = currentSelectedItem ? getPartInsight(activeSlot, currentSelectedItem) : null;
 
   const cost = Number(evalReport?.metrics?.['cost.total_musd'] || 0);
   const budget = Number(effectiveBudget ?? scenario.budget_musd ?? 0);
@@ -177,39 +176,10 @@ export default function BuildScreen() {
         <section className="panel" data-tutorial="build-slots">
           <h2 className="panel-title">
             <span>
-              {tutorialMode
-                ? `${tr(lang, 'LẮP RÁP TUẦN TỰ', 'SEQUENTIAL ASSEMBLY')} (${tr(lang, 'BƯỚC', 'STEP')} ${currentSlotIdx + 1}/9)`
-                : `${tr(lang, 'KHO LINH KIỆN & QUY CÁCH', 'PARTS CATALOG')} (${slotEntries.length})`}
+              {tr(lang, 'KHO LINH KIỆN & QUY CÁCH', 'PARTS CATALOG')} ({slotEntries.length})
             </span>
             <span className="small muted">{design.orbit}</span>
           </h2>
-
-          {/* When tutorialMode is true, show 9-step sequential assembly bar */}
-          {tutorialMode && (
-            <div className="build-seq-bar nine-steps">
-              {SLOTS.map((s, idx) => {
-                const unlocked = isSlotUnlocked(s.id, buildStage);
-                const isCurrent = activeSlot === s.id;
-                const sLabel = tx(s.label, lang) || s.label;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    disabled={!unlocked}
-                    className={`seq-step ${unlocked ? 'done' : 'locked'} ${isCurrent ? 'current' : ''}`}
-                    title={unlocked ? tx(s.title, lang) : tx(s.lockHint, lang)}
-                    onClick={() => {
-                      if (!unlocked) return;
-                      beep(audioOn, 620, 0.025);
-                      (selectSlot || setActiveSlot)(s.id);
-                    }}
-                  >
-                    {unlocked ? sLabel : `LOCK ${idx + 1}`}
-                  </button>
-                );
-              })}
-            </div>
-          )}
 
           {DEV && (
             <div className="row-wrap" style={{ marginBottom: 8 }}>
@@ -227,99 +197,48 @@ export default function BuildScreen() {
 
           <div className="slot-tabs">
             {SLOTS.map((s) => {
-              const unlocked = tutorialMode ? isSlotUnlocked(s.id, buildStage) : true;
               const isCurrent = activeSlot === s.id;
               const tabName = SLOT_TAB_NAMES[s.id] ? tx(SLOT_TAB_NAMES[s.id], lang) : (tx(s.label, lang) || s.label);
               return (
                 <button
                   key={s.id}
                   type="button"
-                  className={`slot-tab ${isCurrent ? 'active' : ''} ${!unlocked ? 'locked' : ''}`}
-                  disabled={!unlocked}
-                  title={unlocked ? `${tx(s.title, lang)}: ${tx(s.shortDesc, lang)}` : tx(s.lockHint, lang)}
+                  className={`slot-tab ${isCurrent ? 'active' : ''}`}
+                  title={`${tx(s.title, lang)}: ${tx(s.shortDesc, lang)}`}
                   onClick={() => {
-                    if (!unlocked) return;
                     beep(audioOn, 620, 0.025);
                     (selectSlot || setActiveSlot)(s.id);
                   }}
                 >
-                  {!unlocked ? `${tr(lang, 'KHÓA:', 'LOCKED:')} ${tabName}` : tabName}
+                  {tabName}
                 </button>
               );
             })}
           </div>
 
-          {tutorialMode ? (
-            <div className="slot-intro-box">
-              <div className="slot-intro-head">{tx(currentSlotMeta.title, lang)}</div>
-              <div className="slot-intro-body">
-                {tx(currentSlotMeta.shortDesc, lang)}{' '}
-                <span className="neon-green">{tx(currentSlotMeta.highlight, lang)}</span>
-              </div>
-              {currentSelectedItem && currentInsight && (
-                <div className="slot-selected-summary">
-                  <div className="small">
-                    <strong className="neon-green">
-                      {tr(lang, 'ĐANG CHỌN:', 'SELECTED:')} {currentSelectedItem.name || currentSelectedItem.id}
-                    </strong>
-                  </div>
-                  <div className="small">• <b>{tr(lang, 'Dùng ở đâu:', 'Where:')}</b> {tx(currentInsight.where, lang)}</div>
-                  <div className="small ok-text">• <b>{tr(lang, 'Lợi ích (+):', 'Pros (+):')}</b> {tx(currentInsight.pros, lang)}</div>
-                  <div className="small warn-text">• <b>{tr(lang, 'Tác hại (-):', 'Cons (-):')}</b> {tx(currentInsight.cons, lang)}</div>
-                </div>
-              )}
-              <div className="slot-intro-actions">
-                <span className="small muted">
-                  {tr(lang, 'Chọn linh kiện bên dưới để so sánh thông số & 3D', 'Select components below to compare specs & 3D')}
-                </span>
-                <button
-                  type="button"
-                  className="btn small neon-btn"
-                  onClick={() => {
-                    beep(audioOn, 760, 0.04);
-                    if (isLastSlot) {
-                      confirmSlotAndAdvance();
-                      enterInspect();
-                    } else {
-                      confirmSlotAndAdvance();
-                    }
-                  }}
-                >
-                  {isLastSlot
-                    ? tr(lang, 'HOÀN TẤT 9 MỤC → SANG KIỂM ĐỊNH [03]', 'FINISH BUILD — GO TO 03.INSPECT')
-                    : tr(
-                        lang,
-                        `TIẾP THEO: MỞ ${tx(currentSlotMeta.nextLabel, lang)} →`,
-                        `NEXT: ${tx(currentSlotMeta.nextLabel, lang)}`
-                      )}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="build-compact-actions">
-              <span className="small">
-                <strong>{SLOT_TAB_NAMES[currentSlotMeta.id] ? tx(SLOT_TAB_NAMES[currentSlotMeta.id], lang) : currentSlotMeta.label}</strong>
-                <span className="muted"> · {currentSelectedItem?.name || currentSelectedItem?.id || tr(lang, 'CHƯA CHỌN', 'UNSELECTED')}</span>
-              </span>
-              <button
-                type="button"
-                className="btn small neon-btn"
-                onClick={() => {
-                  beep(audioOn, 760, 0.04);
-                  if (isLastSlot) {
-                    confirmSlotAndAdvance();
-                    enterInspect();
-                  } else {
-                    confirmSlotAndAdvance();
-                  }
-                }}
-              >
-                {isLastSlot
-                  ? tr(lang, 'HOÀN TẤT — SANG 03.KIỂM ĐỊNH', 'FINISH BUILD — GO TO 03.INSPECT')
-                  : `${tr(lang, 'TIẾP THEO:', 'NEXT:')} ${tx(currentSlotMeta.nextLabel, lang)}`}
-              </button>
-            </div>
-          )}
+          <div className="build-compact-actions">
+            <span className="small">
+              <strong>{SLOT_TAB_NAMES[currentSlotMeta.id] ? tx(SLOT_TAB_NAMES[currentSlotMeta.id], lang) : currentSlotMeta.label}</strong>
+              <span className="muted"> · {currentSelectedItem?.name || currentSelectedItem?.id || tr(lang, 'CHƯA CHỌN', 'UNSELECTED')}</span>
+            </span>
+            <button
+              type="button"
+              className="btn small neon-btn"
+              onClick={() => {
+                beep(audioOn, 760, 0.04);
+                if (isLastSlot) {
+                  confirmSlotAndAdvance();
+                  enterInspect();
+                } else {
+                  confirmSlotAndAdvance();
+                }
+              }}
+            >
+              {isLastSlot
+                ? tr(lang, 'HOÀN TẤT — SANG 03.KIỂM ĐỊNH', 'FINISH BUILD — GO TO 03.INSPECT')
+                : `${tr(lang, 'TIẾP THEO:', 'NEXT:')} ${tx(currentSlotMeta.nextLabel, lang)}`}
+            </button>
+          </div>
 
           <div className="option-list">
             {activeSlot === 'launch' && allSites.length > 0 && (
