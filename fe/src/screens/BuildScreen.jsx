@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { beep } from '../api/client';
 import { CoreTelemetryBars, DatasheetTotals, Logbook } from '../components/CampaignPanels';
 import Hangar3DCanvas from '../components/Hangar3DCanvas';
@@ -6,7 +6,7 @@ import MissionComms from '../components/MissionComms';
 import PartCard from '../components/PartCard';
 import TrajectoryScope from '../components/TrajectoryScope';
 import { DEV } from '../core/devFlag';
-import { SLOTS } from '../core/gameMachine';
+import { SLOTS, getPartInsight } from '../core/gameMachine';
 import { useGame } from '../core/GameContext';
 import { tr, tx } from '../core/i18n';
 
@@ -58,6 +58,7 @@ export default function BuildScreen() {
   } = useGame();
 
   const tables = catalog?.tables || {};
+  const [showSlotGuide, setShowSlotGuide] = useState(false);
 
   const slotEntries = useMemo(() => {
     if (!tables || !activeSlot) return [];
@@ -91,6 +92,7 @@ export default function BuildScreen() {
     if (activeSlot === 'launch') return design.launch?.vehicle === item.id;
     return design[activeSlot] === item.id;
   });
+  const currentInsight = currentSelectedItem ? getPartInsight(activeSlot, currentSelectedItem) : null;
 
   const cost = Number(evalReport?.metrics?.['cost.total_musd'] || 0);
   const budget = Number(effectiveBudget ?? scenario.budget_musd ?? 0);
@@ -221,24 +223,60 @@ export default function BuildScreen() {
               <strong>{SLOT_TAB_NAMES[currentSlotMeta.id] ? tx(SLOT_TAB_NAMES[currentSlotMeta.id], lang) : currentSlotMeta.label}</strong>
               <span className="muted"> · {currentSelectedItem?.name || currentSelectedItem?.id || tr(lang, 'CHƯA CHỌN', 'UNSELECTED')}</span>
             </span>
-            <button
-              type="button"
-              className="btn small neon-btn"
-              onClick={() => {
-                beep(audioOn, 760, 0.04);
-                if (isLastSlot) {
-                  confirmSlotAndAdvance();
-                  enterInspect();
-                } else {
-                  confirmSlotAndAdvance();
-                }
-              }}
-            >
-              {isLastSlot
-                ? tr(lang, 'HOÀN TẤT — SANG 03.KIỂM ĐỊNH', 'FINISH BUILD — GO TO 03.INSPECT')
-                : `${tr(lang, 'TIẾP THEO:', 'NEXT:')} ${tx(currentSlotMeta.nextLabel, lang)}`}
-            </button>
+            <div className="row-wrap" style={{ gap: 6 }}>
+              <button
+                type="button"
+                className={`btn small ${showSlotGuide ? 'primary' : ''}`}
+                onClick={() => {
+                  beep(audioOn, 680, 0.03);
+                  setShowSlotGuide((v) => !v);
+                }}
+              >
+                {showSlotGuide
+                  ? tr(lang, '▲ ẨN GỢI Ý', '▲ HIDE GUIDE')
+                  : tr(lang, '▼ XEM GỢI Ý', '▼ SLOT GUIDE')}
+              </button>
+              <button
+                type="button"
+                className="btn small neon-btn"
+                onClick={() => {
+                  beep(audioOn, 760, 0.04);
+                  if (isLastSlot) {
+                    confirmSlotAndAdvance();
+                    enterInspect();
+                  } else {
+                    confirmSlotAndAdvance();
+                  }
+                }}
+              >
+                {isLastSlot
+                  ? tr(lang, 'HOÀN TẤT — SANG 03.KIỂM ĐỊNH', 'FINISH BUILD — GO TO 03.INSPECT')
+                  : `${tr(lang, 'TIẾP THEO:', 'NEXT:')} ${tx(currentSlotMeta.nextLabel, lang)}`}
+              </button>
+            </div>
           </div>
+
+          {showSlotGuide && (
+            <div className="slot-intro-box">
+              <div className="slot-intro-head">{tx(currentSlotMeta.title, lang)}</div>
+              <div className="slot-intro-body">
+                {tx(currentSlotMeta.shortDesc, lang)}{' '}
+                <span className="neon-green">{tx(currentSlotMeta.highlight, lang)}</span>
+              </div>
+              {currentSelectedItem && currentInsight && (
+                <div className="slot-selected-summary">
+                  <div className="small">
+                    <strong className="neon-green">
+                      {tr(lang, 'ĐANG CHỌN:', 'SELECTED:')} {currentSelectedItem.name || currentSelectedItem.id}
+                    </strong>
+                  </div>
+                  <div className="small">• <b>{tr(lang, 'Dùng ở đâu:', 'Where:')}</b> {tx(currentInsight.where, lang)}</div>
+                  <div className="small ok-text">• <b>{tr(lang, 'Lợi ích (+):', 'Pros (+):')}</b> {tx(currentInsight.pros, lang)}</div>
+                  <div className="small warn-text">• <b>{tr(lang, 'Tác hại (-):', 'Cons (-):')}</b> {tx(currentInsight.cons, lang)}</div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="option-list">
             {activeSlot === 'launch' && allSites.length > 0 && (
