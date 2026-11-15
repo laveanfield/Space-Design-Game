@@ -60,18 +60,20 @@ function MechDial({ label, valueText, unit, value, min = 0, max = 100, accent = 
   );
 }
 
-function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, targetAlt, finalOrbitAlt, orbitId }) {
-  const W = 280;
+function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, pitchDeg = 0, targetAlt, finalOrbitAlt, orbitId }) {
+  const W = 300;
   const H = 96;
-  const padL = 8;
-  const padR = 8;
-  const padT = 12;
-  const padB = 12;
-  const maxAlt = Math.max(100, targetAlt, ...points.map((p) => p.alt));
+  const padL = 14;
+  const padR = 14;
+  const padB = 15;
+  const isHohmann = finalOrbitAlt > targetAlt + 50;
+  const padT = isHohmann ? 30 : 16;
+  const maxAscentAlt = Math.max(100, targetAlt, ...points.map((p) => p.alt));
   const totalT = Math.max(1, tEnd);
+  const ascentEndX = isHohmann ? W * 0.68 : W - padR;
 
-  const toX = (t) => padL + (Math.max(0, Math.min(totalT, t)) / totalT) * (W - padL - padR);
-  const toY = (alt) => H - padB - (Math.max(0, Math.min(maxAlt, alt)) / maxAlt) * (H - padT - padB);
+  const toX = (t) => padL + (Math.max(0, Math.min(totalT, t)) / totalT) * (ascentEndX - padL);
+  const toY = (alt) => H - padB - (Math.max(0, Math.min(maxAscentAlt, alt)) / maxAscentAlt) * (H - padT - padB);
 
   const plannedPath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${toX(p.t).toFixed(1)},${toY(p.alt).toFixed(1)}`).join(' ');
   const activePts = points.filter((p) => p.t <= Math.max(0, currentT));
@@ -81,7 +83,14 @@ function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, targetAlt, fi
     activePts.length > 0
       ? `${activePts.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${toX(p.t).toFixed(1)},${toY(p.alt).toFixed(1)}`).join(' ')} L${curX.toFixed(1)},${curY.toFixed(1)}`
       : `M${padL},${H - padB}`;
-  const karmanY = maxAlt >= 120 ? toY(100) : null;
+  const karmanY = maxAscentAlt >= 120 ? toY(100) : null;
+  const parkingY = toY(targetAlt);
+  const finalY = 11;
+  const hohmannPath = isHohmann
+    ? `M${ascentEndX.toFixed(1)},${parkingY.toFixed(1)} Q${((ascentEndX + W - padR) * 0.5).toFixed(1)},${((parkingY + finalY) * 0.42).toFixed(1)} ${(W - padR).toFixed(1)},${finalY}`
+    : '';
+  const burning = currentT >= 0 && currentT < totalT - 1;
+  const rocketRot = Math.max(0, Math.min(90, pitchDeg));
 
   return (
     <div className="mech-gauge-card mech-traj-card">
@@ -91,22 +100,56 @@ function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, targetAlt, fi
       <span className="mech-rivet br" />
       <div className="mech-traj-head">
         <span className="mech-gauge-lbl">
-          {orbitId} · {finalOrbitAlt > targetAlt + 50 ? `${Math.round(targetAlt)} → ${Math.round(finalOrbitAlt)} km` : `${Math.round(targetAlt)} km`}
+          {orbitId} · {isHohmann ? `${Math.round(targetAlt)} → ${Math.round(finalOrbitAlt)} km` : `${Math.round(targetAlt)} km`}
         </span>
         <span className="mech-gauge-lbl">{Math.max(0, Math.round(currentT))}s / {Math.round(totalT)}s</span>
       </div>
-      <svg className="mech-traj-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
-        <line x1={padL} y1={padT} x2={W - padR} y2={padT} stroke="#233742" strokeWidth="1" strokeDasharray="3 3" />
+      <svg className="mech-traj-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <defs>
+          <linearGradient id="earthArcGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#1d4ed8" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="#082f49" stopOpacity="0.85" />
+          </linearGradient>
+        </defs>
+        {/* Curved Earth horizon */}
+        <path d={`M0,${H} Q${W / 2},${H - 18} ${W},${H} Z`} fill="url(#earthArcGrad)" />
+        <path d={`M0,${H} Q${W / 2},${H - 18} ${W},${H}`} fill="none" stroke="#38bdf8" strokeWidth="1" opacity="0.55" />
+
+        {/* Target / Parking orbit lines */}
+        {isHohmann && (
+          <>
+            <line x1={padL} y1={finalY} x2={W - padR} y2={finalY} stroke="#38bdf8" strokeWidth="1.1" strokeDasharray="4 3" opacity="0.65" />
+            <text x={padL + 2} y={finalY - 2} fill="#7dd3fc" fontSize="6.5" fontFamily="monospace" opacity="0.85">
+              TARGET {Math.round(finalOrbitAlt)} km
+            </text>
+            <path d={hohmannPath} fill="none" stroke="#38bdf8" strokeWidth="1.4" strokeDasharray="3 3" opacity="0.7" />
+          </>
+        )}
+        <line x1={padL} y1={parkingY} x2={W - padR} y2={parkingY} stroke={isHohmann ? '#94a3b8' : '#38bdf8'} strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
+        <text x={W - padR - 2} y={parkingY - 3} textAnchor="end" fill="#94a3b8" fontSize="6.5" fontFamily="monospace" opacity="0.85">
+          {isHohmann ? `PARK ${Math.round(targetAlt)} km` : `${Math.round(targetAlt)} km`}
+        </text>
         {karmanY != null && (
-          <line x1={padL} y1={karmanY} x2={W - padR} y2={karmanY} stroke="#2b424f" strokeWidth="1" strokeDasharray="2 3" />
+          <line x1={padL} y1={karmanY} x2={ascentEndX} y2={karmanY} stroke="#2b424f" strokeWidth="0.9" strokeDasharray="2 3" />
         )}
-        <line x1={padL} y1={H - padB} x2={W - padR} y2={H - padB} stroke="#2e3f49" strokeWidth="1" />
+
+        {/* Planned & live trajectory */}
         {plannedPath && (
-          <path d={plannedPath} fill="none" stroke="#f59e0b" strokeWidth="1.6" strokeDasharray="4 3" opacity="0.55" />
+          <path d={plannedPath} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.55" />
         )}
-        <path d={livePath} fill="none" stroke="#34d399" strokeWidth="2.4" strokeLinecap="round" />
-        <circle cx={curX} cy={curY} r="6.5" fill="rgba(52, 211, 153, 0.22)" />
-        <circle cx={curX} cy={curY} r="3.4" fill="#34d399" stroke="#081b14" strokeWidth="1" />
+        <path d={livePath} fill="none" stroke="#34d399" strokeWidth="2.3" strokeLinecap="round" />
+
+        {/* Rocket flying along the trajectory */}
+        <g transform={`translate(${curX.toFixed(1)}, ${curY.toFixed(1)}) rotate(${rocketRot.toFixed(1)})`}>
+          <circle cx="0" cy="0" r="8" fill="rgba(52, 211, 153, 0.16)" />
+          {burning && (
+            <polygon points="-1.6,5.5 1.6,5.5 0,11.5" fill="#f59e0b" opacity="0.9" />
+          )}
+          <polygon points="0,-7.5 -2.2,-2.5 2.2,-2.5" fill="#f59e0b" />
+          <rect x="-2" y="-2.5" width="4" height="7" rx="0.8" fill="#e2e8f0" stroke="#0f172a" strokeWidth="0.5" />
+          <polygon points="-2,2 -4.2,5 -2,4.5" fill="#94a3b8" />
+          <polygon points="2,2 4.2,5 2,4.5" fill="#94a3b8" />
+        </g>
       </svg>
     </div>
   );
@@ -313,6 +356,7 @@ export default function LaunchScreen() {
               tEnd={trajSeries.tEnd}
               currentT={telem.t}
               currentAlt={telem.altKm}
+              pitchDeg={telem.pitchDeg}
               targetAlt={ascentPeakAltKm}
               finalOrbitAlt={finalOrbitAltKm}
               orbitId={design?.orbit || 'LEO'}
