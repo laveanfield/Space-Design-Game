@@ -274,12 +274,8 @@ export function GameProvider({ children }) {
       }
       return;
     }
-    if (!seenTutorials[phase]) {
-      setSeenTutorials((prev) => ({ ...prev, [phase]: true }));
-      setTutorialStep(0);
-      setTutorialOpen(true);
-    }
-  }, [phase, story, seenTutorials, tutorialMode, tutorialGuided]);
+    setTutorialOpen(false);
+  }, [phase, story, tutorialMode, tutorialGuided]);
 
   const openTutorial = useCallback(() => {
     setTutorialStep(0);
