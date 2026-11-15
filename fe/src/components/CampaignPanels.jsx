@@ -498,6 +498,18 @@ export function LifePhase({
                   : tr(lang, 'HỌP TỔNG KẾT VỚI SẾP', 'MISSION DEBRIEF WITH DIRECTOR')}
             </button>
           </div>
+          {life.imaging && (
+            <div style={{ marginTop: 12 }}>
+              <EvidenceGallery
+                evidence={life.evidence || []}
+                need={life.evidence_need}
+                step={cur ? cur.k : 0}
+                sensorName={life.imaging.name}
+                imaging={life.imaging}
+                altKm={cur ? cur.alt_km : alt0}
+              />
+            </div>
+          )}
         </section>
 
         <section className="panel" data-tutorial="orbit-telemetry">
@@ -596,18 +608,6 @@ export function LifePhase({
                 <strong>{usableEvidenceNow} / {life.evidence_need} {tr(lang, 'ĐÃ VỀ TRÁI ĐẤT', 'DELIVERED TO EARTH')}</strong>
                 <small>{tr(lang, 'Chỉ các gói truyền về hoàn chỉnh mới được tính', 'Only complete downlinked packets count as evidence')}</small>
               </div>
-            </div>
-          )}
-          {life.imaging && (
-            <div style={{ marginTop: 10 }}>
-              <EvidenceGallery
-                evidence={life.evidence || []}
-                need={life.evidence_need}
-                step={cur ? cur.k : 0}
-                sensorName={life.imaging.name}
-                imaging={life.imaging}
-                altKm={cur ? cur.alt_km : alt0}
-              />
             </div>
           )}
           {communications && (
