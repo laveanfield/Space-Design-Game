@@ -50,6 +50,18 @@ export default function HomeScreen() {
           <p className="home-menu-subtitle">
             {tr(lang, 'Từ chối cắt góc kỹ thuật — bảo vệ Trái Đất bằng vật lý thực thụ', 'Refuse to cut corners — defend Earth with real orbital physics')}
           </p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+            <a
+              href="https://github.com/laveanfield/Space-Design-Game"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn small"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <span>🔗</span>
+              <span>GitHub: laveanfield/Space-Design-Game</span>
+            </a>
+          </div>
 
           <nav className="home-menu-buttons" aria-label={tr(lang, 'Menu chính', 'Main menu')} data-tutorial="home-start">
             <button
@@ -171,7 +183,16 @@ export default function HomeScreen() {
                 )}
               </div>
             </div>
-            <div className="menu-modal-foot">
+            <div className="menu-modal-foot" style={{ justifyContent: 'space-between' }}>
+              <a
+                href="https://github.com/laveanfield/Space-Design-Game"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn small"
+                style={{ textDecoration: 'none' }}
+              >
+                🔗 GitHub Repo
+              </a>
               <button
                 type="button"
                 className="btn primary"
