@@ -223,7 +223,7 @@ export default function BuildScreen() {
               <strong>{SLOT_TAB_NAMES[currentSlotMeta.id] ? tx(SLOT_TAB_NAMES[currentSlotMeta.id], lang) : currentSlotMeta.label}</strong>
               <span className="muted"> · {currentSelectedItem?.name || currentSelectedItem?.id || tr(lang, 'CHƯA CHỌN', 'UNSELECTED')}</span>
             </span>
-            <div className="row-wrap" style={{ gap: 6 }}>
+            <div className="build-compact-btns">
               <button
                 type="button"
                 className={`btn small ${showSlotGuide ? 'primary' : ''}`}
@@ -250,8 +250,8 @@ export default function BuildScreen() {
                 }}
               >
                 {isLastSlot
-                  ? tr(lang, 'HOÀN TẤT — SANG 03.KIỂM ĐỊNH', 'FINISH BUILD — GO TO 03.INSPECT')
-                  : `${tr(lang, 'TIẾP THEO:', 'NEXT:')} ${tx(currentSlotMeta.nextLabel, lang)}`}
+                  ? tr(lang, 'SANG KIỂM ĐỊNH →', 'GO TO INSPECT →')
+                  : `${tr(lang, 'TIẾP:', 'NEXT:')} ${SLOT_TAB_NAMES[SLOTS[currentSlotIdx + 1]?.id] ? tx(SLOT_TAB_NAMES[SLOTS[currentSlotIdx + 1].id], lang) : ''} →`}
               </button>
             </div>
           </div>
