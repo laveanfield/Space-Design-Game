@@ -3,7 +3,7 @@ name = "mission-engine"
 version = "0.1.0"
 description = "Space Mission Design Game - engine (NASA Space Apps 2026)"
 requires-python = ">=3.11"
-dependencies = ["numpy", "pyyaml"]
+dependencies = ["numpy", "pyyaml", "fastapi", "uvicorn[standard]", "pydantic>=2"]
 
 [project.optional-dependencies]
 api = ["fastapi", "uvicorn[standard]", "pydantic>=2"]
