@@ -60,28 +60,53 @@ function MechDial({ label, valueText, unit, value, min = 0, max = 100, accent = 
   );
 }
 
-function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, pitchDeg = 0, targetAlt, finalOrbitAlt, orbitId }) {
+function sampleAtTime(points, t) {
+  if (!points.length) return { t: 0, alt: 0, down: 0 };
+  if (t <= points[0].t) return points[0];
+  const last = points[points.length - 1];
+  if (t >= last.t) return last;
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (t >= a.t && t <= b.t) {
+      const f = (t - a.t) / Math.max(1e-6, b.t - a.t);
+      return {
+        t,
+        alt: a.alt + (b.alt - a.alt) * f,
+        down: a.down + (b.down - a.down) * f,
+      };
+    }
+  }
+  return last;
+}
+
+function MechTrajectoryGraph({ points, events = [], tEnd, currentT, currentAlt, pitchDeg = 0, targetAlt, finalOrbitAlt, orbitId }) {
   const W = 300;
   const H = 96;
-  const padL = 14;
+  const padL = 16;
   const padR = 14;
   const padB = 15;
   const isHohmann = finalOrbitAlt > targetAlt + 50;
   const padT = isHohmann ? 30 : 16;
   const maxAscentAlt = Math.max(100, targetAlt, ...points.map((p) => p.alt));
+  const maxDown = Math.max(1, ...points.map((p) => p.down ?? 0));
   const totalT = Math.max(1, tEnd);
   const ascentEndX = isHohmann ? W * 0.68 : W - padR;
 
-  const toX = (t) => padL + (Math.max(0, Math.min(totalT, t)) / totalT) * (ascentEndX - padL);
-  const toY = (alt) => H - padB - (Math.max(0, Math.min(maxAscentAlt, alt)) / maxAscentAlt) * (H - padT - padB);
+  const scaleAlt = (a) => Math.pow(Math.max(0, a), 0.65);
+  const maxScaledAlt = Math.max(1, scaleAlt(maxAscentAlt));
 
-  const plannedPath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${toX(p.t).toFixed(1)},${toY(p.alt).toFixed(1)}`).join(' ');
+  const toX = (down) => padL + (Math.max(0, Math.min(maxDown, down)) / maxDown) * (ascentEndX - padL);
+  const toY = (alt) => H - padB - (scaleAlt(Math.min(maxAscentAlt, alt)) / maxScaledAlt) * (H - padT - padB);
+
+  const plannedPath = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${toX(p.down ?? 0).toFixed(1)},${toY(p.alt).toFixed(1)}`).join(' ');
   const activePts = points.filter((p) => p.t <= Math.max(0, currentT));
-  const curX = toX(currentT);
-  const curY = toY(currentAlt);
+  const curSample = sampleAtTime(points, Math.max(0, currentT));
+  const curX = toX(curSample.down);
+  const curY = toY(Math.max(0, currentAlt));
   const livePath =
     activePts.length > 0
-      ? `${activePts.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${toX(p.t).toFixed(1)},${toY(p.alt).toFixed(1)}`).join(' ')} L${curX.toFixed(1)},${curY.toFixed(1)}`
+      ? `${activePts.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${toX(p.down ?? 0).toFixed(1)},${toY(p.alt).toFixed(1)}`).join(' ')} L${curX.toFixed(1)},${curY.toFixed(1)}`
       : `M${padL},${H - padB}`;
   const karmanY = maxAscentAlt >= 120 ? toY(100) : null;
   const parkingY = toY(targetAlt);
@@ -91,6 +116,19 @@ function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, pitchDeg = 0,
     : '';
   const burning = currentT >= 0 && currentT < totalT - 1;
   const rocketRot = Math.max(0, Math.min(90, pitchDeg));
+
+  const markerEvents = events
+    .filter((ev) => ['MECO', 'STAGE_SEP', 'SECO2'].includes(ev.name) && ev.t != null)
+    .map((ev) => {
+      const pt = sampleAtTime(points, Number(ev.t));
+      return {
+        name: ev.name === 'STAGE_SEP' ? 'SEP' : ev.name,
+        t: Number(ev.t),
+        x: toX(pt.down),
+        y: toY(pt.alt),
+        passed: currentT >= Number(ev.t),
+      };
+    });
 
   return (
     <div className="mech-gauge-card mech-traj-card">
@@ -123,6 +161,9 @@ function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, pitchDeg = 0,
               TARGET {Math.round(finalOrbitAlt)} km
             </text>
             <path d={hohmannPath} fill="none" stroke="#38bdf8" strokeWidth="1.4" strokeDasharray="3 3" opacity="0.7" />
+            <text x={((ascentEndX + W - padR) * 0.52).toFixed(1)} y={((parkingY + finalY) * 0.44 - 3).toFixed(1)} textAnchor="middle" fill="#7dd3fc" fontSize="5.6" fontFamily="monospace" opacity="0.8">
+              HOHMANN
+            </text>
           </>
         )}
         <line x1={padL} y1={parkingY} x2={W - padR} y2={parkingY} stroke={isHohmann ? '#94a3b8' : '#38bdf8'} strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
@@ -138,6 +179,31 @@ function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, pitchDeg = 0,
           <path d={plannedPath} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.55" />
         )}
         <path d={livePath} fill="none" stroke="#34d399" strokeWidth="2.3" strokeLinecap="round" />
+
+        {/* Stage / burn event markers along trajectory */}
+        {markerEvents.map((m, idx) => (
+          <g key={`${m.name}-${idx}`}>
+            <circle
+              cx={m.x.toFixed(1)}
+              cy={m.y.toFixed(1)}
+              r="2.2"
+              fill={m.passed ? '#34d399' : '#f59e0b'}
+              stroke="#0b1216"
+              strokeWidth="0.8"
+            />
+            <text
+              x={(m.x + (m.name === 'SECO2' ? -2 : 4)).toFixed(1)}
+              y={(m.y + (m.name === 'SECO2' ? 8 : 6)).toFixed(1)}
+              textAnchor={m.name === 'SECO2' ? 'end' : 'start'}
+              fill={m.passed ? '#a7f3d0' : '#cbd5e1'}
+              fontSize="5.4"
+              fontFamily="monospace"
+              opacity="0.85"
+            >
+              {m.name}
+            </text>
+          </g>
+        ))}
 
         {/* Rocket flying along the trajectory */}
         <g transform={`translate(${curX.toFixed(1)}, ${curY.toFixed(1)}) rotate(${rocketRot.toFixed(1)})`}>
@@ -212,17 +278,18 @@ export default function LaunchScreen() {
 
   const trajSeries = useMemo(() => {
     const s = flightData?.series;
-    if (!s?.alt_km || !s?.n) return { points: [{ t: 0, alt: 0 }, { t: 540, alt: 400 }], tEnd: 540 };
+    if (!s?.alt_km || !s?.n) return { points: [{ t: 0, alt: 0, down: 0 }, { t: 540, alt: 400, down: 1600 }], tEnd: 540 };
     const alt = decodeF32(s.alt_km);
+    const down = s.downrange_km ? decodeF32(s.downrange_km) : null;
     const n = s.n;
     const dt = s.dt_s || 1;
-    const step = Math.max(1, Math.floor(n / 48));
+    const step = Math.max(1, Math.floor(n / 60));
     const points = [];
     for (let i = 0; i < n; i += step) {
-      points.push({ t: i * dt, alt: alt[i] || 0 });
+      points.push({ t: i * dt, alt: alt[i] || 0, down: down ? down[i] || 0 : i * dt });
     }
     if (points[points.length - 1]?.t < (n - 1) * dt) {
-      points.push({ t: (n - 1) * dt, alt: alt[n - 1] || 0 });
+      points.push({ t: (n - 1) * dt, alt: alt[n - 1] || 0, down: down ? down[n - 1] || 0 : (n - 1) * dt });
     }
     return { points, tEnd: (n - 1) * dt };
   }, [flightData]);
@@ -353,6 +420,7 @@ export default function LaunchScreen() {
           <div className="mech-gauges-grid">
             <MechTrajectoryGraph
               points={trajSeries.points}
+              events={flightData.events || []}
               tEnd={trajSeries.tEnd}
               currentT={telem.t}
               currentAlt={telem.altKm}
