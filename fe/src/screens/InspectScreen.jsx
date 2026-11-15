@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { beep, playGasHiss, playSoundAsset } from '../api/client';
 import { useGame } from '../core/GameContext';
+import { tr, tx } from '../core/i18n';
 import { buildRocket, buildSatellite, loadInstruments, loadRocket, loadSatellite } from '../three/modelLoader';
 import { addAdapterBelow, mountSatelliteOnAdapter } from '../three/payloadAdapter';
 
@@ -29,6 +30,7 @@ export default function InspectScreen() {
     tutorialMode,
     setTutorialStep,
     completeTutorialToBrief,
+    lang,
   } = useGame();
 
   const defects = useMemo(() => inspectSession?.defects || [], [inspectSession]);
@@ -57,9 +59,10 @@ export default function InspectScreen() {
     structVib: 6,
     camTiltErr: Math.min(100, Math.abs(initialTilt) * 3.4),
   });
-  const [scanHint, setScanHint] = useState(
-    '1: NGHE TIẾNG XÌ GA TO DẦN ĐỂ BẤM (KHÔNG HIỆN ĐIỂM) • 2: BẬT X-RAY TÌM ĐƯỜNG NỨT VÀNG NHỎ • 3: GHÌ CHUỘT CHỈNH GƯƠNG CAMERA VỀ 0°'
-  );
+  const [scanHint, setScanHint] = useState({
+    vi: '1: NGHE TIẾNG XÌ GA TO DẦN ĐỂ BẤM (KHÔNG HIỆN ĐIỂM) • 2: BẬT X-RAY TÌM ĐƯỜNG NỨT VÀNG NHỎ • 3: GHÌ CHUỘT CHỈNH GƯƠNG CAMERA VỀ 0°',
+    en: '1: LISTEN FOR PROPELLANT LEAK HISS • 2: ENABLE X-RAY TO SPOT YELLOW CRACKS • 3: DRAG CAMERA MIRROR TO 0°',
+  });
 
   const mountRef = useRef(null);
   const pointerRef = useRef({ mx: 0.5, my: 0.5, inside: false });
@@ -91,6 +94,10 @@ export default function InspectScreen() {
     setInspectMode('stack');
     setCameraAngle(tilt0);
     setMirrorLockPct(0);
+    setScanHint({
+      vi: '1: NGHE TIẾNG XÌ GA TO DẦN ĐỂ BẤM (KHÔNG HIỆN ĐIỂM) • 2: BẬT X-RAY TÌM ĐƯỜNG NỨT VÀNG NHỎ • 3: GHÌ CHUỘT CHỈNH GƯƠNG CAMERA VỀ 0°',
+      en: '1: LISTEN FOR PROPELLANT LEAK HISS • 2: ENABLE X-RAY TO SPOT YELLOW CRACKS • 3: DRAG CAMERA MIRROR TO 0°',
+    });
   }, [inspectSession]);
 
   // Dong bo buoc huong dan Ky su truong theo tien do sua 3 loi
@@ -99,11 +106,11 @@ export default function InspectScreen() {
     const hasCrack = fixedIds.includes('STRUCT_CRACK_XRAY');
     const hasCam = fixedIds.includes('CAMERA_TILT_ALIGN');
     if (hasLeak && hasCrack && hasCam) {
-      setTutorialStep(3);
+      setTutorialStep?.(3);
     } else if (hasLeak && hasCrack) {
-      setTutorialStep(2);
+      setTutorialStep?.(2);
     } else if (hasLeak) {
-      setTutorialStep(1);
+      setTutorialStep?.(1);
     }
   }, [fixedIds, setTutorialStep]);
 
@@ -558,32 +565,58 @@ export default function InspectScreen() {
         );
 
         if (leakFocus > 0.65) {
-          setScanHint('🔊 TIẾNG XÌ GA ĐANG CỰC LỚN NGAY ĐÂY! CLICK CHUỘT NGAY ĐỂ HÀN KÍN (KHÔNG CÓ ĐIỂM ĐÁNH DẤU)!');
+          setScanHint({
+            vi: '🔊 TIẾNG XÌ GA ĐANG CỰC LỚN NGAY ĐÂY! CLICK CHUỘT NGAY ĐỂ HÀN KÍN (KHÔNG CÓ ĐIỂM ĐÁNH DẤU)!',
+            en: '🔊 GAS HISS PEAKING RIGHT HERE! CLICK NOW TO SEAL LEAK (NO MARKER)!',
+          });
         } else if (leakFocus > 0.2) {
-          setScanHint('🔉 ĐANG NGHE THẤY TIẾNG XÌ GA... LIA CHUỘT TÌM CHỖ TIẾNG XÌ TO NHẤT RỒI BẤM!');
+          setScanHint({
+            vi: '🔉 ĐANG NGHE THẤY TIẾNG XÌ GA... LIA CHUỘT TÌM CHỖ TIẾNG XÌ TO NHẤT RỒI BẤM!',
+            en: '🔉 GAS LEAK DETECTED... SWEEP CURSOR FOR PEAK HISS THEN CLICK!',
+          });
         } else if (
           xrayRef.current &&
           !fixedRef.current.includes('STRUCT_CRACK_XRAY') &&
           unfixedInCurrentMode.length === 0 &&
           unfixedInOtherMode.length > 0
         ) {
+          const count = unfixedInOtherMode.length;
           setScanHint(
             unfixedInOtherMode[0].mode === 'payload'
-              ? `🩻 CÒN ${unfixedInOtherMode.length} VẾT NỨT VÀNG GIẤU TRONG KHOANG TẢI! HÃY BẤM [PAYLOAD FOCUS] ĐỂ TÌM!`
-              : `🩻 CÒN ${unfixedInOtherMode.length} VẾT NỨT VÀNG Ở THÂN TÊN LỬA! HÃY BẤM [FULL STACK] ĐỂ TÌM!`
+              ? {
+                  vi: `🩻 CÒN ${count} VẾT NỨT VÀNG GIẤU TRONG KHOANG TẢI! HÃY BẤM [PAYLOAD FOCUS] ĐỂ TÌM!`,
+                  en: `🩻 ${count} YELLOW CRACK(S) HIDDEN IN PAYLOAD BAY! SWITCH TO [PAYLOAD FOCUS]!`,
+                }
+              : {
+                  vi: `🩻 CÒN ${count} VẾT NỨT VÀNG Ở THÂN TÊN LỬA! HÃY BẤM [FULL STACK] ĐỂ TÌM!`,
+                  en: `🩻 ${count} YELLOW CRACK(S) ON ROCKET STACK! SWITCH TO [FULL STACK]!`,
+                }
           );
         } else if (nearCrackFocus > 0.4) {
-          setScanHint('🩻 BẮT GẶP ĐƯỜNG NỨT NGOẰN NGHÈO MÀU VÀNG! CLICK TRỰC TIẾP VÀO ĐƯỜNG VÀNG ĐỂ HÀN!');
+          setScanHint({
+            vi: '🩻 BẮT GẶP ĐƯỜNG NỨT NGOẰN NGHÈO MÀU VÀNG! CLICK TRỰC TIẾP VÀO ĐƯỜNG VÀNG ĐỂ HÀN!',
+            en: '🩻 YELLOW HAIRLINE CRACK DETECTED! CLICK DIRECTLY ON CRACK TO WELD!',
+          });
         } else if (!fixedRef.current.includes('GAS_LEAK_AUDIO')) {
-          setScanHint('NHIỆM VỤ 1: LIA CHUỘT TRÊN TÊN LỬA — LẮNG NGHE TIẾNG XÌ GA TO DẦN RỒI BẤM (KHÔNG HIỆN ĐIỂM)');
+          setScanHint({
+            vi: 'NHIỆM VỤ 1: LIA CHUỘT TRÊN TÊN LỬA — LẮNG NGHE TIẾNG XÌ GA TO DẦN RỒI BẤM (KHÔNG HIỆN ĐIỂM)',
+            en: 'TASK 1: SWEEP ROCKET BODY — LISTEN FOR INCREASING GAS HISS THEN CLICK (NO MARKER)',
+          });
         } else if (!fixedRef.current.includes('STRUCT_CRACK_XRAY')) {
-          setScanHint(
-            `NHIỆM VỤ 2: BẬT [🩻 X-RAY MESH] TÌM & BẤM VÀO ĐƯỜNG NỨT VÀNG NHỎ (${fixedCracksRef.current.length}/${crackVisuals.length} VẾT)`
-          );
+          setScanHint({
+            vi: `NHIỆM VỤ 2: BẬT [🩻 X-RAY MESH] TÌM & BẤM VÀO ĐƯỜNG NỨT VÀNG NHỎ (${fixedCracksRef.current.length}/${crackVisuals.length} VẾT)`,
+            en: `TASK 2: ENABLE [🩻 X-RAY MESH], FIND & CLICK YELLOW CRACKS (${fixedCracksRef.current.length}/${crackVisuals.length})`,
+          });
         } else if (!fixedRef.current.includes('CAMERA_TILT_ALIGN')) {
-          setScanHint('NHIỆM VỤ 3: GHÌ KÉO CHUỘT ĐƯA GƯƠNG CAMERA VỀ 0.0° VÀ GIỮ YÊN ĐỂ SIẾT CHỐT 100%');
+          setScanHint({
+            vi: 'NHIỆM VỤ 3: GHÌ KÉO CHUỘT ĐƯA GƯƠNG CAMERA VỀ 0.0° VÀ GIỮ YÊN ĐỂ SIẾT CHỐT 100%',
+            en: 'TASK 3: DRAG CAMERA MIRROR TO 0.0° AND HOLD STEADY TO LOCK 100%',
+          });
         } else {
-          setScanHint('✓ ĐÃ XỬ LÝ XONG CẢ 3 NHIỆM VỤ — BẤM [FINISH INSPECTION] ĐỂ RA BỆ PHÓNG!');
+          setScanHint({
+            vi: '✓ ĐÃ XỬ LÝ XONG CẢ 3 NHIỆM VỤ — BẤM [FINISH INSPECTION] ĐỂ RA BỆ PHÓNG!',
+            en: '✓ ALL 3 TASKS RESOLVED — CLICK [FINISH INSPECTION] TO PROCEED TO LAUNCH PAD!',
+          });
         }
       }
 
@@ -608,11 +641,15 @@ export default function InspectScreen() {
     return (
       <div className="sandbox-end-wrap">
         <section className="panel sandbox-end-card">
-          <div className="sandbox-end-badge">✓ KẾT THÚC HƯỚNG DẪN SANDBOX</div>
-          <h2 className="sandbox-end-title">Kết thúc sandbox, quay về cốt truyện</h2>
+          <div className="sandbox-end-badge">
+            {tr(lang, '✓ KẾT THÚC HƯỚNG DẪN SANDBOX', '✓ SANDBOX TUTORIAL COMPLETE')}
+          </div>
+          <h2 className="sandbox-end-title">
+            {tr(lang, 'Kết thúc sandbox, quay về cốt truyện', 'Sandbox tutorial complete, return to campaign')}
+          </h2>
           <div className="sandbox-end-actions">
             <button type="button" className="btn neon-btn sandbox-return-btn" onClick={completeTutorialToBrief}>
-              ↩ RETURN (QUAY VỀ CỐT TRUYỆN)
+              {tr(lang, '↩ RETURN (QUAY VỀ CỐT TRUYỆN)', '↩ RETURN TO CAMPAIGN')}
             </button>
           </div>
         </section>
@@ -632,8 +669,10 @@ export default function InspectScreen() {
   return (
     <div className="phase-stage">
       <div className="phase-header-plaques row-between-wide">
-        <div className="rivet-plaque title">PHASE 2: PRE-FLIGHT INSPECTION (3 NHIỆM VỤ CHẨN ĐOÁN)</div>
-        <div className={`inspect-timer ${timeLeft <= 10 ? 'crit' : ''}`} data-tutorial="inspect-timer">
+        <div className="rivet-plaque title">
+          {tr(lang, 'PHASE 2: PRE-FLIGHT INSPECTION (3 NHIỆM VỤ CHẨN ĐOÁN)', 'PHASE 2: PRE-FLIGHT INSPECTION (3 DIAGNOSTIC TASKS)')}
+        </div>
+        <div className={`inspect-timer inspect-timer-pill ${timeLeft <= 10 ? 'crit' : ''}`} data-tutorial="inspect-timer">
           <strong>00:{String(timeLeft).padStart(2, '0')} ⏳</strong>
         </div>
       </div>
@@ -644,15 +683,19 @@ export default function InspectScreen() {
           <div className="clipboard-clip" aria-hidden="true" />
           <div className="clipboard-sheet">
             <h2 className="clipboard-title">
-              <span>3 NHIỆM VỤ KIỂM ĐỊNH</span>
+              <span>{tr(lang, '3 NHIỆM VỤ KIỂM ĐỊNH', '3 INSPECTION TASKS')}</span>
               <span className={`badge ${allFixed ? 'ok' : 'warn'}`}>
-                {fixedIds.length}/{defects.length} HOÀN TẤT
+                {fixedIds.length}/{defects.length} {tr(lang, 'HOÀN TẤT', 'DONE')}
               </span>
             </h2>
 
             {inspectSession.delayMonths > 0 && (
               <div className="small err-ink" style={{ marginBottom: 8 }}>
-                ! TRỄ HẠN {inspectSession.delayMonths} THÁNG (-{inspectSession.delayMonths * 5}s THỜI GIAN KIỂM ĐỊNH)
+                {tr(
+                  lang,
+                  `! TRỄ HẠN ${inspectSession.delayMonths} THÁNG (-${inspectSession.delayMonths * 5}s THỜI GIAN KIỂM ĐỊNH)`,
+                  `! DELAYED ${inspectSession.delayMonths} MONTHS (-${inspectSession.delayMonths * 5}s INSPECTION TIME)`
+                )}
               </div>
             )}
 
@@ -668,25 +711,33 @@ export default function InspectScreen() {
                   >
                     <div className="row-between">
                       <span>
-                        {item.label}{' '}
+                        {tx(item.label, lang)}{' '}
                         {item.id === 'STRUCT_CRACK_XRAY'
-                          ? `[${isFixed ? `${totalCracks}/${totalCracks} VẾT ✓` : `${fixedCracks.length}/${totalCracks} VẾT`}]`
-                          : `[${isFixed ? '✓ ĐÃ SỬA' : isDetected ? 'ĐANG XỬ LÝ' : 'ĐANG DÒ...'}]`}
+                          ? `[${isFixed ? `${totalCracks}/${totalCracks} ${tr(lang, 'VẾT ✓', 'CRACKS ✓')}` : `${fixedCracks.length}/${totalCracks} ${tr(lang, 'VẾT', 'CRACKS')}`}]`
+                          : `[${isFixed ? tr(lang, '✓ ĐÃ SỬA', '✓ FIXED') : isDetected ? tr(lang, 'ĐANG XỬ LÝ', 'IN PROGRESS') : tr(lang, 'ĐANG DÒ...', 'SCANNING...')}]`}
                       </span>
                     </div>
                     <div className="small muted-ink" style={{ marginTop: 4 }}>
-                      {item.symptom}
+                      {tx(item.symptom, lang)}
                     </div>
                     {item.id === 'STRUCT_CRACK_XRAY' && !isFixed && (
                       <div className="small err-ink" style={{ marginTop: 3 }}>
                         👉 {item.isCheapRocket
-                          ? `Tên lửa ${item.rocketName} (dỏm/độ tin cậy thấp) bị nứt tới ${totalCracks} vết màu vàng (có ở cả FULL STACK & PAYLOAD FOCUS)!`
-                          : `Tìm ${totalCracks} đường nứt ngoằn nghoèo nhỏ màu vàng khi bật [🩻 X-RAY MESH]!`}
+                          ? tr(
+                              lang,
+                              `Tên lửa ${item.rocketName} (dỏm/độ tin cậy thấp) bị nứt tới ${totalCracks} vết màu vàng (có ở cả FULL STACK & PAYLOAD FOCUS)!`,
+                              `Rocket ${item.rocketName} (low reliability) has ${totalCracks} yellow cracks across FULL STACK & PAYLOAD FOCUS!`
+                            )
+                          : tr(
+                              lang,
+                              `Tìm ${totalCracks} đường nứt ngoằn nghoèo nhỏ màu vàng khi bật [🩻 X-RAY MESH]!`,
+                              `Find ${totalCracks} hairline yellow cracks with [🩻 X-RAY MESH]!`
+                            )}
                       </div>
                     )}
                     {item.id === 'CAMERA_TILT_ALIGN' && !isFixed && (
                       <div className="small err-ink" style={{ marginTop: 3 }}>
-                        👉 {item.mirrorIssue}
+                        👉 {tx(item.mirrorIssue, lang)}
                       </div>
                     )}
                   </div>
@@ -696,7 +747,7 @@ export default function InspectScreen() {
 
             <div className="row-wrap" style={{ marginTop: 12 }}>
               <button className="btn" onClick={() => setPhase('design')}>
-                ← QUAY LẠI XƯỞNG (02.BUILD)
+                {tr(lang, '← QUAY LẠI XƯỞNG (02.BUILD)', '← BACK TO BUILD (02.BUILD)')}
               </button>
             </div>
           </div>
@@ -705,7 +756,13 @@ export default function InspectScreen() {
         {/* Right: Dark 3D X-Ray Bay + Mirror Gimbal Drag Aligner + Meters */}
         <section className="panel lantern-panel">
           <h2 className="panel-title">
-            <span>BUỒNG CHẨN ĐOÁN 3D [AUDIO HISS • X-RAY YELLOW CRACKS • MIRROR ALIGN]</span>
+            <span>
+              {tr(
+                lang,
+                'BUỒNG CHẨN ĐOÁN 3D [AUDIO HISS • X-RAY YELLOW CRACKS • MIRROR ALIGN]',
+                '3D DIAGNOSTIC BAY [AUDIO HISS • X-RAY YELLOW CRACKS • MIRROR ALIGN]'
+              )}
+            </span>
             <span className="small muted">
               {design.launch?.vehicle} + {design.bus}
             </span>
@@ -787,7 +844,9 @@ export default function InspectScreen() {
                       fontSize="11"
                       fontWeight="800"
                     >
-                      {isCoinciding ? '★ TRÙNG TRỤC CHUẨN 0.0° (XANH)' : 'TRỤC ĐỨNG 0.0°'}
+                      {isCoinciding
+                        ? tr(lang, '★ TRÙNG TRỤC CHUẨN 0.0° (XANH)', '★ ALIGNED TO 0.0° BORESIGHT (GREEN)')
+                        : tr(lang, 'TRỤC ĐỨNG 0.0°', 'VERTICAL AXIS 0.0°')}
                     </text>
                   </g>
 
@@ -871,10 +930,14 @@ export default function InspectScreen() {
                         fontWeight="800"
                       >
                         {camAligned
-                          ? '✓ ĐÃ KHÓA TRỤC PHÁP GƯƠNG 0.0°'
+                          ? tr(lang, '✓ ĐÃ KHÓA TRỤC PHÁP GƯƠNG 0.0°', '✓ MIRROR NORMAL LOCKED AT 0.0°')
                           : isCoinciding
-                            ? `★ ĐANG TRÙNG TRỤC XANH! GIỮ YÊN (${mirrorLockPct}%)`
-                            : `TRỤC PHÁP GƯƠNG: ${cameraAngle > 0 ? `+${cameraAngle.toFixed(1)}` : cameraAngle.toFixed(1)}° (KÉO VỀ 0°)`}
+                            ? tr(lang, `★ ĐANG TRÙNG TRỤC XANH! GIỮ YÊN (${mirrorLockPct}%)`, `★ ALIGNED! HOLD STEADY (${mirrorLockPct}%)`)
+                            : tr(
+                                lang,
+                                `TRỤC PHÁP GƯƠNG: ${cameraAngle > 0 ? `+${cameraAngle.toFixed(1)}` : cameraAngle.toFixed(1)}° (KÉO VỀ 0°)`,
+                                `MIRROR NORMAL: ${cameraAngle > 0 ? `+${cameraAngle.toFixed(1)}` : cameraAngle.toFixed(1)}° (DRAG TO 0°)`
+                              )}
                       </text>
                     </g>
                   </g>
@@ -906,22 +969,28 @@ export default function InspectScreen() {
               );
             })()}
 
-            <div className="inspect-scan-banner small">{scanHint}</div>
+            <div className="inspect-scan-banner small">{tx(scanHint, lang)}</div>
 
             {/* Hộp trạng thái gương gọn nhẹ ngay góc trên phải khung 3D */}
             <div className={`inspect-mirror-hud ${camAligned ? 'ok' : ''}`}>
               <div className="row-between" style={{ gap: 8 }}>
-                <strong>📐 GƯƠNG ({camDefect?.cameraName || 'CAM'}):</strong>
+                <strong>
+                  📐 {tr(lang, 'GƯƠNG', 'MIRROR')} ({camDefect?.cameraName || 'CAM'}):
+                </strong>
                 <span className={`badge ${camAligned || Math.abs(cameraAngle) <= 0.35 ? 'ok' : 'warn'}`}>
                   {camAligned
-                    ? '✓ ĐÃ KHÓA 0.0°'
-                    : `${cameraAngle > 0 ? `+${cameraAngle.toFixed(1)}` : cameraAngle.toFixed(1)}° • CHỐT ${mirrorLockPct}%`}
+                    ? tr(lang, '✓ ĐÃ KHÓA 0.0°', '✓ LOCKED 0.0°')
+                    : `${cameraAngle > 0 ? `+${cameraAngle.toFixed(1)}` : cameraAngle.toFixed(1)}° • ${tr(lang, 'CHỐT', 'LATCH')} ${mirrorLockPct}%`}
                 </span>
               </div>
               <div className="small muted" style={{ marginTop: 2 }}>
                 {camAligned
-                  ? 'Trục pháp gương đã khóa trùng khít Trục đứng 0.0°.'
-                  : 'Ghì kéo chuột trên model để Trục Pháp trùng Trục Đứng (hiện XANH) và giữ yên tới 100%.'}
+                  ? tr(lang, 'Trục pháp gương đã khóa trùng khít Trục đứng 0.0°.', 'Mirror normal locked precisely to vertical axis 0.0°.')
+                  : tr(
+                      lang,
+                      'Ghì kéo chuột trên model để Trục Pháp trùng Trục Đứng (hiện XANH) và giữ yên tới 100%.',
+                      'Drag on model to align Mirror Normal with Vertical Axis (GREEN) and hold until 100%.'
+                    )}
               </div>
             </div>
 
@@ -934,62 +1003,91 @@ export default function InspectScreen() {
                   setXrayMode((v) => !v);
                 }}
               >
-                {xrayMode ? '🩻 X-RAY MESH: ON (LƯỚI TRẮNG)' : '🩻 BẬT X-RAY MESH'}
+                {xrayMode
+                  ? tr(lang, '🩻 X-RAY MESH: BẬT (LƯỚI TRẮNG)', '🩻 X-RAY MESH: ON (WHITE)')
+                  : tr(lang, '🩻 BẬT X-RAY MESH', '🩻 ENABLE X-RAY MESH')}
               </button>
               <button
                 type="button"
                 className={`btn small ${inspectMode === 'stack' ? 'primary' : ''}`}
                 onClick={() => setInspectMode('stack')}
               >
-                FULL STACK (TÊN LỬA)
+                {tr(lang, 'FULL STACK (TÊN LỬA)', 'FULL STACK (ROCKET)')}
               </button>
               <button
                 type="button"
                 className={`btn small ${inspectMode === 'payload' ? 'primary' : ''}`}
                 onClick={() => setInspectMode('payload')}
               >
-                PAYLOAD FOCUS (TRONG VỆ TINH)
+                {tr(lang, 'PAYLOAD FOCUS (TRONG VỆ TINH)', 'PAYLOAD FOCUS (SATELLITE)')}
               </button>
               <button type="button" className="btn small" onClick={() => setYawTarget((y) => y - Math.PI / 3)}>
-                ⟲ XOAY -60°
+                {tr(lang, '⟲ XOAY -60°', '⟲ ROTATE -60°')}
               </button>
               <button type="button" className="btn small" onClick={() => setYawTarget((y) => y + Math.PI / 3)}>
-                ⟳ XOAY +60°
+                {tr(lang, '⟳ XOAY +60°', '⟳ ROTATE +60°')}
               </button>
             </div>
           </div>
 
           <div className="osc-meters three-cols">
             {[
-              ['1. AUDIO HISS (TIẾNG XÌ GA)', meters.pressureDiff],
-              [`2. X-RAY CRACKS (${fixedCracks.length}/${totalCracks} VẾT VÀNG)`, meters.structVib],
-              ['3. MIRROR TILT (LỆCH GƯƠNG)', meters.camTiltErr],
-            ].map(([name, val]) => (
-              <div key={name} className="kpi-box dial-meter">
+              [
+                '1. AUDIO HISS',
+                tr(lang, '1. AUDIO HISS (TIẾNG XÌ GA)', '1. AUDIO HISS (GAS LEAK)'),
+                meters.pressureDiff,
+              ],
+              [
+                '2. X-RAY CRACKS',
+                tr(
+                  lang,
+                  `2. X-RAY CRACKS (${fixedCracks.length}/${totalCracks} VẾT VÀNG)`,
+                  `2. X-RAY CRACKS (${fixedCracks.length}/${totalCracks} YELLOW CRACKS)`
+                ),
+                meters.structVib,
+              ],
+              [
+                '3. MIRROR TILT',
+                tr(lang, '3. MIRROR TILT (LỆCH GƯƠNG)', '3. MIRROR TILT (OFF-AXIS)'),
+                meters.camTiltErr,
+              ],
+            ].map(([id, label, val]) => (
+              <div key={id} className="kpi-box dial-meter">
                 <div className="row-between">
-                  <span className="kpi-label">{name}</span>
+                  <span className="kpi-label">{label}</span>
                   <span className={`small ${val > 35 ? 'err-text' : 'ok-text'}`}>{val}%</span>
                 </div>
                 <div className="gauge-bar">
-                  <div className={`gauge-fill ${val > 55 ? 'err' : val > 20 ? 'warn' : ''}`} style={{ width: `${val}%` }} />
+                  <div
+                    className={`gauge-fill ${val > 55 ? 'err' : val > 20 ? 'warn' : ''}`}
+                    style={{ width: `${val}%` }}
+                  />
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="row-between" style={{ marginTop: 12 }}>
-            <span className="small muted">
-              {allFixed
-                ? '✓ ĐÃ XỬ LÝ TOÀN BỘ 3 LỖI KIỂM ĐỊNH — SẴN SÀNG PHÓNG'
-                : `CÒN ${defects.length - fixedIds.length}/3 HẠNG MỤC CHƯA XỬ LÝ`}
-            </span>
+          <div className="row-between inspect-action-bar" style={{ marginTop: 12 }}>
+            <div className="inspect-status-slot">
+              <span className={`small ${allFixed ? 'ok-text' : 'muted'}`}>
+                {allFixed
+                  ? tr(lang, '✓ ĐÃ XỬ LÝ TOÀN BỘ 3 LỖI KIỂM ĐỊNH — SẴN SÀNG PHÓNG', '✓ ALL 3 DEFECTS RESOLVED — READY FOR LAUNCH')
+                  : tr(
+                      lang,
+                      `CÒN ${defects.length - fixedIds.length}/3 HẠNG MỤC CHƯA XỬ LÝ`,
+                      `${defects.length - fixedIds.length}/3 DEFECTS REMAINING`
+                    )}
+              </span>
+            </div>
             <button
               className="btn primary hazard hazard-cta"
               data-tutorial="inspect-finish"
               disabled={busy}
               onClick={finishNow}
             >
-              [ FINISH INSPECTION ]
+              {allFixed
+                ? tr(lang, 'PHÓNG TÊN LỬA NGAY [FINISH]', 'LAUNCH VEHICLE NOW [FINISH]')
+                : tr(lang, 'HOÀN THÀNH KIỂM ĐỊNH', 'FINISH INSPECTION')}
             </button>
           </div>
         </section>

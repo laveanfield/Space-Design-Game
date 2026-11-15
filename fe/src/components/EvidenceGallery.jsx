@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useGame } from '../core/GameContext';
+import { tr } from '../core/i18n';
 
 /**
  * EvidenceGallery -- anh dam chay rung ve tinh TU DONG chup (du lieu tu /campaign/lifetime).
@@ -161,12 +163,12 @@ function ShotCanvas({ shot, thermal, res, w, h }) {
   return <canvas ref={ref} width={w} height={h} />;
 }
 
-function Photo({ shot, shown, thermal, res, gb, onOpen }) {
+function Photo({ shot, shown, thermal, res, gb, lang = 'vi', onOpen }) {
   const blurred = shot.blur >= BLUR_USABLE;
   const state = !shown ? 'pending' : blurred ? 'bad' : 'ok';
   return (
     <button className={`evidence-card ${state}`} disabled={!shown} onClick={onOpen}
-            title={`${shot.target} · tháng ${shot.month}${shot.seu ? ' · SEU' : ''}`}>
+            title={`${shot.target} · ${tr(lang, 'tháng', 'month')} ${shot.month}${shot.seu ? ' · SEU' : ''}`}>
       {shown ? <ShotCanvas shot={shot} thermal={thermal} res={res} w={200} h={132} />
              : <div className="evidence-pending"><span className="ev-spin" />⇣</div>}
       <div className="evidence-cap">
@@ -180,6 +182,7 @@ function Photo({ shot, shown, thermal, res, gb, onOpen }) {
 
 /** step: moc dang hien (1..12). Chi hien anh da chup toi moc nay; anh hien khi delivered_k <= step. */
 export default function EvidenceGallery({ evidence, need, step, sensorName, imaging, altKm }) {
+  const { lang } = useGame();
   const [open, setOpen] = useState(null);
   const thermal = /thermal|hồng ngoại|infrared/i.test(sensorName || imaging?.name || '');
   const res = resOf(imaging?.gb_per_day, imaging?.theme);
@@ -192,28 +195,28 @@ export default function EvidenceGallery({ evidence, need, step, sensorName, imag
     <div className="evidence">
       <div className="evidence-head">
         <span>{imaging?.theme === 'space_weather' ? '📡' : '📷'} {sensorName || imaging?.name}</span>
-        <span className="ev-meter" title="ảnh rõ đã về / ảnh cần">
+        <span className="ev-meter" title={tr(lang, 'ảnh rõ đã về / ảnh cần', 'usable photos downlinked / required')}>
           {Array.from({ length: need }, (_, i) => <i key={i} className={i < usable ? 'on' : ''} />)}
           <b className={usable >= need ? 'ok-text' : ''}>{usable}/{need}</b>
         </span>
       </div>
-      {usable >= need && <div className="ok-banner" style={{ margin: '0 0 8px 0' }}>✔ ĐỦ BẰNG CHỨNG</div>}
+      {usable >= need && <div className="ok-banner" style={{ margin: '0 0 8px 0' }}>✔ {tr(lang, 'ĐỦ BẰNG CHỨNG', 'EVIDENCE COMPLETE')}</div>}
       <div className="evidence-grid">
         {taken.length === 0 && <div className="small muted">{{ methane: 'CH₄', space_weather: '☀' }[evidence[0]?.theme] || '🔥'} —</div>}
         {taken.map((s) => (
-          <Photo key={s.n} shot={{ ...s, sensor }} shown={isShown(s)} thermal={thermal} res={res} gb={gb} onOpen={() => setOpen(s)} />
+          <Photo key={s.n} shot={{ ...s, sensor }} shown={isShown(s)} thermal={thermal} res={res} gb={gb} lang={lang} onOpen={() => setOpen(s)} />
         ))}
       </div>
-      <div className="small muted" style={{ marginTop: 4 }}>ảnh minh họa · dung lượng ≈ GB/ngày ÷ số vòng/ngày</div>
+      <div className="small muted" style={{ marginTop: 4 }}>{tr(lang, 'ảnh minh họa · dung lượng ≈ GB/ngày ÷ số vòng/ngày', 'simulated imagery · size ≈ GB/day ÷ orbits/day')}</div>
       {open && (
         <div className="evidence-lightbox" onClick={() => setOpen(null)}>
           <div className="evidence-big" onClick={(e) => e.stopPropagation()}>
             <ShotCanvas shot={{ ...open, sensor }} thermal={thermal} res={res} w={640} h={422} />
             <div className="evidence-big-cap">
               <b>#{open.n} {open.target}</b>
-              <span>tháng {open.month}</span>
+              <span>{tr(lang, 'tháng', 'month')} {open.month}</span>
               {gb != null && <span>💾 {fmtSize(gb)}</span>}
-              <span className={open.blur >= BLUR_USABLE ? 'err-text' : 'ok-text'}>{open.blur >= BLUR_USABLE ? '✕ nhòe' : '✔ rõ'}</span>
+              <span className={open.blur >= BLUR_USABLE ? 'err-text' : 'ok-text'}>{open.blur >= BLUR_USABLE ? `✕ ${tr(lang, 'nhòe', 'blurred')}` : `✔ ${tr(lang, 'rõ', 'sharp')}`}</span>
               {open.seu && <span className="err-text">☢ SEU</span>}
               <button className="btn" onClick={() => setOpen(null)}>✕</button>
             </div>

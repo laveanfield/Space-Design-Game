@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { beep } from '../api/client';
-import { BossPanel, CoreTelemetryBars, DatasheetTotals, Logbook, tx } from '../components/CampaignPanels';
+import { CoreTelemetryBars, DatasheetTotals, Logbook } from '../components/CampaignPanels';
 import Hangar3DCanvas from '../components/Hangar3DCanvas';
 import MissionComms from '../components/MissionComms';
 import PartCard from '../components/PartCard';
@@ -8,15 +8,30 @@ import TrajectoryScope from '../components/TrajectoryScope';
 import { DEV } from '../core/devFlag';
 import { SLOTS, getPartInsight, isSlotUnlocked } from '../core/gameMachine';
 import { useGame } from '../core/GameContext';
+import { tr, tx } from '../core/i18n';
+
+const SLOT_TAB_NAMES = {
+  orbit: { vi: 'QUỸ ĐẠO', en: 'ORBIT' },
+  instruments: { vi: 'CẢM BIẾN', en: 'INSTR' },
+  bus: { vi: 'KHUNG', en: 'BUS' },
+  power: { vi: 'PIN MT', en: 'POWER' },
+  battery: { vi: 'ẮC QUY', en: 'BATT' },
+  comm: { vi: 'TRUYỀN TIN', en: 'COMM' },
+  obc: { vi: 'MÁY TÍNH', en: 'OBC' },
+  adcs: { vi: 'ĐIỀU HƯỚNG', en: 'ADCS' },
+  launch: { vi: 'TÊN LỬA', en: 'LAUNCH' },
+};
 
 export default function BuildScreen() {
   const {
+    lang,
     tutorialMode,
     catalog,
     missionDetail,
     scenario,
     design,
     activeSlot,
+    setActiveSlot,
     selectSlot,
     buildStage,
     confirmSlotAndAdvance,
@@ -70,7 +85,6 @@ export default function BuildScreen() {
   const currentSlotMeta = SLOTS[currentSlotIdx] || SLOTS[0];
   const isLastSlot = currentSlotIdx >= SLOTS.length - 1;
 
-  // Tim linh kien dang duoc chon trong tab hien tai de hien thi Loi ich / Tac hai
   const currentSelectedItem = slotEntries.find((item) => {
     if (activeSlot === 'instruments') return (design.instruments || []).includes(item.id);
     if (activeSlot === 'launch') return design.launch?.vehicle === item.id;
@@ -78,17 +92,82 @@ export default function BuildScreen() {
   });
   const currentInsight = getPartInsight(activeSlot, currentSelectedItem);
 
+  const cost = Number(evalReport?.metrics?.['cost.total_musd'] || 0);
+  const budget = Number(effectiveBudget ?? scenario.budget_musd ?? 0);
+  const months = Number(evalReport?.metrics?.['schedule.months'] || 0);
+  const deadline = Number(effectiveDeadline ?? scenario.deadline_months ?? 0);
+  const overBudget = budget > 0 && cost > budget;
+  const overTime = deadline > 0 && months > deadline;
+  const budgetPct = Math.min(100, budget > 0 ? (cost / budget) * 100 : 0);
+  const timePct = Math.min(100, deadline > 0 ? (months / deadline) * 100 : 0);
+
   return (
     <div className="phase-stage">
-      <div className="phase-header-plaques">
-        <div className="rivet-plaque title">
-          {tutorialMode ? 'SANDBOX TUTORIAL // PHASE 1: THIẾT KẾ TỪNG THÀNH PHẦN (1–9)' : 'PHASE 1: BUILD MODE'}
+      <div className="phase-header-plaques build-plaques">
+        <div className="rivet-plaque plaque-title-cell">
+          <span className="plaque-kicker">
+            {tutorialMode
+              ? tr(lang, 'HƯỚNG DẪN TẬP SỰ', 'SANDBOX TUTORIAL')
+              : tr(lang, 'GIAI ĐOẠN 1', 'PHASE 1')}
+          </span>
+          <strong>
+            {tutorialMode
+              ? tr(lang, 'THIẾT KẾ (1–9)', 'STEP-BY-STEP (1–9)')
+              : tr(lang, 'CHẾ TẠO', 'BUILD MODE')}
+          </strong>
         </div>
-        <div className="rivet-plaque">
-          BUDGET: <strong>{tutorialMode ? 'SANDBOX ($999M)' : `$${effectiveBudget ?? scenario.budget_musd ?? '-'}M`}</strong>
+
+        <div
+          className={`rivet-plaque ${overBudget ? 'crit' : ''}`}
+          title={tr(lang, 'Chi phí thiết kế / Ngân sách cho phép', 'Design cost / Authorized budget')}
+        >
+          <div className="plaque-metric-row">
+            <span>{tr(lang, 'NGÂN SÁCH', 'BUDGET')}</span>
+            <strong>
+              {tutorialMode ? '$999M (SANDBOX)' : `$${cost.toFixed(1)} / ${budget || '-'}M`}
+            </strong>
+          </div>
+          <div className="plaque-mini-bar">
+            <div className={`plaque-mini-fill ${overBudget ? 'err' : ''}`} style={{ width: `${budgetPct}%` }} />
+          </div>
         </div>
-        <div className="rivet-plaque">
-          DEADLINE: <strong>{tutorialMode ? 'UNLIMITED (SANDBOX)' : `MONTH ${effectiveDeadline ?? scenario.deadline_months ?? '-'}`}</strong>
+
+        <div
+          className={`rivet-plaque ${overTime ? 'crit' : ''}`}
+          title={tr(lang, 'Thời gian chế tạo / Hạn chót: trễ hạn sẽ bị trừ giờ kiểm định', 'Lead time / Deadline: delays reduce inspection window')}
+        >
+          <div className="plaque-metric-row">
+            <span>{tr(lang, 'HẠN CHÓT', 'DEADLINE')}</span>
+            <strong>
+              {tutorialMode
+                ? tr(lang, 'KHÔNG GIỚI HẠN', 'UNLIMITED')
+                : `${months.toFixed(0)} / ${deadline || '-'} ${tr(lang, 'THÁNG', 'MO')}`}
+            </strong>
+          </div>
+          <div className="plaque-mini-bar">
+            <div className={`plaque-mini-fill ${overTime ? 'warn' : ''}`} style={{ width: `${timePct}%` }} />
+          </div>
+        </div>
+
+        <div
+          className="rivet-plaque plaque-rep-cell"
+          title={tr(lang, 'Uy tín kỹ thuật: Thất bại khi phóng sẽ làm mất uy tín', 'Technical reputation: launch failures cost reputation')}
+        >
+          <div className="plaque-rep-row">
+            <span>{tr(lang, 'UY TÍN', 'REPUTATION')}</span>
+            <span className="rep-pills">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <span key={i} className={`rep-dot ${i < reputation ? 'ok' : 'lost'}`}>
+                  {i < reputation ? '◆' : '◇'}
+                </span>
+              ))}
+            </span>
+          </div>
+          <div className="plaque-attempt-cell">
+            <span className="small muted">
+              {tr(lang, 'LẦN THỬ', 'ATTEMPT')} #{attempts + 1}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -96,38 +175,48 @@ export default function BuildScreen() {
         {/* Left: Kho linh kien */}
         <section className="panel" data-tutorial="build-slots">
           <h2 className="panel-title">
-            <span>LẮP RÁP TUẦN TỰ (BƯỚC {currentSlotIdx + 1}/9)</span>
+            <span>
+              {tutorialMode
+                ? `${tr(lang, 'LẮP RÁP TUẦN TỰ', 'SEQUENTIAL ASSEMBLY')} (${tr(lang, 'BƯỚC', 'STEP')} ${currentSlotIdx + 1}/9)`
+                : `${tr(lang, 'KHO LINH KIỆN & QUY CÁCH', 'PARTS CATALOG')} (${slotEntries.length})`}
+            </span>
             <span className="small muted">{design.orbit}</span>
           </h2>
 
-          {/* Thanh tien trinh 9 buoc */}
-          <div className="build-seq-bar nine-steps">
-            {SLOTS.map((s, idx) => {
-              const unlocked = isSlotUnlocked(s.id, buildStage);
-              const isCurrent = activeSlot === s.id;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  disabled={!unlocked}
-                  className={`seq-step ${unlocked ? 'done' : 'locked'} ${isCurrent ? 'current' : ''}`}
-                  title={unlocked ? s.title : s.lockHint}
-                  onClick={() => {
-                    if (!unlocked) return;
-                    beep(audioOn, 620, 0.025);
-                    selectSlot(s.id);
-                  }}
-                >
-                  {unlocked ? s.label : `🔒${idx + 1}`}
-                </button>
-              );
-            })}
-          </div>
+          {/* When tutorialMode is true, show teammates' 9-step bar */}
+          {tutorialMode && (
+            <div className="build-seq-bar nine-steps">
+              {SLOTS.map((s, idx) => {
+                const unlocked = isSlotUnlocked(s.id, buildStage);
+                const isCurrent = activeSlot === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    disabled={!unlocked}
+                    className={`seq-step ${unlocked ? 'done' : 'locked'} ${isCurrent ? 'current' : ''}`}
+                    title={unlocked ? s.title : s.lockHint}
+                    onClick={() => {
+                      if (!unlocked) return;
+                      beep(audioOn, 620, 0.025);
+                      (selectSlot || setActiveSlot)(s.id);
+                    }}
+                  >
+                    {unlocked ? s.label : `🔒${idx + 1}`}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {DEV && (
             <div className="row-wrap" style={{ marginBottom: 8 }}>
               {(missionDetail?.presets || []).map((p) => (
-                <button key={p.id} className="btn small" onClick={() => applyPreset(p.id, true)}>
+                <button
+                  key={p.id}
+                  className="btn small"
+                  onClick={() => applyPreset(p.id, true)}
+                >
                   {p.id}
                 </button>
               ))}
@@ -136,65 +225,100 @@ export default function BuildScreen() {
 
           <div className="slot-tabs">
             {SLOTS.map((s) => {
-              const unlocked = isSlotUnlocked(s.id, buildStage);
+              const unlocked = tutorialMode ? isSlotUnlocked(s.id, buildStage) : true;
+              const isCurrent = activeSlot === s.id;
+              const tabName = SLOT_TAB_NAMES[s.id] ? tx(SLOT_TAB_NAMES[s.id], lang) : s.label;
               return (
                 <button
                   key={s.id}
-                  className={`slot-tab ${activeSlot === s.id ? 'active' : ''} ${!unlocked ? 'locked' : ''}`}
+                  type="button"
+                  className={`slot-tab ${isCurrent ? 'active' : ''} ${!unlocked ? 'locked' : ''}`}
                   disabled={!unlocked}
                   title={unlocked ? `${s.title}: ${s.shortDesc}` : s.lockHint}
                   onClick={() => {
                     if (!unlocked) return;
                     beep(audioOn, 620, 0.025);
-                    selectSlot(s.id);
+                    (selectSlot || setActiveSlot)(s.id);
                   }}
                 >
-                  {!unlocked ? `🔒 ${s.label}` : s.label}
+                  {!unlocked ? `🔒 ${tabName}` : tabName}
                 </button>
               );
             })}
           </div>
 
-          {/* Hop gioi thieu chi tiet vai tro thanh phan + nut TIEP THEO */}
-          <div className="slot-intro-box">
-            <div className="slot-intro-head">{currentSlotMeta.title}</div>
-            <div className="slot-intro-body">
-              {currentSlotMeta.shortDesc}{' '}
-              <span className="neon-green">{currentSlotMeta.highlight}</span>
-            </div>
-            {currentSelectedItem && currentInsight && (
-              <div className="slot-selected-summary">
-                <div className="small">
-                  <strong className="neon-green">ĐANG CHỌN: {currentSelectedItem.name || currentSelectedItem.id}</strong>
-                </div>
-                <div className="small">• <b>Dùng ở đâu:</b> {currentInsight.where}</div>
-                <div className="small ok-text">• <b>Lợi ích (+):</b> {currentInsight.pros}</div>
-                <div className="small warn-text">• <b>Tác hại (-):</b> {currentInsight.cons}</div>
+          {/* Hop gioi thieu chi tiet vai tro thanh phan + nut TIEP THEO (when tutorialMode) */}
+          {tutorialMode && (
+            <div className="slot-intro-box">
+              <div className="slot-intro-head">{currentSlotMeta.title}</div>
+              <div className="slot-intro-body">
+                {currentSlotMeta.shortDesc}{' '}
+                <span className="neon-green">{currentSlotMeta.highlight}</span>
               </div>
-            )}
-            <div className="slot-intro-actions">
-              <span className="small muted">Click thử các lựa chọn bên dưới để so sánh thông số & 3D</span>
-              <button
-                type="button"
-                className="btn small neon-btn"
-                onClick={() => {
-                  beep(audioOn, 760, 0.04);
-                  if (isLastSlot) {
-                    confirmSlotAndAdvance();
-                    enterInspect();
-                  } else {
-                    confirmSlotAndAdvance();
-                  }
-                }}
-              >
-                {isLastSlot
-                  ? 'HOÀN TẤT 9 MỤC → SANG TÌM LỖI [03] →'
-                  : `TIẾP THEO: MỞ ${currentSlotMeta.nextLabel} →`}
-              </button>
+              {currentSelectedItem && currentInsight && (
+                <div className="slot-selected-summary">
+                  <div className="small">
+                    <strong className="neon-green">
+                      {tr(lang, 'ĐANG CHỌN:', 'SELECTED:')} {currentSelectedItem.name || currentSelectedItem.id}
+                    </strong>
+                  </div>
+                  <div className="small">• <b>{tr(lang, 'Dùng ở đâu:', 'Where:')}</b> {currentInsight.where}</div>
+                  <div className="small ok-text">• <b>{tr(lang, 'Lợi ích (+):', 'Pros (+):')}</b> {currentInsight.pros}</div>
+                  <div className="small warn-text">• <b>{tr(lang, 'Tác hại (-):', 'Cons (-):')}</b> {currentInsight.cons}</div>
+                </div>
+              )}
+              <div className="slot-intro-actions">
+                <span className="small muted">
+                  {tr(lang, 'Chọn linh kiện bên dưới để so sánh thông số & 3D', 'Select components below to compare specs & 3D')}
+                </span>
+                <button
+                  type="button"
+                  className="btn small neon-btn"
+                  onClick={() => {
+                    beep(audioOn, 760, 0.04);
+                    if (isLastSlot) {
+                      confirmSlotAndAdvance();
+                      enterInspect();
+                    } else {
+                      confirmSlotAndAdvance();
+                    }
+                  }}
+                >
+                  {isLastSlot
+                    ? tr(lang, 'HOÀN TẤT 9 MỤC → SANG KIỂM ĐỊNH [03] →', 'COMPLETE 9 STEPS → INSPECTION [03] →')
+                    : tr(
+                        lang,
+                        `TIẾP THEO: MỞ ${currentSlotMeta.nextLabel} →`,
+                        `NEXT: UNLOCK ${currentSlotMeta.nextLabel} →`
+                      )}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="option-list">
+            {activeSlot === 'launch' && allSites.length > 0 && (
+              <div className="launch-site-selector" style={{ marginBottom: 10 }}>
+                <div className="small muted" style={{ marginBottom: 4 }}>
+                  {tr(lang, 'BÃI PHÓNG TÊN LỬA', 'LAUNCH SITE')}
+                </div>
+                <div className="row-wrap">
+                  {(compatibleSites.length > 0 ? compatibleSites : allSites).map((s) => (
+                    <button
+                      key={s.id}
+                      className={`btn ${design.launch?.site === s.id ? 'primary' : ''}`}
+                      onClick={() =>
+                        updateDesign((d) => {
+                          d.launch = { ...d.launch, site: s.id };
+                        })
+                      }
+                    >
+                      {s.name || s.id} • {Number(s.lat_deg).toFixed(1)}°
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {slotEntries.map((item) => {
               const isInstr = activeSlot === 'instruments';
               const isLaunch = activeSlot === 'launch';
@@ -210,12 +334,12 @@ export default function BuildScreen() {
               const wrongOrbit =
                 !tutorialMode && activeSlot === 'orbit' && allowedOrbits.length > 0 && !allowedOrbits.includes(item.id);
               const warnText = noFit
-                ? `FAIRING MISMATCH: ${tx(fit.reason)}`
+                ? `${tr(lang, 'SAI LỆCH KHOANG MŨI FAIRING', 'FAIRING MISMATCH')}: ${tx(fit.reason, lang)}`
                 : wrongOrbit
-                  ? `NGOÀI QUỸ ĐẠO KHUYẾN NGHỊ`
+                  ? tr(lang, 'NGOÀI QUỸ ĐẠO KHUYẾN NGHỊ', 'NON-RECOMMENDED ORBIT')
                   : null;
 
-              const pick = () => {
+              const pick = () =>
                 updateDesign((d) => {
                   if (isInstr) {
                     const cur = d.instruments || [];
@@ -232,8 +356,6 @@ export default function BuildScreen() {
                     d[activeSlot] = item.id;
                   }
                 });
-                // Khong nhay tab ngay de nguoi choi thoai mai doc Loi ich / Tac hai va suy nghi!
-              };
 
               return (
                 <PartCard
@@ -243,6 +365,7 @@ export default function BuildScreen() {
                   selected={selected}
                   warnText={warnText}
                   budgetMusd={effectiveBudget ?? scenario.budget_musd}
+                  deadlineMonths={effectiveDeadline}
                   onPick={pick}
                 />
               );
@@ -257,29 +380,6 @@ export default function BuildScreen() {
               onChange={updateDesign}
               setupOnly
             />
-          )}
-
-          {activeSlot === 'launch' && allSites.length > 0 && (
-            <div style={{ marginTop: 10 }}>
-              <div className="small muted" style={{ marginBottom: 4 }}>
-                BÃI PHÓNG TƯƠNG THÍCH (LAUNCH SITE)
-              </div>
-              <div className="row-wrap">
-                {(compatibleSites.length > 0 ? compatibleSites : allSites).map((s) => (
-                  <button
-                    key={s.id}
-                    className={`btn ${design.launch?.site === s.id ? 'primary' : ''}`}
-                    onClick={() =>
-                      updateDesign((d) => {
-                        d.launch = { ...d.launch, site: s.id };
-                      })
-                    }
-                  >
-                    {s.name || s.id} ({Number(s.lat_deg).toFixed(1)}°)
-                  </button>
-                ))}
-              </div>
-            </div>
           )}
 
           {DEV && (
@@ -307,28 +407,36 @@ export default function BuildScreen() {
         {/* Center: Model 3D + Live Trajectory Scope */}
         <section className="panel lantern-panel" data-tutorial="build-hangar">
           <h2 className="panel-title">
-            <span>3D INTEGRATION BAY</span>
+            <span>{tr(lang, 'VỊNH TÍCH HỢP 3D', '3D INTEGRATION BAY')}</span>
             <span className="small muted">{(design.instruments || []).join(', ')}</span>
           </h2>
 
           <Hangar3DCanvas design={design} catalog={catalog} theme={theme} />
           <TrajectoryScope flight={preview} runs={previewRuns} updating={previewUpdating} />
 
-          {currentFit && !currentFit.ok && (
-            <div className="nofit-banner small">
-              ! CẢNH BÁO TÍCH HỢP: {tx(currentFit.reason)} (Vẫn cho phép phóng thử — dự kiến vỡ fairing tại Max-Q)
-            </div>
-          )}
+          <div className="nofit-slot">
+            {currentFit && !currentFit.ok ? (
+              <div className="nofit-banner small">
+                ! {tr(lang, 'CẢNH BÁO TÍCH HỢP:', 'INTEGRATION ALERT:')} {tx(currentFit.reason, lang)} — {tr(lang, 'Dự kiến vỡ fairing tại Max-Q khi phóng thử', 'Fairing breakup expected at Max-Q during launch')}
+              </div>
+            ) : (
+              <div className="nofit-banner ok small">
+                ✓ {tr(lang, 'VỪA VỚI VỎ TÊN LỬA', 'FAIRING FIT OK')}
+              </div>
+            )}
+          </div>
 
-          <div className="row-between" style={{ marginTop: 12 }}>
-            <span className="small muted">LAUNCH ANYTHING: MỌI CẤU HÌNH ĐỀU ĐƯỢC CHUYỂN QUA KIỂM ĐỊNH</span>
+          <div className="row-between build-action-row" style={{ marginTop: 12 }}>
+            <span className="small muted">
+              LAUNCH ANYTHING: {tr(lang, 'MỌI CẤU HÌNH ĐỀU ĐƯỢC CHUYỂN QUA KIỂM ĐỊNH', 'ALL CONFIGURATIONS PROCEED TO INSPECTION')}
+            </span>
             <button
               className="btn primary hazard hazard-cta"
               data-tutorial="build-next"
               disabled={busy || reputation <= 0}
               onClick={enterInspect}
             >
-              [ GO TO INSPECTION ]
+              ▶ {tr(lang, 'TIẾP TỤC ĐẾN KIỂM ĐỊNH', 'GO TO INSPECTION')}
             </button>
           </div>
         </section>
@@ -336,19 +444,11 @@ export default function BuildScreen() {
         {/* Right: Chi so song con, ngan sach, datasheet, nhat ky */}
         <section className="panel" data-tutorial="build-telemetry">
           <h2 className="panel-title">
-            <span>SYSTEMS TELEMETRY</span>
+            <span>{tr(lang, 'THÔNG SỐ HỆ THỐNG', 'SYSTEMS TELEMETRY')}</span>
             <span className="small muted">
               {design.launch?.vehicle} @ {design.launch?.site}
             </span>
           </h2>
-          <BossPanel
-            scenario={scenario}
-            metrics={evalReport?.metrics}
-            reputation={reputation}
-            attempts={attempts}
-            budgetBonus={budgetBonus}
-            deadlineBonus={deadlineBonus}
-          />
           <CoreTelemetryBars bars={coreBars} />
           <DatasheetTotals metrics={evalReport?.metrics} />
           <Logbook entries={logbook} />

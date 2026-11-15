@@ -1,14 +1,8 @@
 import React, { useState } from 'react';
 import { playSoundAsset } from '../api/client';
+import { useGame } from '../core/GameContext';
+import { tr, tx } from '../core/i18n';
 import { BossPortrait, EngineerPortrait } from '../story/Portraits';
-
-/**
- * BossConfrontation -- Man chat van Sep theo phong cach Workshop Boss Confrontation:
- * - Bang banner giay cu "BOSS CONFRONTATION // CHAT VAN SEP"
- * - 2 chan dung doi thoai [Kỹ sư trưởng] vs [Sếp kế toán]
- * - 3 the chung cu giay da (BÁO CÁO LỖI / HÓA ĐƠN KHỐNG / SỔ ĐEN CỦA SẾP)
- * - Thanh mo khoa ngan sach + nut [ RÚT LUI ] va [ TẤN CÔNG ]
- */
 
 function EvidenceIcon({ type }) {
   if (type === 'DOC-01') {
@@ -47,23 +41,29 @@ function EvidenceIcon({ type }) {
 const EVIDENCE_CARDS = [
   {
     id: 'DOC-01',
-    code: 'BÁO CÁO LỖI',
-    sub: '[DOC-01]',
-    desc: 'Telemetry chứng minh linh kiện quá tải bức xạ / nguồn / quỹ đạo.',
+    code: { vi: 'BÁO CÁO DỊ THƯỜNG', en: 'ANOMALY REPORT' },
+    desc: {
+      vi: 'Dữ liệu đo xa chứng minh linh kiện quá tải bức xạ, nguồn điện hoặc sai lệch quỹ đạo.',
+      en: 'Telemetry proving component exceeded radiation, power, or orbital limits.',
+    },
     matches: ['radiation', 'power', 'lifetime', 'pointing', 'data', 'science'],
   },
   {
     id: 'DOC-02',
-    code: 'HÓA ĐƠN KHỐNG',
-    sub: '[DOC-02]',
-    desc: 'Chứng từ trần ngân sách ép xưởng dùng linh kiện [CHEAP/UNVERIFIED].',
+    code: { vi: 'HÓA ĐƠN KHỐNG', en: 'INVOICE AUDIT' },
+    desc: {
+      vi: 'Chứng từ trần ngân sách ép xưởng dùng linh kiện giá rẻ chưa qua kiểm định.',
+      en: 'Budget cap records forcing workshop to use unverified low-cost parts.',
+    },
     matches: ['radiation', 'power', 'cost', 'data'],
   },
   {
     id: 'DOC-03',
-    code: 'SỔ ĐEN CỦA SẾP',
-    sub: '[DOC-03]',
-    desc: 'Chỉ thị ép tiến độ cắt ngắn thời gian đặt hàng & kiểm định tiền phóng.',
+    code: { vi: 'SỔ ĐEN CỦA SẾP', en: 'DIRECTOR BLACKBOOK' },
+    desc: {
+      vi: 'Chỉ thị ép tiến độ cắt ngắn thời gian đặt hàng và kiểm định tiền phóng.',
+      en: 'Schedule mandates rushing procurement and cutting pre-flight inspection.',
+    },
     matches: ['schedule', 'lifetime', 'pointing', 'power'],
   },
 ];
@@ -76,7 +76,11 @@ export default function BossConfrontation({
   audioOn,
   onUnlock,
   onReturnBuild,
+  lang: propLang,
 }) {
+  const { lang: gameLang } = useGame();
+  const lang = propLang || gameLang || 'vi';
+
   const [selectedDoc, setSelectedDoc] = useState('DOC-02');
   const [reply, setReply] = useState(null);
   const [unlocked, setUnlocked] = useState(false);
@@ -87,12 +91,18 @@ export default function BossConfrontation({
 
   const submitConfrontation = () => {
     const card = EVIDENCE_CARDS.find((c) => c.id === selectedDoc);
+    const cardLabel = tx(card?.code, lang);
+
     if (outcome?.success) {
       playSoundAsset(audioOn, '06-11-2026-chime.wav', 0.3);
       setReply({
         ok: true,
-        speaker: 'SẾP KẾ TOÁN',
-        text: 'Hồ sơ nghiệm thu đã đạt chuẩn! Không cần truy cứu thêm.',
+        speaker: tr(lang, 'SẾP KẾ TOÁN', 'BUDGET DIRECTOR'),
+        text: tr(
+          lang,
+          'Hồ sơ nghiệm thu đã đạt chuẩn! Không cần truy cứu thêm.',
+          'Acceptance dossier meets standards! No further audit needed.'
+        ),
       });
       return;
     }
@@ -100,8 +110,12 @@ export default function BossConfrontation({
       playSoundAsset(audioOn, '08-11-2026-alarm.wav', 0.3);
       setReply({
         ok: false,
-        speaker: 'SẾP KẾ TOÁN',
-        text: 'TỪ CHỐI: Nhật ký tiền phóng cho thấy bạn đã bỏ sót lỗi lắp ráp ở Phase 2 (Inspection)!',
+        speaker: tr(lang, 'SẾP KẾ TOÁN', 'BUDGET DIRECTOR'),
+        text: tr(
+          lang,
+          'TỪ CHỐI: Nhật ký tiền phóng cho thấy bạn đã bỏ sót lỗi lắp ráp ở giai đoạn kiểm định!',
+          'REJECTED: Pre-flight logs prove you missed assembly defects during inspection!'
+        ),
       });
       return;
     }
@@ -109,8 +123,12 @@ export default function BossConfrontation({
       playSoundAsset(audioOn, '08-11-2026-data_glitch.wav', 0.3);
       setReply({
         ok: false,
-        speaker: 'SẾP KẾ TOÁN',
-        text: `Bằng chứng ${card?.code || selectedDoc} chưa khớp nguyên nhân gốc (${killer.toUpperCase() || 'UNKNOWN'}). Chọn chứng cứ khác!`,
+        speaker: tr(lang, 'SẾP KẾ TOÁN', 'BUDGET DIRECTOR'),
+        text: tr(
+          lang,
+          `Bằng chứng ${cardLabel || selectedDoc} chưa khớp nguyên nhân gốc: ${killer.toUpperCase() || 'CHƯA RÕ'}. Hãy chọn chứng cứ khác!`,
+          `Evidence ${cardLabel || selectedDoc} does not match root cause: ${killer.toUpperCase() || 'UNKNOWN'}. Pick another document!`
+        ),
       });
       return;
     }
@@ -120,28 +138,32 @@ export default function BossConfrontation({
     }
     setReply({
       ok: true,
-      speaker: 'SẾP KẾ TOÁN',
-      text: `Chứng cứ ${card.code} không thể chối cãi... Được rồi! Duyệt cấp thêm +$80M ngân sách, +18 tháng và +1 vạch uy tín!`,
+      speaker: tr(lang, 'SẾP KẾ TOÁN', 'BUDGET DIRECTOR'),
+      text: tr(
+        lang,
+        `Chứng cứ ${cardLabel} không thể chối cãi... Được rồi! Duyệt cấp thêm +$80M ngân sách, +18 tháng và +1 điểm uy tín!`,
+        `Evidence ${cardLabel} is indisputable... Fine! Approving +$80M budget, +18 months, and +1 authority credit!`
+      ),
     });
   };
 
   const bossLine = reply
     ? reply.text
     : canConfront
-      ? 'CÁI... CÁI GÌ?! ĐỂ TÔI XEM LẠI ĐÃ...'
-      : 'Lần này làm tốt đấy, tôi đang duyệt bảng kê!';
+      ? tr(lang, 'CÁI... CÁI GÌ?! ĐỂ TÔI XEM LẠI ĐÃ...', 'WHAT... WHAT?! LET ME DOUBLE CHECK THIS...')
+      : tr(lang, 'Lần này làm tốt đấy, tôi đang duyệt bảng kê!', 'Good job this time, I am approving the accounts!');
 
   const engLine = canConfront
-    ? 'LỖI HỆ THỐNG THẾ NÀY, SẾP GIẢI THÍCH SAO?!'
-    : 'SỐ LIỆU ĐẠT CHUẨN 100%, MỜI SẾP KÝ NGHIỆM THU!';
+    ? tr(lang, 'LỖI HỆ THỐNG THẾ NÀY, SẾP GIẢI THÍCH SAO?!', 'A SYSTEM FAILURE LIKE THIS, HOW DO YOU EXPLAIN IT?!')
+    : tr(lang, 'SỐ LIỆU ĐẠT CHUẨN 100%, MỜI SẾP KÝ NGHIỆM THU!', 'ALL METRICS AT 100%, PLEASE SIGN THE ACCEPTANCE!');
 
   const unlockedPct = unlocked || budgetBonus > 0 ? 100 : canConfront ? 28 : 100;
 
   return (
     <div className="boss-confront-stage">
       <div className="boss-confront-banner">
-        <div className="boss-banner-sub">BOSS CONFRONTATION</div>
-        <div className="boss-banner-main">CHẤT VẤN SẾP</div>
+        <div className="boss-banner-sub">{tr(lang, 'ĐỐI CHẤT NỘI BỘ', 'BOSS CONFRONTATION')}</div>
+        <div className="boss-banner-main">{tr(lang, 'CHẤT VẤN SẾP', 'DIRECTOR AUDIT')}</div>
       </div>
 
       <div className="boss-faceoff">
@@ -161,7 +183,7 @@ export default function BossConfrontation({
       </div>
 
       <div className="audit-drawer">
-        <div className="audit-drawer-title">CHỌN CHỨNG CỨ</div>
+        <div className="audit-drawer-title">{tr(lang, 'CHỌN CHỨNG CỨ', 'SELECT EVIDENCE')}</div>
 
         <div className="audit-cards">
           {EVIDENCE_CARDS.map((card) => (
@@ -170,38 +192,39 @@ export default function BossConfrontation({
               className={`parchment-card ${selectedDoc === card.id ? 'selected' : ''}`}
               onClick={() => setSelectedDoc(card.id)}
             >
-              <div className="parchment-card-title">{card.code}</div>
+              <div className="parchment-card-title">{tx(card.code, lang)}</div>
               <EvidenceIcon type={card.id} />
-              <div className="parchment-card-desc">{card.desc}</div>
+              <div className="parchment-card-desc">{tx(card.desc, lang)}</div>
             </button>
           ))}
         </div>
 
         <div className="audit-unlock-bar">
-          <span className="small">NGÂN SÁCH ĐÃ MỞ KHÓA</span>
+          <span className="small">{tr(lang, 'NGÂN SÁCH ĐÃ MỞ KHÓA', 'UNLOCKED BUDGET')}</span>
           <div className="unlock-gauge-row">
             <div className="unlock-dial" aria-hidden="true">⚙</div>
             <div className="gauge-bar unlock-track">
               <div className="gauge-fill" style={{ width: `${unlockedPct}%` }} />
             </div>
             <strong className="unlock-amount">
-              ${effectiveBudget || '-'}M | {effectiveDeadline || '-'} MO {unlocked || budgetBonus > 0 ? '🔓' : '🔒'}
+              ${effectiveBudget || '-'}M | {effectiveDeadline || '-'}{' '}
+              {tr(lang, 'THÁNG', 'MO')} {unlocked || budgetBonus > 0 ? '🔓' : '🔒'}
             </strong>
           </div>
         </div>
 
         <div className="row-between" style={{ marginTop: 10 }}>
           <button className="btn" onClick={onReturnBuild}>
-            RÚT LUI
+            {tr(lang, 'RÚT LUI', 'STAND DOWN')}
           </button>
           <div className="row-wrap">
             {unlocked && (
               <button className="btn primary" onClick={onReturnBuild}>
-                ÁP DỤNG NGÂN SÁCH MỚI → VỀ XƯỞNG
+                {tr(lang, 'ÁP DỤNG NGÂN SÁCH MỚI → VỀ XƯỞNG', 'APPLY OVERRIDE → RETURN TO BUILD')}
               </button>
             )}
             <button className="btn warn hazard" disabled={unlocked} onClick={submitConfrontation}>
-              TẤN CÔNG
+              {tr(lang, 'CHẤT VẤN', 'CONFRONT')}
             </button>
           </div>
         </div>

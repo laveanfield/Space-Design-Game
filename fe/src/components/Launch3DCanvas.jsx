@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { decodeF32, decodeU8, playSoundAsset } from '../api/client';
+import { useGame } from '../core/GameContext';
+import { tr, tx } from '../core/i18n';
 import { buildRocket, buildSatellite, loadInstruments, loadRocket, loadSatellite, loadSite } from '../three/modelLoader';
 import { mountSatelliteOnAdapter } from '../three/payloadAdapter';
 import { buildPadDetail } from '../three/padDetail';
@@ -86,6 +88,7 @@ function makeParticles(count, { color, size, additive, opacity = 1 }) {
 }
 
 export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, onEnd, tutorialPaused = false, onResumeFromTutorial }) {
+  const { lang } = useGame();
   const containerRef = useRef(null);
   const hudRef = useRef({});
   const ctlRef = useRef({ warp: 12, playing: true });
@@ -640,11 +643,15 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
       </div>
       {tutorialPaused && !banner && (
         <div className="launch-banner ok">
-          ⏸ ĐANG TẠM DỪNG ĐỂ ĐỌC HƯỚNG DẪN — XEM XONG BẤM [BẮT ĐẦU PHÓNG ▶]
+          {tr(
+            lang,
+            '⏸ ĐANG TẠM DỪNG ĐỂ ĐỌC HƯỚNG DẪN — XEM XONG BẤM [BẮT ĐẦU PHÓNG ▶]',
+            '⏸ PAUSED FOR TUTORIAL — CLICK [START LAUNCH ▶] WHEN READY'
+          )}
         </div>
       )}
       {banner && (
-        <div className={`launch-banner ${banner.kind}`}>{banner.kind === 'fail' ? '⚠ ' : ''}{banner.title?.vi || banner.title?.en}</div>
+        <div className={`launch-banner ${banner.kind}`}>{banner.kind === 'fail' ? '⚠ ' : ''}{tx(banner.title, lang)}</div>
       )}
       <div className="viewport-tools">
         <button
@@ -658,18 +665,22 @@ export default function Launch3DCanvas({ flight, design, geo, audioOn, onEvent, 
             }
           }}
         >
-          {effectivePlaying ? 'TẠM DỪNG' : '▶ BẮT ĐẦU / TIẾP TỤC'}
+          {effectivePlaying ? tr(lang, 'TẠM DỪNG', 'PAUSE') : tr(lang, '▶ BẮT ĐẦU / TIẾP TỤC', '▶ START / RESUME')}
         </button>
         {[4, 12, 30].map((w) => (
           <button key={w} className={`btn small ${warp === w ? 'primary' : ''}`} onClick={() => setWarp(w)}>{w}x</button>
         ))}
         {!banner && (
-          <button className="btn small danger" onClick={() => ctlRef.current.abort?.()} title="Hủy phóng: mất 1 vạch uy tín">
-            ✕ HỦY PHÓNG
+          <button
+            className="btn small danger"
+            onClick={() => ctlRef.current.abort?.()}
+            title={tr(lang, 'Hủy phóng: mất 1 vạch uy tín', 'Abort launch: deducts 1 authority pip')}
+          >
+            ✕ {tr(lang, 'HỦY PHÓNG', 'ABORT LAUNCH')}
           </button>
         )}
       </div>
-      <div className="viewport-hint">Kéo để xoay camera • Cuộn để phóng to</div>
+      <div className="viewport-hint">{tr(lang, 'Kéo để xoay camera • Cuộn để phóng to', 'Drag to rotate camera • Scroll to zoom')}</div>
     </div>
   );
 }

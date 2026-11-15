@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
+import { useGame } from '../core/GameContext';
+import { tr } from '../core/i18n';
 import { armSvg, clampParts, launchPadSvg, ISO_CSS, ARM_Z } from './14-11-2026-launchpad.mjs';
 import { translateAlong } from './kit/iso-kit.mjs';
 
@@ -35,10 +37,13 @@ export function LaunchPadStatic({ theme = 'light' }) {
  */
 export function LaunchPadLive({ fired = [], theme = 'dark' }) {
   useIsoCss();
+  const { lang } = useGame();
   const ref = useRef(null);
   const readRef = useRef(null);
   const firedRef = useRef(fired);
   firedRef.current = fired;
+  const langRef = useRef(lang);
+  langRef.current = lang;
   const { svg, P } = useMemo(() => launchPadSvg({ state: { arm: 0, clamp: 0, lift: 0 } }), []);
 
   useEffect(() => {
@@ -54,6 +59,7 @@ export function LaunchPadLive({ fired = [], theme = 'dark' }) {
     const tick = (now) => {
       const t = (now - t0) / 1000;
       const f = firedRef.current;
+      const curLang = langRef.current;
       const scrub = f.includes('SCRUB');
       const lifted = f.includes('LIFTOFF');
       if (lifted && liftAt === null) liftAt = t;
@@ -69,7 +75,11 @@ export function LaunchPadLive({ fired = [], theme = 'dark' }) {
       }
       if (readRef.current) {
         const deg = Math.round(arm * 80);
-        readRef.current.textContent = scrub ? 'HOÃN PHÓNG — đếm ngược dừng' : lifted ? `kẹp mở • rời bệ` : `cần nối ${deg}° • kẹp đóng`;
+        readRef.current.textContent = scrub
+          ? tr(curLang, 'HOÃN PHÓNG — đếm ngược dừng', 'SCRUBBED — countdown held')
+          : lifted
+            ? tr(curLang, 'kẹp mở • rời bệ', 'clamps released • liftoff')
+            : tr(curLang, `cần nối ${deg}° • kẹp đóng`, `umbilicals ${deg}° • clamps locked`);
       }
       if (!(lifted && lift > 520)) raf = requestAnimationFrame(tick);
     };
@@ -81,11 +91,15 @@ export function LaunchPadLive({ fired = [], theme = 'dark' }) {
     <div className="pad-card">
       <div className="row-between small muted" style={{ marginBottom: 4 }}>
         <span>LAUNCH COMPLEX // PAD 1</span>
-        <span ref={readRef}>cần nối 0° • kẹp đóng</span>
+        <span ref={readRef}>{tr(lang, 'cần nối 0° • kẹp đóng', 'umbilicals 0° • clamps locked')}</span>
       </div>
       <div ref={ref} className="iso anatomy-pad" data-theme={theme} dangerouslySetInnerHTML={{ __html: svg }} />
       <div className="small muted" style={{ marginTop: 4 }}>
-        {ARM_Z.length} cần nối quay ra trước T-0, 4 kẹp giữ chân mở khi đánh lửa đủ lực. Hình minh họa (skill /anatomy).
+        {tr(
+          lang,
+          `${ARM_Z.length} cần nối quay ra trước T-0, 4 kẹp giữ chân mở khi đánh lửa đủ lực.`,
+          `${ARM_Z.length} umbilicals retract before T-0, 4 hold-down clamps release at thrust buildup.`
+        )}
       </div>
     </div>
   );

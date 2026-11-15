@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { LifePhase } from '../components/CampaignPanels';
 import { useGame } from '../core/GameContext';
+import { tr } from '../core/i18n';
 
 export default function OrbitScreen() {
   const {
@@ -16,6 +17,7 @@ export default function OrbitScreen() {
     setTutorialOpen,
     setTutorialStep,
     completeTutorialToBrief,
+    lang,
   } = useGame();
 
   const handleTutorialFinishStep = useCallback(() => {
@@ -29,10 +31,14 @@ export default function OrbitScreen() {
     return (
       <div className="sandbox-end-wrap">
         <section className="panel sandbox-end-card">
-          <div className="sandbox-end-badge">✓ HOÀN THÀNH HƯỚNG DẪN SANDBOX</div>
-          <h2 className="sandbox-end-title">Kết thúc sandbox, quay về cốt truyện</h2>
+          <div className="sandbox-end-badge">✓ {tr(lang, 'HOÀN THÀNH HƯỚNG DẪN SANDBOX', 'SANDBOX TUTORIAL COMPLETE')}</div>
+          <h2 className="sandbox-end-title">{tr(lang, 'Kết thúc sandbox, quay về cốt truyện', 'Sandbox tutorial complete, return to campaign')}</h2>
           <p className="sandbox-end-desc">
-            Nhấn nút Return bên dưới để quay về màn hình cốt truyện và chọn nhiệm vụ chính thức.
+            {tr(
+              lang,
+              'Nhấn nút Return bên dưới để quay về màn hình cốt truyện và chọn nhiệm vụ chính thức.',
+              'Click Return below to return to campaign story and select official mission.'
+            )}
           </p>
           <div className="sandbox-end-actions">
             <button
@@ -40,7 +46,7 @@ export default function OrbitScreen() {
               className="btn neon-btn sandbox-return-btn"
               onClick={completeTutorialToBrief}
             >
-              ↩ RETURN (QUAY VỀ CỐT TRUYỆN)
+              ↩ {tr(lang, 'RETURN (QUAY VỀ CỐT TRUYỆN)', 'RETURN TO CAMPAIGN')}
             </button>
           </div>
         </section>
@@ -60,6 +66,7 @@ export default function OrbitScreen() {
       tutorialPaused={Boolean(tutorialOpen)}
       onResumeFromTutorial={closeTutorial}
       onTutorialFinishStep={handleTutorialFinishStep}
+      lang={lang}
     />
   );
 }

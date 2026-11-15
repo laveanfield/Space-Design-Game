@@ -1,7 +1,9 @@
 import React from 'react';
+import { useGame } from '../core/GameContext';
+import { tr } from '../core/i18n';
 import { getHumanityImpact } from '../story/humanityImpact';
 
-function MissionImpactArt({ missionKey, success }) {
+function MissionImpactArt({ missionKey, success, lang = 'vi' }) {
   if (missionKey === 'space_weather') {
     const stroke = success ? '#59d38c' : '#ff6b57';
     const glow = success ? '#89e8ae' : '#ff9a3c';
@@ -19,7 +21,7 @@ function MissionImpactArt({ missionKey, success }) {
         />
         {!success && (
           <text x="140" y="15" fontSize="9" fontWeight="800" fill="#ff6b57" textAnchor="middle">
-            NO GPS
+            {tr(lang, 'MẤT GPS', 'NO GPS')}
           </text>
         )}
         {/* Power grid pylons */}
@@ -42,7 +44,9 @@ function MissionImpactArt({ missionKey, success }) {
           <path d="M95 56 L101 66 L97 66 L104 76" fill="none" stroke="#ffc04d" strokeWidth="2" />
         )}
         <text x="90" y="109" fontSize="8" fontWeight="700" fill="#b7c0c8" textAnchor="middle">
-          {success ? '14 NATIONAL GRIDS PROTECTED' : 'G5 BLACKOUT // VAN ALLEN BREACH'}
+          {success
+            ? tr(lang, 'BẢO VỆ 14 LƯỚI ĐIỆN QUỐC GIA', '14 NATIONAL GRIDS PROTECTED')
+            : tr(lang, 'SẬP LƯỚI ĐIỆN VÌ BÃO TỪ', 'G5 BLACKOUT // VAN ALLEN BREACH')}
         </text>
       </svg>
     );
@@ -71,7 +75,7 @@ function MissionImpactArt({ missionKey, success }) {
             <circle cx="30" cy="48" r="7" fill="none" stroke="#59d38c" strokeWidth="2" />
             <rect x="82" y="14" width="12" height="7" fill="#ffc04d" />
             <text x="118" y="23" fontSize="8" fontWeight="800" fill="#59d38c">
-              27 LEAKS SEALED
+              {tr(lang, '27 ĐIỂM RÒ ĐÃ KHÓA', '27 LEAKS SEALED')}
             </text>
           </g>
         )}
@@ -82,7 +86,9 @@ function MissionImpactArt({ missionKey, success }) {
           <path d="M98 85 L106 91 L101 95 M132 82 L139 89 L135 94" stroke="#2c1d11" strokeWidth="1.5" fill="none" />
         )}
         <text x="90" y="109" fontSize="8" fontWeight="700" fill="#b7c0c8" textAnchor="middle">
-          {success ? 'CH4 SUPER-EMITTERS STOPPED' : 'METHANE PLUME // CROP DROUGHT'}
+          {success
+            ? tr(lang, 'CHẶN ĐỨNG SIÊU NGUỒN PHÁT THẢI', 'CH4 SUPER-EMITTERS STOPPED')
+            : tr(lang, 'RÒ RỈ METHANE GÂY HẠN MẶN', 'METHANE PLUME // CROP DROUGHT')}
         </text>
       </svg>
     );
@@ -120,16 +126,19 @@ function MissionImpactArt({ missionKey, success }) {
         </g>
       )}
       <text x="90" y="109" fontSize="8" fontWeight="700" fill="#b7c0c8" textAnchor="middle">
-        {success ? '142,000 HA PROTECTED // EARLY LOCK' : '142,000 HA LOST // NO DOWNLINK'}
+        {success
+          ? tr(lang, 'BẢO VỆ 142.000 HA RỪNG NGUYÊN SINH', '142,000 HA PROTECTED // EARLY LOCK')
+          : tr(lang, 'MẤT TRẮNG 142.000 HA RỪNG', '142,000 HA LOST // NO DOWNLINK')}
       </text>
     </svg>
   );
 }
 
 /** Ngay thang tren dau bao (theo dong ho may nguoi choi). */
-function editionDate() {
+function editionDate(lang = 'vi') {
   try {
-    return new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+    const locale = lang === 'en' ? 'en-US' : 'vi-VN';
+    return new Date().toLocaleDateString(locale, { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
   } catch {
     return '';
   }
@@ -141,8 +150,17 @@ function editionDate() {
  * khung "nhung con so" va trich dan noi bat. Ten bao "The Orbital Times" la HU CAU (khong dung ten / logo
  * cua to bao that nao). Noi dung cau chuyen giu nguyen tu story/humanityImpact.js.
  */
-export default function HumanityImpactCard({ missionId, success, failureId, outcome, compact = false }) {
-  const story = getHumanityImpact(missionId, { success, failureId, outcome });
+export default function HumanityImpactCard({
+  missionId,
+  success,
+  failureId,
+  outcome,
+  compact = false,
+  lang: langProp,
+}) {
+  const gameCtx = useGame();
+  const lang = langProp || gameCtx?.lang || 'vi';
+  const story = getHumanityImpact(missionId, { success, failureId, outcome, lang });
   const toneClass = story.success ? 'ok' : 'fail';
   const paragraphs = compact ? story.paragraphs.slice(0, 1) : story.paragraphs;
 
@@ -151,32 +169,32 @@ export default function HumanityImpactCard({ missionId, success, failureId, outc
       <header className="news-masthead">
         {!compact && (
           <div className="news-ears">
-            <span>ẤN BẢN TRÁI ĐẤT</span>
-            <span>“Mọi tin tức đều bắt đầu từ quỹ đạo”</span>
+            <span>{tr(lang, 'ẤN BẢN TRÁI ĐẤT', 'EARTH EDITION')}</span>
+            <span>{tr(lang, '“Mọi tin tức đều bắt đầu từ quỹ đạo”', '“All news begins from orbit”')}</span>
           </div>
         )}
         <h2 className="news-name">The Orbital Times</h2>
         <div className="news-dateline">
           <span>{story.levelTag}</span>
-          <span>{editionDate()}</span>
-          <span>ẤN BẢN MINH HỌA</span>
+          <span>{editionDate(lang)}</span>
+          <span>{tr(lang, 'ẤN BẢN MINH HỌA', 'ILLUSTRATED EDITION')}</span>
         </div>
       </header>
 
       <div className="news-breaking">
-        <b>{story.success ? 'TIN NÓNG' : 'TIN KHẨN'}</b>
+        <b>{story.success ? tr(lang, 'TIN NÓNG', 'BREAKING NEWS') : tr(lang, 'TIN KHẨN', 'URGENT BULLETIN')}</b>
         <span>{story.badge}</span>
       </div>
 
       <h1 className="news-headline">{story.headline}</h1>
       {story.causeBridge && <p className="news-deck">{story.causeBridge}</p>}
-      <div className="news-byline">Bản tin Không gian &amp; Trái Đất · Trạm điều hành mặt đất</div>
+      <div className="news-byline">{tr(lang, 'Bản tin Không gian & Trái Đất · Trạm điều hành mặt đất', 'Space & Earth Dispatch · Ground Mission Ops')}</div>
 
       <div className="news-body">
         <div className="news-main">
           <figure className="news-photo">
             <img src={`/mission_art/${missionId}.jpg`} alt="" draggable={false} />
-            <figcaption>Ảnh minh họa vùng nhiệm vụ nhìn từ quỹ đạo.</figcaption>
+            <figcaption>{tr(lang, 'Ảnh minh họa vùng nhiệm vụ nhìn từ quỹ đạo.', 'Mission zone illustration viewed from orbit.')}</figcaption>
           </figure>
           <div className="news-columns">
             {paragraphs.map((p, idx) => (
@@ -187,7 +205,7 @@ export default function HumanityImpactCard({ missionId, success, failureId, outc
           </div>
         </div>
         <aside className="news-sidebar">
-          <div className="news-sidebar-title">NHỮNG CON SỐ</div>
+          <div className="news-sidebar-title">{tr(lang, 'NHỮNG CON SỐ', 'BY THE NUMBERS')}</div>
           {story.metrics.map((m) => (
             <div key={m.label} className="news-figure">
               <div className="news-figure-value">{m.value}</div>
@@ -197,14 +215,14 @@ export default function HumanityImpactCard({ missionId, success, failureId, outc
           ))}
           {!compact && (
             <div className="news-infographic">
-              <MissionImpactArt missionKey={story.missionKey} success={story.success} />
+              <MissionImpactArt missionKey={story.missionKey} success={story.success} lang={lang} />
             </div>
           )}
         </aside>
       </div>
 
       {!compact && <blockquote className="news-pullquote">{story.moral}</blockquote>}
-      <footer className="news-foot">Bài báo và số liệu là minh họa cho câu chuyện trong trò chơi, không phải thống kê thật.</footer>
+      <footer className="news-foot">{tr(lang, 'Bài báo và số liệu là minh họa cho câu chuyện trong trò chơi, không phải thống kê thật.', 'Articles and figures are narrative illustrations for the game, not real-world statistics.')}</footer>
     </article>
   );
 }

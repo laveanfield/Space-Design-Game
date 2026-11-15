@@ -1,22 +1,15 @@
 import React from 'react';
-import { beep } from '../api/client';
 import { DEV } from '../core/devFlag';
 import { useGame } from '../core/GameContext';
-
-// Anh nen minh hoa cua tung nhiem vu (be/tools/14-11-2026-render_mission_art.py -> fe/public/mission_art/<ID>.jpg; khong dung /missions vi Vite chuyen duong do sang API)
-export const missionArt = (id) => `/mission_art/${id}.jpg`;
+import { tr, tx } from '../core/i18n';
 
 export default function BriefScreen() {
   const {
-    missions,
-    selectedMissionId,
+    lang,
     missionDetail,
-    catalog,
     scenario,
     design,
     busy,
-    audioOn,
-    loadMission,
     applyPreset,
     enterBuild,
     setPhase,
@@ -24,126 +17,115 @@ export default function BriefScreen() {
   } = useGame();
 
   return (
-    <div className="brief-grid">
-      <section className="panel" data-tutorial="brief-missions">
+    <div className="brief-single-wrap">
+      <section className="panel brief-single-card">
         <h2 className="panel-title">
-          <span>AVAILABLE MISSIONS ({missions.length})</span>
-          <span className="small muted">{catalog?.catalog_hash ? `#${catalog.catalog_hash.slice(0, 8)}` : ''}</span>
-        </h2>
-        <div className="mission-list">
-          {[...missions].sort((a, b) => (a.difficulty ?? 9) - (b.difficulty ?? 9)).map((m) => (
-            <button
-              key={m.id}
-              className={`mission-card ${m.id === selectedMissionId ? 'selected' : ''}`}
-              style={{ backgroundImage: `linear-gradient(90deg, rgba(10,14,18,0.92) 35%, rgba(10,14,18,0.45)), url(${missionArt(m.id)})` }}
-              onClick={() => {
-                beep(audioOn, 780, 0.04);
-                loadMission(m.id);
-              }}
-            >
-              <div className="row-between">
-                <strong>{m.title?.vi || m.title?.en || m.id}</strong>
-                <span className="badge info">LVL {m.difficulty}</span>
-              </div>
-              <div className="small muted" style={{ marginTop: 4 }}>
-                {m.id} • ~{m.est_play_min} min
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel">
-        <h2 className="panel-title">
-          <span>MISSION BRIEFING</span>
+          <span>{tr(lang, 'PHIẾU GIAO NHIỆM VỤ', 'MISSION DOSSIER')}</span>
           {missionDetail && <span className="badge ok">{missionDetail.id}</span>}
         </h2>
-        {missionDetail ? (
-          <div>
-            <div className="mission-hero" style={{ backgroundImage: `url(${missionArt(missionDetail.id)})` }}>
-              <span className="badge info mission-hero-lvl">LEVEL {missionDetail.meta?.difficulty ?? 1}</span>
-              <h3 className="mission-hero-title">
-                {missionDetail.meta?.title?.vi}
-                <small>{missionDetail.meta?.title?.en}</small>
-              </h3>
-              <span className="mission-hero-note">ảnh minh họa</span>
-            </div>
-            <p style={{ marginTop: 0 }}>{missionDetail.meta?.brief?.vi || scenario.description_simple}</p>
-            <p
-              className="small boss-quote"
-              title="Bạn tự chịu trách nhiệm kỹ thuật: thiết kế luôn được phép phóng và chứng minh bằng kết quả thực tế."
-            >
-              [ENG-01] KỸ SƯ TRƯỞNG &nbsp;|&nbsp; [DIR-01] SẾP GIỮ TIỀN &nbsp;|&nbsp; AUTH CREDITS: 3/3
-            </p>
-            <p className="muted">
-              MỤC TIÊU: {missionDetail.objective?.statement?.vi || missionDetail.objective?.statement?.en}
-            </p>
 
-            <div className="kpi-grid" style={{ marginTop: 12 }} data-tutorial="brief-kpis">
+        {missionDetail ? (
+          <div className="brief-single-body">
+            <div
+              className="mission-hero"
+              style={{ backgroundImage: `url(/mission_art/${missionDetail.id}.jpg)` }}
+            >
+              <span className="badge info mission-hero-lvl">
+                {tr(lang, 'CẤP ĐỘ', 'LEVEL')} {missionDetail.meta?.difficulty ?? 1}
+              </span>
+              <h3 className="mission-hero-title">
+                {tx(missionDetail.meta?.title, lang)}
+                <small>{tx(missionDetail.meta?.title, lang === 'vi' ? 'en' : 'vi')}</small>
+              </h3>
+              <span className="mission-hero-note">{tr(lang, 'ảnh minh họa', 'concept art')}</span>
+            </div>
+
+            <h1 className="brief-mission-title">
+              {tx(missionDetail.meta?.title, lang)}
+            </h1>
+            <p className="brief-mission-desc">
+              {tx(missionDetail.meta?.brief, lang) || tx(scenario.description_simple, lang)}
+            </p>
+            <div className="brief-objective-box">
+              <strong>{tr(lang, 'MỤC TIÊU:', 'OBJECTIVE:')}</strong>{' '}
+              {tx(missionDetail.objective?.statement, lang)}
+            </div>
+
+            <div className="kpi-grid" style={{ marginTop: 14 }} data-tutorial="brief-kpis">
               <div className="kpi-box">
-                <div className="kpi-label">BUDGET LIMIT</div>
+                <div className="kpi-label">{tr(lang, 'NGÂN SÁCH TỐI ĐA', 'BUDGET CEILING')}</div>
                 <div className="kpi-val">${scenario.budget_musd ?? '-'}M</div>
               </div>
               <div className="kpi-box">
-                <div className="kpi-label">DEADLINE / MIN LIFE</div>
+                <div className="kpi-label">{tr(lang, 'HẠN CHÓT / TUỔI THỌ', 'DEADLINE / LIFETIME')}</div>
                 <div className="kpi-val">
-                  {scenario.deadline_months ?? '-'} MO / {missionDetail.life_years ?? scenario.min_mission_life_years ?? '-'} YR
+                  {scenario.deadline_months ?? '-'} {tr(lang, 'THÁNG', 'MO')} / {missionDetail.life_years ?? scenario.min_mission_life_years ?? '-'} {tr(lang, 'NĂM', 'YR')}
                 </div>
               </div>
               <div className="kpi-box">
-                <div className="kpi-label">RECOMMENDED ORBITS</div>
-                <div className="small">{(scenario.allowed_orbit_ids || []).join(', ') || 'ANY'}</div>
+                <div className="kpi-label">{tr(lang, 'QUỸ ĐẠO GỢI Ý', 'TARGET ORBITS')}</div>
+                <div className="kpi-val" style={{ fontSize: 13 }}>
+                  {(scenario.allowed_orbit_ids || []).join(', ') || tr(lang, 'BẤT KỲ', 'ANY')}
+                </div>
               </div>
               <div className="kpi-box">
-                <div className="kpi-label">FLIGHT RULE</div>
+                <div className="kpi-label">{tr(lang, 'LUẬT PHÓNG', 'LAUNCH PROTOCOL')}</div>
                 <div className="kpi-val">LAUNCH ANYTHING</div>
               </div>
             </div>
 
-            <div className="row-wrap" style={{ marginTop: 14 }}>
+            <div className="row-wrap brief-actions" data-tutorial="brief-start">
               <button
+                type="button"
                 className="btn primary hazard-cta"
-                data-tutorial="brief-start"
                 disabled={!design || busy}
                 onClick={() => {
                   applyPreset(typeof missionDetail.starter === 'string' ? missionDetail.starter : 'starter');
                   enterBuild();
                 }}
               >
-                [ VÀO XƯỞNG CHẾ TẠO → ]
+                [ {tr(lang, 'VÀO XƯỞNG CHẾ TẠO →', 'ENTER ASSEMBLY HANGAR →')} ]
               </button>
               <button
+                type="button"
                 className="btn warn"
                 disabled={busy}
                 onClick={() => startTutorialSandbox(true)}
-                title="Chơi lại màn Sandbox kèm Kỹ sư trưởng hướng dẫn từng bước"
               >
-                🎓 CHƠI SANDBOX (CÓ HƯỚNG DẪN)
+                🎓 {tr(lang, 'CHƠI SANDBOX (CÓ HƯỚNG DẪN)', 'GUIDED SANDBOX')}
               </button>
               <button
+                type="button"
                 className="btn neon-btn"
                 disabled={busy}
                 onClick={() => startTutorialSandbox(false)}
-                title="Vào thẳng Sandbox mở khóa sẵn toàn bộ thiết bị, không bật hộp thoại hướng dẫn"
               >
-                🛠️ CHƠI SANDBOX TỰ DO (TẮT HƯỚNG DẪN)
+                🛠️ {tr(lang, 'SANDBOX TỰ DO', 'FREE SANDBOX')}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setPhase('levels')}
+              >
+                🗺️ {tr(lang, 'ĐỔI MÀN CHƠI', 'CHANGE LEVEL')}
               </button>
               {DEV && missionDetail.presets?.some((p) => p.id === 'good') && (
                 <button
+                  type="button"
                   className="btn"
                   disabled={busy}
                   onClick={() => {
-                    applyPreset('good', true); // DEV: mo khoa du 9 muc de thu nhanh
+                    applyPreset('good');
                     setPhase('design');
                   }}
                 >
-                  DEV: MỞ PRESET CHUẨN (GOOD)
+                  DEV: {tr(lang, 'MỞ PRESET CHUẨN', 'LOAD REFERENCE PRESET')}
                 </button>
               )}
             </div>
           </div>
         ) : (
-          <div className="muted">LOADING MISSION DOSSIER...</div>
+          <div className="muted">{tr(lang, 'ĐANG TẢI HỒ SƠ NHIỆM VỤ...', 'LOADING MISSION DOSSIER...')}</div>
         )}
       </section>
     </div>

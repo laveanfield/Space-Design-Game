@@ -6,7 +6,14 @@
 export const REP_MAX = 3;
 export const INSPECT_BASE_SEC = 60;
 
+export const MISSION_ORDER = [
+  'MP-SC01-FIRST-EYES',
+  'MP-SC03-SPACE-WEATHER',
+  'MP-SC04-GHG',
+];
+
 export const PHASES = [
+  { id: 'home', label: '00.HOME' },
   { id: 'brief', label: '01.BRIEF' },
   { id: 'design', label: '02.BUILD' },
   { id: 'inspect', label: '03.INSPECT' },
@@ -452,29 +459,38 @@ export const CHECKLIST_TEMPLATES = [
   {
     id: 'GAS_LEAK_AUDIO',
     kind: 'audio_leak',
-    label: '1. RÒ RỈ KHÍ GA [NGHE AUDIO]',
+    label: { vi: '1. RÒ RỈ KHÍ GA', en: '1. PROPELLANT GAS LEAK' },
     group: 'rocket',
     basePos: [-0.11, -0.28, 0.18],
     meter: 'pressureDiff',
-    symptom: 'Không có dấu hiệu bằng mắt thường! Hãy lia chuột nghe tiếng xì ga TO DẦN rồi NHỎ DẦN để bấm trúng tâm điểm rò.',
+    symptom: {
+      vi: 'Không có dấu hiệu bằng mắt thường. Hãy lia chuột nghe tiếng xì ga to dần rồi nhỏ dần để bấm trúng tâm điểm rò.',
+      en: 'No visual cue. Sweep the cursor and listen for peak hiss intensity to pinpoint and seal the cryogenic leak.',
+    },
   },
   {
     id: 'STRUCT_CRACK_XRAY',
     kind: 'xray_crack',
-    label: '2. VẾT NỨT KẾT CẤU [X-RAY VÀNG]',
+    label: { vi: '2. VẾT NỨT KẾT CẤU', en: '2. STRUCTURAL CRACK' },
     group: 'sat',
     basePos: [0.06, 0.56, 0.15],
     meter: 'structVib',
-    symptom: 'Bật [X-RAY MESH] tìm đường nứt ngoằn nghoèo nhỏ màu vàng để bấm hàn (Tên lửa dỏm sẽ có nhiều hơn 1 vết nứt!).',
+    symptom: {
+      vi: 'Bật chế độ X-Ray tìm đường nứt ngoằn nghoèo nhỏ màu vàng để bấm hàn.',
+      en: 'Enable X-Ray mode to spot fine yellow hairline structural cracks and weld them closed.',
+    },
   },
   {
     id: 'CAMERA_TILT_ALIGN',
     kind: 'camera_align',
-    label: '3. CÂN CHỈNH GƯƠNG CAMERA [0°]',
+    label: { vi: '3. CÂN CHỈNH GƯƠNG QUANG HỌC', en: '3. OPTICAL MIRROR ALIGNMENT' },
     group: 'sat',
     basePos: [0.0, 0.72, 0.16],
     meter: 'emiNoise',
-    symptom: 'Gương phản xạ của Camera bị lệch & rơ bánh răng — kéo ghì chuột đưa gương về 0.0° và giữ ổn định để khóa chốt.',
+    symptom: {
+      vi: 'Gương phản xạ bị lệch và rơ bánh răng — kéo giữ chuột đưa gương về 0.0° và giữ ổn định để khóa chốt.',
+      en: 'Reflective optics mirror is off-axis with backlash — drag steadily to 0.0° and hold to lock.',
+    },
   },
 ];
 
@@ -603,16 +619,22 @@ export function generateInspectionDefects(salt = Date.now(), design = null, cata
   let mirrorIssue = '';
   if (tier === 'basic') {
     tiltMagnitude = Math.round(20 + rnd() * 8); // 20° .. 28° cho camera dom/re tien
-    mirrorIssue =
-      'Camera giá rẻ (Basic): Gương phản xạ bị RƠ BÁNH RĂNG & KẸT LÒ XO HỒI VỊ (Gear Backlash) do gia công dỏm — kéo rất nặng tay và nếu thả chuột sớm gương sẽ bị bật lệch trở lại!';
+    mirrorIssue = {
+      vi: 'Camera giá rẻ: Gương phản xạ bị rơ bánh răng & kẹt lò xo hồi vị — kéo nặng tay và dễ bật lệch nếu thả sớm.',
+      en: 'Budget camera optics: Gear backlash and sticking spring — heavy drag and rebounds if released too early.',
+    };
   } else if (tier === 'advanced') {
     tiltMagnitude = Math.round(12 + rnd() * 5); // 12° .. 17° cho camera tam trung
-    mirrorIssue =
-      'Camera tầm trung (Advanced): Gương hội tụ bị trôi ốc hãm ma sát do rung động vận chuyển — cần kéo chậm và giữ ở 0.0° để khóa chốt.';
+    mirrorIssue = {
+      vi: 'Camera tầm trung: Gương hội tụ bị trôi ốc hãm ma sát khi vận chuyển — kéo chậm và giữ ở 0.0° để khóa chốt.',
+      en: 'Mid-tier optics: Friction screw drifted during transport — drag slowly and hold at 0.0° to lock.',
+    };
   } else {
     tiltMagnitude = Math.round(7 + rnd() * 5); // 7° .. 12° cho camera cao cap
-    mirrorIssue =
-      'Camera cao cấp (Expert): Gương tinh chỉnh lệch nhẹ khỏi trục chuẩn — kéo mượt về 0.0° để khóa ngàm quang học.';
+    mirrorIssue = {
+      vi: 'Camera cao cấp: Gương tinh chỉnh lệch nhẹ khỏi trục chuẩn — kéo mượt về 0.0° để khóa ngàm quang học.',
+      en: 'High-precision optics: Slight alignment offset — steer smoothly to 0.0° to latch optical mount.',
+    };
   }
   const tiltSign = rnd() > 0.5 ? 1 : -1;
   const initialTiltDeg = tiltSign * tiltMagnitude;
@@ -677,9 +699,10 @@ export function evaluateInspectionOutcome(defects, fixedIds) {
   }
   const hasRocketFault = unfixed.some((d) => d.id === 'GAS_LEAK_AUDIO' || (d.id === 'STRUCT_CRACK_XRAY' && !d.hiddenInPayload));
   if (unfixed.length >= 2 || hasRocketFault) {
-    // nhan nhiem vu dang "1. RÒ RỈ KHÍ GA [NGHE AUDIO]" -> bo so thu tu va phan trong [ ] cho tieu de su co gon, de doc
-    const shortName = (label) => String(label || '').replace(/^\d+\.\s*/, '').replace(/\s*\[[^\]]*\]\s*$/, '');
-    const names = unfixed.map((d) => shortName(d.label)).join(', ');
+    const pickLang = (label, l) => (label && typeof label === 'object' ? label[l] || label.vi || label.en : label);
+    const shortName = (label, l) => String(pickLang(label, l) || '').replace(/^\d+\.\s*/, '').replace(/\s*\[[^\]]*\]\s*$/, '');
+    const namesVi = unfixed.map((d) => shortName(d.label, 'vi')).join(', ');
+    const namesEn = unfixed.map((d) => shortName(d.label, 'en')).join(', ');
     return {
       mode: 'launch_explode',
       unfixed,
@@ -689,14 +712,14 @@ export function evaluateInspectionOutcome(defects, fixedIds) {
         explode: true,
         constraint: 'inspection',
         title: {
-          vi: `NỔ TÊN LỬA DO BỎ SÓT LỖI KIỂM ĐỊNH (${names})`,
-          en: `VEHICLE EXPLOSION: MISSED PRE-FLIGHT DEFECTS (${names})`,
+          vi: `NỔ TÊN LỬA DO BỎ SÓT LỖI KIỂM ĐỊNH: ${namesVi}`,
+          en: `VEHICLE EXPLOSION: MISSED PRE-FLIGHT DEFECTS: ${namesEn}`,
         },
         cause: {
-          vi: `Đội kiểm định đã bỏ sót ${unfixed.length} lỗi phần cứng nghiêm trọng (${names}) trước khi rời bệ. Tên lửa mất ổn định và phát nổ trên đường bay.`,
-          en: `Pre-flight inspection missed critical hardware defects (${names}). The stack suffered catastrophic failure in flight.`,
+          vi: `Đội kiểm định đã bỏ sót ${unfixed.length} lỗi phần cứng nghiêm trọng (${namesVi}) trước khi rời bệ. Tên lửa mất ổn định và phát nổ trên đường bay.`,
+          en: `Pre-flight inspection missed critical hardware defects (${namesEn}). The stack suffered catastrophic failure in flight.`,
         },
-        numbers: unfixed.map((d) => ({ label: shortName(d.label), value: 'UNFIXED' })),
+        numbers: unfixed.map((d) => ({ label: shortName(d.label, 'vi'), value: 'UNFIXED' })),
       },
       orbitFault: null,
     };

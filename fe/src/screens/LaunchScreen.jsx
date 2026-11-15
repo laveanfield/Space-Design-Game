@@ -6,6 +6,18 @@ import HumanityImpactCard from '../components/HumanityImpactCard';
 import Launch3DCanvas from '../components/Launch3DCanvas';
 import { REP_MAX } from '../core/gameMachine';
 import { useGame } from '../core/GameContext';
+import { tr, tx } from '../core/i18n';
+
+const EVENT_NAMES = {
+  IGNITION: { vi: 'ĐÁNH LỬA ĐỘNG CƠ', en: 'IGNITION' },
+  LIFTOFF: { vi: 'RỜI BỆ PHÓNG', en: 'LIFTOFF' },
+  MAX_Q: { vi: 'ÁP SUẤT CỰC ĐẠI', en: 'MAX-Q' },
+  MECO: { vi: 'TẮT ĐỘNG CƠ TẦNG 1', en: 'MECO' },
+  STAGE_SEP: { vi: 'TÁCH TẦNG 1', en: 'STAGE SEPARATION' },
+  FAIRING_SEP: { vi: 'TÁCH VỎ BẢO VỆ', en: 'FAIRING SEPARATION' },
+  SECO: { vi: 'TẮT ĐỘNG CƠ TẦNG 2', en: 'SECO' },
+  PAYLOAD_DEPLOY: { vi: 'TÁCH VỆ TINH', en: 'PAYLOAD DEPLOYMENT' },
+};
 
 export default function LaunchScreen() {
   const {
@@ -28,17 +40,18 @@ export default function LaunchScreen() {
     tutorialOpen,
     closeTutorial,
     completeTutorialToBrief,
+    lang,
   } = useGame();
 
   if (!flightData) {
     return (
       <div className="sandbox-end-wrap">
         <section className="panel sandbox-end-card">
-          <div className="sandbox-end-badge">✓ KẾT THÚC HƯỚNG DẪN SANDBOX</div>
-          <h2 className="sandbox-end-title">Kết thúc sandbox, quay về cốt truyện</h2>
+          <div className="sandbox-end-badge">✓ {tr(lang, 'KẾT THÚC HƯỚNG DẪN SANDBOX', 'SANDBOX TUTORIAL COMPLETE')}</div>
+          <h2 className="sandbox-end-title">{tr(lang, 'Kết thúc sandbox, quay về cốt truyện', 'Sandbox tutorial complete, return to campaign')}</h2>
           <div className="sandbox-end-actions">
             <button type="button" className="btn neon-btn sandbox-return-btn" onClick={completeTutorialToBrief}>
-              ↩ RETURN (QUAY VỀ CỐT TRUYỆN)
+              ↩ {tr(lang, 'RETURN (QUAY VỀ CỐT TRUYỆN)', 'RETURN TO CAMPAIGN')}
             </button>
           </div>
         </section>
@@ -69,9 +82,11 @@ export default function LaunchScreen() {
       <section className="panel launch-left" data-tutorial="launch-canvas">
         <h2 className="panel-title">
           <span>
-            LAUNCH 3D // {flightData.meta?.vehicle} @ {flightData.meta?.site}
+            {tr(lang, 'PHÓNG 3D', 'LAUNCH 3D')} // {flightData.meta?.vehicle} @ {flightData.meta?.site}
           </span>
-          <span className="small muted">PAYLOAD {Number(flightData.meta?.payload_kg || 0).toFixed(1)} kg</span>
+          <span className="small muted">
+            {tr(lang, 'TẢI TRỌNG', 'PAYLOAD')} {Number(flightData.meta?.payload_kg || 0).toFixed(1)} kg
+          </span>
         </h2>
 
         <Launch3DCanvas
@@ -93,7 +108,7 @@ export default function LaunchScreen() {
         <LaunchPadLive key={launchSeq} fired={launchFired} />
 
         <h2 className="panel-title" style={{ marginTop: 10 }}>
-          <span>ASCENT SEQUENCER</span>
+          <span>{tr(lang, 'TIẾN TRÌNH PHÓNG TÊN LỬA', 'ASCENT SEQUENCER')}</span>
           <span className="small muted">{flightData.meta?.physics}</span>
         </h2>
 
@@ -101,7 +116,7 @@ export default function LaunchScreen() {
           {[{ name: 'IGNITION' }, ...(flightData.events || [])].map((ev, i) => (
             <div key={i} className={`constraint-row ${launchFired.includes(ev.name) ? 'pass' : ''}`}>
               <div className="row-between">
-                <strong>{ev.name}</strong>
+                <strong>{tx(EVENT_NAMES[ev.name], lang) || ev.name}</strong>
                 <span className="small muted">{ev.t != null ? `T+${Number(ev.t).toFixed(0)}s` : 'T-1s'}</span>
               </div>
             </div>
@@ -110,13 +125,19 @@ export default function LaunchScreen() {
 
         {!launchResult && (
           <div className="small muted" style={{ marginTop: 10 }}>
-            ĐANG PHÓNG. Không thể chỉnh sửa thiết kế trong lúc tên lửa rời bệ.
+            {tr(
+              lang,
+              'ĐANG PHÓNG. Không thể chỉnh sửa thiết kế trong lúc tên lửa rời bệ.',
+              'LAUNCH IN PROGRESS. Configuration locked during ascent.'
+            )}
           </div>
         )}
 
         {launchResult && !launchResult.success && (
           <>
-            <div className="halt-banner">⚠ CRITICAL LAUNCH FAILURE</div>
+            <div className="halt-banner">
+              {tr(lang, '⚠ THẤT BẠI PHÓNG NGHIÊM TRỌNG', '⚠ CRITICAL LAUNCH FAILURE')}
+            </div>
             <Dossier dossier={launchResult.failure} />
             <div style={{ marginTop: 10 }}>
               <HumanityImpactCard
@@ -124,30 +145,43 @@ export default function LaunchScreen() {
                 success={false}
                 failureId={launchResult.failure?.kind || 'launch'}
                 compact
+                lang={lang}
               />
             </div>
           </>
         )}
         {launchResult?.success && (
           <div className="ok-banner">
-            ĐÃ VÀO QUỸ ĐẠO. Bắt đầu theo dõi vận hành 12 tháng để kiểm chứng độ bền hệ thống.
+            {tr(
+              lang,
+              'ĐÃ VÀO QUỸ ĐẠO. Bắt đầu theo dõi vận hành để kiểm chứng độ bền hệ thống.',
+              'ORBIT INSERTION CONFIRMED. Initiating mission lifetime evaluation.'
+            )}
           </div>
         )}
 
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {launchResult?.success && (
             <button className="btn primary hazard hazard-cta" data-tutorial="launch-next" disabled={busy} onClick={startLife}>
-              [ THEO DÕI 12 MỐC QUỸ ĐẠO [05] → ]
+              {tr(lang, '[ THEO DÕI 12 MỐC QUỸ ĐẠO [05] → ]', '[ PROCEED TO ORBIT OPERATIONS → ]')}
             </button>
           )}
           {launchResult && !launchResult.success && reputation > 0 && (
             <button className="btn primary" onClick={() => setPhase('design')}>
-              ← VỀ XƯỞNG SỬA THIẾT KẾ (CÒN {reputation}/{REP_MAX} VẠCH UY TÍN)
+              {tr(
+                lang,
+                `← VỀ XƯỞNG SỬA THIẾT KẾ (CÒN ${reputation}/${REP_MAX} VẠCH UY TÍN)`,
+                `← RETURN TO BUILD (AUTHORITY ${reputation}/${REP_MAX})`
+              )}
             </button>
           )}
           {launchResult && !launchResult.success && reputation <= 0 && (
             <button className="btn warn" onClick={() => loadMission(selectedMissionId)}>
-              DỰ ÁN BỊ HỦY — NHẬN LẠI NHIỆM VỤ TỪ ĐẦU
+              {tr(
+                lang,
+                'DỰ ÁN BỊ HỦY — NHẬN LẠI NHIỆM VỤ TỪ ĐẦU',
+                'PROJECT SCRUBBED — RESTART MISSION'
+              )}
             </button>
           )}
         </div>

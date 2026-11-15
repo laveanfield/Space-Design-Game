@@ -2,37 +2,61 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { playSoundAsset } from '../api/client';
 import AccidentNewspaper from '../components/AccidentNewspaper';
 import HumanityImpactCard from '../components/HumanityImpactCard';
+import { tr, tx } from '../core/i18n';
 import { BossPortrait, EngineerPortrait } from './Portraits';
 import { CAST, fill } from './14-11-2026-script';
 
-/**
- * StoryScene -- Cua so Terminal Comm-Link tuong tac:
- * Nguoi choi [BAN // ENG-01] truc tiep chon loi phan bien / de xuat voi Sep [DIR-01],
- * va chung kien Sep dong dau [TU CHOI PHE DUYET] bac bo de xuat ngay truoc gio phong / sau man choi.
- */
-const TYPE_SPEED = 42; // ky tu / giay cho cam giac terminal nhanh nhay
+const TYPE_SPEED = 42;
+
+export function getCast(lang = 'vi') {
+  return {
+    eng: {
+      name: tx(CAST.eng.name, lang),
+      side: CAST.eng.side,
+    },
+    boss: {
+      name: tx(CAST.boss.name, lang),
+      side: CAST.boss.side,
+    },
+  };
+}
+
+function resolveField(val, lang) {
+  if (val == null) return '';
+  if (typeof val === 'object') {
+    return lang === 'en' ? val.en || val.vi || '' : val.vi || val.en || '';
+  }
+  return String(val);
+}
 
 function hydrateLines(lines, ctx) {
   const c = ctx || {};
+  const lang = c.lang || 'vi';
   return (lines || []).map((l) => ({
     ...l,
-    text: fill(l.text, c),
-    stamp: l.stamp ? fill(l.stamp, c) : undefined,
+    text: fill(resolveField(l.text, lang), c),
+    stamp: l.stamp ? fill(resolveField(l.stamp, lang), c) : undefined,
     choicePicked: false,
     choices: Array.isArray(l.choices)
       ? l.choices.map((ch) => ({
           ...ch,
-          tag: fill(ch.tag, c),
-          text: fill(ch.text, c),
-          stamp: ch.stamp ? fill(ch.stamp, c) : 'TỪ CHỐI PHÊ DUYỆT // REQUEST DENIED',
-          bossReply: fill(ch.bossReply, c),
-          engNote: ch.engNote ? fill(ch.engNote, c) : '',
+          tag: fill(resolveField(ch.tag, lang), c),
+          text: fill(resolveField(ch.text, lang), c),
+          stamp: ch.stamp
+            ? fill(resolveField(ch.stamp, lang), c)
+            : lang === 'en'
+            ? 'REQUEST DENIED'
+            : 'TỪ CHỐI PHÊ DUYỆT',
+          bossReply: fill(resolveField(ch.bossReply, lang), c),
+          engNote: ch.engNote ? fill(resolveField(ch.engNote, lang), c) : '',
         }))
       : undefined,
   }));
 }
 
 export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
+  const lang = ctx?.lang || 'vi';
+  const cast = getCast(lang);
   const hydrated = useMemo(() => hydrateLines(lines, ctx), [lines, ctx]);
   const [activeScript, setActiveScript] = useState(hydrated);
   const [i, setI] = useState(0);
@@ -87,7 +111,6 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
       copy.splice(i + 1, 0, ...inserted);
       return copy;
     });
-    // Nhay thang sang cau bac bo cua Sep (i + 2) de cau ban vua chon hien ngay trong nhat ky phia tren
     setI((prevIdx) => prevIdx + 2);
   };
 
@@ -127,8 +150,6 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
   const speaking = line.who;
   const mood = ctx?.mood || {};
   const history = activeScript.slice(0, i);
-  // Phan duoi khung chat: 2 to bao (tai nan ten lua + hau qua nhan loai) thay cho khung "THONG DIEP HAU QUA" cu.
-  // Chi man phong that bai moi co ctx.accident; man tong ket (review_*) chi hien to bao hau qua.
   const showNews = Boolean(ctx?.showImpact);
   const accident = ctx?.accident || null;
 
@@ -138,41 +159,41 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
         <div className="term-comm-header">
           <span className="term-comm-title">
             <span className="brand-dot" />
-            SECURE COMM-LINK // [{header?.level || 'LEVEL 1'}: {header?.title || 'MISSION'}]
+            {tr(lang, 'KÊNH TRUYỀN BẢO MẬT', 'SECURE COMM-LINK')} // {header?.level || (lang === 'en' ? 'LEVEL 1' : 'MÀN 1')}: {tx(header?.title, lang) || (lang === 'en' ? 'MISSION' : 'NHIỆM VỤ')}
           </span>
           <span className="small">
-            CAP: <strong className="ok-text">${header?.budget ?? '-'}M</strong> | DEADLINE:{' '}
-            <strong className="err-text">{header?.deadline ?? '-'} MO</strong>
+            {tr(lang, 'TRẦN', 'CAP')}: <strong className="ok-text">${header?.budget ?? '-'}M</strong> | {tr(lang, 'HẠN CHÓT', 'DEADLINE')}:{' '}
+            <strong className="err-text">{header?.deadline ?? '-'} {tr(lang, 'THÁNG', 'MO')}</strong>
           </span>
         </div>
 
         <div className="term-comm-nodes">
           <div className={`term-node ${speaking === 'eng' || waitingChoice ? 'speaking eng' : ''}`}>
-            <span className="term-role-pill player">VAI CỦA BẠN // PLAYER</span>
+            <span className="term-role-pill player">{tr(lang, 'KỸ SƯ TRƯỞNG', 'CHIEF ENGINEER')}</span>
             <EngineerPortrait mood={mood.eng || (speaking === 'eng' || waitingChoice ? 'calm' : 'worried')} />
-            <div className="term-node-label">
-              [BẠN // ENG-01] KỸ SƯ TRƯỞNG
-            </div>
+            <div className="term-node-label">{tr(lang, 'BẠN — KỸ SƯ TRƯỞNG', 'YOU — CHIEF ENGINEER')}</div>
           </div>
           <div className={`term-node ${speaking === 'boss' && !waitingChoice ? 'speaking boss' : ''}`}>
-            <span className="term-role-pill npc">BAN GIÁM ĐỐC // NPC</span>
+            <span className="term-role-pill npc">{tr(lang, 'BAN GIÁM ĐỐC', 'MANAGEMENT')}</span>
             <BossPortrait mood={line.stamp ? 'angry' : mood.boss || 'smug'} />
-            <div className="term-node-label">
-              [DIR-01] {CAST.boss.name}
-            </div>
+            <div className="term-node-label">{cast.boss.name}</div>
           </div>
         </div>
 
         <div ref={logRef} className="term-comm-log" onClick={waitingChoice ? undefined : next}>
           {history.map((h, idx) => (
             <div key={idx} className={`term-log-line muted ${h.who}`}>
-              <span className="term-tag">[{h.who === 'boss' ? 'DIR-01' : 'BẠN // ENG-01'}]</span>{' '}
+              <span className="term-tag">
+                [{h.who === 'boss' ? cast.boss.name : cast.eng.name}]
+              </span>{' '}
               {h.choiceTag && <span className="term-choice-echo">[{h.choiceTag}]</span>}{' '}
               {h.stamp && <span className="term-reject-stamp">⛔ {h.stamp}</span>} {h.text}
             </div>
           ))}
           <div className={`term-log-active ${speaking} ${line.isThought ? 'thought' : ''}`}>
-            <span className="term-tag">[{speaking === 'boss' ? 'DIR-01' : 'BẠN // ENG-01'}]:&gt;</span>{' '}
+            <span className="term-tag">
+              [{speaking === 'boss' ? cast.boss.name : cast.eng.name}]:&gt;
+            </span>{' '}
             {line.stamp && <span className="term-reject-stamp">⛔ {line.stamp}</span>} {line.text.slice(0, typed)}
             <span className="story-caret">▍</span>
           </div>
@@ -181,7 +202,11 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
         {waitingChoice && (
           <div className="term-choices-box">
             <div className="term-choices-title">
-              CHỌN LỜI PHẢN HỒI CỦA BẠN [BẠN // ENG-01] (Bấm phím 1-{line.choices.length} hoặc click):
+              {tr(
+                lang,
+                `CHỌN LỜI PHẢN HỒI — Phím 1-${line.choices.length} hoặc nhấp chuột:`,
+                `CHOOSE YOUR RESPONSE — Keys 1-${line.choices.length} or click:`
+              )}
             </div>
             <div className="term-choices-list">
               {line.choices.map((ch, idx) => (
@@ -215,6 +240,7 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
                 success={Boolean(ctx?.success)}
                 failureId={ctx?.failureId || ''}
                 compact
+                lang={lang}
               />
             </div>
           </div>
@@ -223,19 +249,27 @@ export default function StoryScene({ lines, ctx, header, audioOn, onClose }) {
         <div className="term-comm-footer">
           <span className="small muted">
             {waitingChoice
-              ? `CHỌN PHẢN HỒI [1-${line.choices.length}] ĐỂ NÓI VỚI SẾP • [ESC] BỎ QUA`
-              : `MSG ${i + 1}/${activeScript.length} • [ENTER/CLICK] TIẾP TỤC • [ESC] BỎ QUA`}
+              ? tr(
+                  lang,
+                  `Chọn phản hồi 1-${line.choices.length} để nói với sếp • Phím ESC để bỏ qua`,
+                  `Select response 1-${line.choices.length} to reply • ESC to skip`
+                )
+              : tr(
+                  lang,
+                  `Tin ${i + 1}/${activeScript.length} • Enter hoặc nhấp chuột để tiếp tục • Phím ESC để bỏ qua`,
+                  `Msg ${i + 1}/${activeScript.length} • Enter or click to continue • ESC to skip`
+                )}
           </span>
           <div className="row-wrap">
             <button className="btn small" onClick={onClose}>
-              BYPASS [ESC]
+              {tr(lang, 'BỎ QUA', 'SKIP')}
             </button>
             <button className={`btn small ${waitingChoice ? '' : 'primary'}`} onClick={next}>
               {waitingChoice
-                ? '↑ CHỌN CÂU TRẢ LỜI Ở TRÊN'
+                ? tr(lang, 'CHỌN PHẢN HỒI Ở TRÊN', 'SELECT RESPONSE ABOVE')
                 : i + 1 >= activeScript.length && typed >= line.text.length
-                ? 'ACKNOWLEDGE [DONE]'
-                : 'ACK / NEXT >>'}
+                ? tr(lang, 'XÁC NHẬN HOÀN TẤT', 'ACKNOWLEDGE')
+                : tr(lang, 'TIẾP TỤC →', 'CONTINUE →')}
             </button>
           </div>
         </div>
