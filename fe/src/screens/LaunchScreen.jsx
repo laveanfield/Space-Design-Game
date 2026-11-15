@@ -60,7 +60,7 @@ function MechDial({ label, valueText, unit, value, min = 0, max = 100, accent = 
   );
 }
 
-function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, targetAlt, orbitId }) {
+function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, targetAlt, finalOrbitAlt, orbitId }) {
   const W = 280;
   const H = 96;
   const padL = 8;
@@ -90,7 +90,9 @@ function MechTrajectoryGraph({ points, tEnd, currentT, currentAlt, targetAlt, or
       <span className="mech-rivet bl" />
       <span className="mech-rivet br" />
       <div className="mech-traj-head">
-        <span className="mech-gauge-lbl">{orbitId} · {Math.round(targetAlt)} km</span>
+        <span className="mech-gauge-lbl">
+          {orbitId} · {finalOrbitAlt > targetAlt + 50 ? `${Math.round(targetAlt)} → ${Math.round(finalOrbitAlt)} km` : `${Math.round(targetAlt)} km`}
+        </span>
         <span className="mech-gauge-lbl">{Math.max(0, Math.round(currentT))}s / {Math.round(totalT)}s</span>
       </div>
       <svg className="mech-traj-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
@@ -186,7 +188,11 @@ export default function LaunchScreen() {
   const site = catalog?.tables?.launch_sites?.[design?.launch?.site];
   const orbit = catalog?.tables?.orbits?.[design?.orbit];
   const geo = { latDeg: site?.lat_deg, lonDeg: site?.lon_deg, incDeg: orbit?.inclination_deg };
-  const targetAltKm = Number(orbit?.altitude_km || telem.targetAltKm || 400);
+  const ascentPeakAltKm = Math.max(
+    100,
+    Number(trajSeries.points[trajSeries.points.length - 1]?.alt || telem.targetAltKm || 400)
+  );
+  const finalOrbitAltKm = Number(orbit?.altitude_km || ascentPeakAltKm);
 
   // To bao tai nan (du lieu su co that cua chuyen bay) lap day o trong duoi khung 3D khi phong that bai
   const accident =
@@ -307,7 +313,8 @@ export default function LaunchScreen() {
               tEnd={trajSeries.tEnd}
               currentT={telem.t}
               currentAlt={telem.altKm}
-              targetAlt={targetAltKm}
+              targetAlt={ascentPeakAltKm}
+              finalOrbitAlt={finalOrbitAltKm}
               orbitId={design?.orbit || 'LEO'}
             />
             <MechDial
@@ -316,7 +323,7 @@ export default function LaunchScreen() {
               unit="km"
               value={telem.altKm}
               min={0}
-              max={Math.max(200, targetAltKm)}
+              max={Math.max(200, ascentPeakAltKm)}
               accent="#38bdf8"
               warnAt={0.92}
             />
