@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b151e" />
+      <stop offset="100%" stop-color="#132534" />
+    </linearGradient>
+    <linearGradient id="earth" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+
+  <!-- Mission badge background -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg)" stroke="#34d399" stroke-width="2" />
+
+  <!-- Planet / Earth curve -->
+  <circle cx="42" cy="44" r="14" fill="url(#earth)" opacity="0.92" />
+  <path d="M31 41c4-3 10-2 14 2s7 3 9 1" fill="none" stroke="#a7f3d0" stroke-width="1.6" stroke-linecap="round" opacity="0.7" />
+
+  <!-- Orbital trajectory arc -->
+  <ellipse cx="32" cy="34" rx="24" ry="12" transform="rotate(-24 32 34)" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 3" opacity="0.9" />
+
+  <!-- Stylized Satellite (angled) -->
+  <g transform="translate(24 22) rotate(-24)">
+    <!-- Left solar wing -->
+    <rect x="-15" y="-4" width="10" height="8" rx="1.5" fill="url(#panel)" stroke="#a7f3d0" stroke-width="1" />
+    <!-- Right solar wing -->
+    <rect x="5" y="-4" width="10" height="8" rx="1.5" fill="url(#panel)" stroke="#a7f3d0" stroke-width="1" />
+    <!-- Spacecraft bus -->
+    <rect x="-4.5" y="-5.5" width="9" height="11" rx="2" fill="#e2e8f0" stroke="#0f172a" stroke-width="1" />
+    <!-- Antenna dish / sensor -->
+    <circle cx="0" cy="7.5" r="2" fill="#f59e0b" />
+    <line x1="0" y1="5.5" x2="0" y2="7.5" stroke="#f59e0b" stroke-width="1.4" />
+  </g>
+</svg>
